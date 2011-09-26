@@ -1,3 +1,11 @@
 ==Goals==
 
 The goals of this project is to create open source library which will represents a higher-level, task-based parallelism that abstracts platform details and threading mechanisms. It should be something similar to Intel TBB or Microsoft Parallel Extensions but distributed with BSD license to be available to include in the commercial or freeware projects. 
+
+==Implementation==
+
+Library should be implemented as headers only library, if it is possible. For simple projects integration.
+
+==Platforms==
+
+It should be multi-platform  library supporting Windows and Unix like systems.
