@@ -15,34 +15,39 @@ namespace parallel
 class Task
 {
 public:
-    Task(){done = false;}
-    virtual ~Task(){}
+    Task(){}
+    virtual ~Task(){Wait();}
     virtual void Execute() = 0;
 
     void Run()
     {
-        done = false;
+        ScopedLock<Mutex> lock(&waitGuard);
         try
         {
             Execute();
         }
         catch(Exception& err)
         {
-            scoped_lock<Mutex> lock(exceptionGuard);
-            lastException.reset(Exception.Clone());
+            ScopedLock<Mutex> lock(&exceptionGuard);
+            lastException.reset(err.Clone());
         }
-        done = true;
     }
-    bool IsDone() const {return done;}
+
     std::shared_ptr<Exception> GetLastException();
+
+    void Wait()
+    {
+        ScopedLock<Mutex> lock(&waitGuard);
+    }
 
 private:
     Task(const Task&);
     const Task& operator=(const Task&);
 private:
-    atomic<bool> done;
+   
     std::shared_ptr<Exception> lastException;
     Mutex exceptionGuard;
+    Mutex waitGuard;
 };
 
 class TaskThread: public Thread
@@ -151,7 +156,7 @@ private:
 };
 
 template<class Iterator, class Functor>
-void parallel_for(Iterator start, Iterator end, Functor functor, TaskManager& manager)
+void ParallelFor(Iterator start, Iterator end, Functor functor, TaskManager& manager)
 {        
     auto ranges = manager.SplitRange(start, end);
 

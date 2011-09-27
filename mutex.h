@@ -2,27 +2,26 @@
 #define _MUTEX_H_
 
 #include <Windows.h>
-#include <stdexcept>
 
 namespace parallel
 {
 
 template <class T>
-class scoped_lock
+class ScopedLock
 {
 public:
-    scoped_lock(T* guard)
+    ScopedLock(T* guard)
         : guard(guard)
     {
         guard->Lock();
     }
-    ~scoped_lock()
+    ~ScopedLock()
     {
         guard->UnLock();
     }
 private:
-    scoped_lock(const scoped_lock&);
-    const scoped_lock& operator=(const scoped_lock&);
+    ScopedLock(const ScopedLock&);
+    const ScopedLock& operator=(const ScopedLock&);
 private:
     T* guard;
 };
@@ -42,7 +41,7 @@ public:
     {
         CloseHandle(hMutex);
     }
-    bool Lock()
+    void Lock()
     {
         DWORD rez = ::WaitForSingleObject(hMutex, INFINITE);
         if (rez != WAIT_OBJECT_0)
@@ -50,7 +49,7 @@ public:
             //log error
         }
     }
-    bool UnLock()
+    void UnLock()
     {
         BOOL rez = ::ReleaseMutex(hMutex);
         if (rez == FALSE)

@@ -43,7 +43,7 @@ int main(int /*argc*/, char* /*argv*/[])
     big_array = GetBigArray();
 
     timer.Start();
-    parallel::parallel_for(big_array.begin(), big_array.end(),
+    parallel::ParallelFor(big_array.begin(), big_array.end(),
         [](double& x)
     {
         x = std::sqrt(std::sqrt(x));
