@@ -2,6 +2,7 @@
 #define _PARALLEL_H_
 
 #include "thread.h"
+#include "mutex.h"
 
 #include <Windows.h>
 
