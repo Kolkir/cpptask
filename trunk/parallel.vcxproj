@@ -75,10 +75,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="parallel.cpp" />
+    <ClCompile Include="parallel_for.cpp" />
+    <ClCompile Include="thread.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="parallel.h" />
+    <ClInclude Include="exception.h" />
+    <ClInclude Include="parallel_for.h" />
+    <ClInclude Include="thread.h" />
     <ClInclude Include="timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

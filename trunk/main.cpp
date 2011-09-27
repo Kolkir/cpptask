@@ -1,4 +1,4 @@
-#include "parallel.h"
+#include "parallel_for.h"
 #include "timer.h"
 
 #include <cmath>
