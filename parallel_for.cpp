@@ -1,4 +1,5 @@
-#include "parallel.h"
+#include "parallel_for.h"
+#include <process.h>
 
 namespace parallel
 {

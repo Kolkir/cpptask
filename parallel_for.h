@@ -1,31 +1,47 @@
 #ifndef _PARALLEL_H_
 #define _PARALLEL_H_
 
+#include "thread.h"
+
+#include <Windows.h>
+
 #include <algorithm>
 #include <vector>
 
 namespace parallel
 {
 
-class Exception: public std::exception
-{
-};
-
-class Thread
-{
-public:
-    virtual ~Thread(){}
-    virtual void Run() = 0;
-    const Exception* GetLastException() const;
-};
-
 class Task
 {
 public:
+    Task(){done = false;}
     virtual ~Task(){}
     virtual void Execute() = 0;
 
-    void Wait() const;
+    void Run()
+    {
+        done = false;
+        try
+        {
+            Execute();
+        }
+        catch(Exception& err)
+        {
+            scoped_lock<Mutex> lock(exceptionGuard);
+            lastException.reset(Exception.Clone());
+        }
+        done = true;
+    }
+    bool IsDone() const {return done;}
+    std::shared_ptr<Exception> GetLastException();
+
+private:
+    Task(const Task&);
+    const Task& operator=(const Task&);
+private:
+    atomic<bool> done;
+    std::shared_ptr<Exception> lastException;
+    Mutex exceptionGuard;
 };
 
 class TaskThread: public Thread
@@ -33,7 +49,7 @@ class TaskThread: public Thread
 public:
     virtual void Run()
     {
-        task->Execute();
+        task->Run();
     }
 private:
     Task* task;
@@ -141,6 +157,7 @@ void parallel_for(Iterator start, Iterator end, Functor functor, TaskManager& ma
     typedef Range<Iterator> RANGE;
     typedef ForTask<RANGE, Functor> TASK;
     std::vector<TASK> tasks;
+
     std::for_each(ranges.begin(), ranges.end(),
         [&](RANGE& range)
     {
