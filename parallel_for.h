@@ -3,6 +3,7 @@
 
 #include "thread.h"
 #include "mutex.h"
+#include "mpscqueue.h"
 
 #include <Windows.h>
 
@@ -12,7 +13,7 @@
 namespace parallel
 {
 
-class Task
+class Task : public MPSCNode
 {
 public:
     Task(){}
@@ -43,8 +44,7 @@ public:
 private:
     Task(const Task&);
     const Task& operator=(const Task&);
-private:
-   
+private:   
     std::shared_ptr<Exception> lastException;
     Mutex exceptionGuard;
     Mutex waitGuard;
@@ -53,10 +53,17 @@ private:
 class TaskThread: public Thread
 {
 public:
+    TaskThread():task(0){}
+    void SetTask(Task* t){task = t;}//sync
     virtual void Run()
     {
-        task->Run();
+        if (task != 0)
+        {
+            task->Run();
+        }
+        task = 0;
     }
+    bool HasTask(){return task == 0;}
 private:
     Task* task;
 };
@@ -68,9 +75,9 @@ public:
     
     size_t GetThreadsNum() const;
 
-    Thread* GetEmptyThread() const; //sync
+    TaskThread* GetEmptyThread() const; //sync
 
-    void PushBackThread(Thread*); //sync
+    void PushBackThread(TaskThread*); //sync
 
 private:
     ThreadPool(const ThreadPool&);
@@ -94,12 +101,33 @@ public:
     Iterator end;
 };
 
+class TaskManager;
+class ManagerThread: public Thread
+{
+public:
+    ManagerThread():done(0){}
+    virtual void Run();
+    void SetManager(TaskManager* manager){this->manager = manager;}
+    void Finish()
+    {
+        ::InterlockedIncrement(&done);
+    }
+private:
+    volatile unsigned int done;
+    TaskManager* manager;
+};
+
 class TaskManager
 {
 public:
     TaskManager(ThreadPool& threadPool);
+    ~TaskManager();
 
     void StartTask(Task* task);
+
+    bool HasQueuedTasks(){return taskQueue.IsEmpty();}
+
+    void ScheduleTasks();
 
     template<class Iterator>
     std::vector<Range<Iterator>> SplitRange(Iterator start, Iterator end) const
@@ -131,6 +159,8 @@ public:
 
 private:
     ThreadPool& threadPool;
+    MPSCQueue taskQueue;
+    ManagerThread managerThread;
 };
 
 template<class Range, class Functor>
