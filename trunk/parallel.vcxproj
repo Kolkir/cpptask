@@ -80,6 +80,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="exception.h" />
+    <ClInclude Include="mpscqueue.h" />
     <ClInclude Include="mutex.h" />
     <ClInclude Include="parallel_for.h" />
     <ClInclude Include="thread.h" />
