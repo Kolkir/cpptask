@@ -10,7 +10,7 @@ typedef std::vector<double> ArrayType;
 
 ArrayType GetBigArray()
 {
-    const size_t n = 10000000;
+    const size_t n = 20;
     ArrayType m(n);
     for (size_t i = 0; i < n; ++i)
     {
@@ -37,7 +37,7 @@ int main(int /*argc*/, char* /*argv*/[])
     std::cout << "Serial time is : " << timer.End() << " ms\n";
 
     // parallel test
-    parallel::ThreadPool threadPool(4);
+    parallel::TaskThreadPool threadPool(4);
     parallel::TaskManager manager(threadPool);
 
     big_array = GetBigArray();

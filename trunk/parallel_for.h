@@ -3,6 +3,8 @@
 
 #include "thread.h"
 #include "mutex.h"
+#include "event.h"
+#include "atomic.h"
 #include "mpscqueue.h"
 
 #include <Windows.h>
@@ -17,12 +19,12 @@ class Task : public MPSCNode
 {
 public:
     Task(){}
-    virtual ~Task(){Wait();}
+    virtual ~Task(){}
     virtual void Execute() = 0;
 
     void Run()
-    {
-        ScopedLock<Mutex> lock(&waitGuard);
+    {        
+        waitEvent.Reset();
         try
         {
             Execute();
@@ -32,58 +34,83 @@ public:
             ScopedLock<Mutex> lock(&exceptionGuard);
             lastException.reset(err.Clone());
         }
+        waitEvent.Signal();
     }
 
     std::shared_ptr<Exception> GetLastException();
 
     void Wait()
     {
-        ScopedLock<Mutex> lock(&waitGuard);
+        waitEvent.Wait();
     }
 
 private:
     Task(const Task&);
     const Task& operator=(const Task&);
-private:   
+private:
     std::shared_ptr<Exception> lastException;
     Mutex exceptionGuard;
-    Mutex waitGuard;
+    Event waitEvent;
 };
 
 class TaskThread: public Thread
 {
 public:
-    TaskThread():task(0){}
-    void SetTask(Task* t){task = t;}//sync
+    TaskThread(Event* emptyThreadEvent):task(0),emptyThreadEvent(emptyThreadEvent){}
+    ~TaskThread()
+    {
+        taskEvent.Signal();
+    }
+    void SetTask(Task* t)
+    {       
+        task = t;
+        hasTask.Set();
+        taskEvent.Signal();
+    }
     virtual void Run()
     {
+        taskEvent.Wait();
         if (task != 0)
         {
             task->Run();
         }
         task = 0;
+        hasTask.Reset();
+        if (emptyThreadEvent != 0)
+        {
+            emptyThreadEvent->Signal();
+        }
     }
-    bool HasTask(){return task == 0;}
+    bool HasTask()
+    {        
+        return hasTask.IsSet();
+        
+    }
 private:
     Task* task;
+    Event taskEvent;
+    AtomicFlag hasTask;
+    Event* emptyThreadEvent;
 };
 
-class ThreadPool
+class TaskThreadPool
 {
 public:
-    ThreadPool(size_t threadsNum);
+    TaskThreadPool(size_t threadsNum);
     
     size_t GetThreadsNum() const;
 
-    TaskThread* GetEmptyThread() const; //sync
-
-    void PushBackThread(TaskThread*); //sync
+    TaskThread* GetEmptyThread();
+    TaskThread* GetEmptyThreadWait();
 
 private:
-    ThreadPool(const ThreadPool&);
-    const ThreadPool& operator=(const ThreadPool&);
+    TaskThreadPool(const TaskThreadPool&);
+    const TaskThreadPool& operator=(const TaskThreadPool&);
 private:
-    //TaskThread s
+    typedef std::shared_ptr<TaskThread> TaskThreadPtr;
+    typedef std::vector<TaskThreadPtr> Threads;
+    Threads threads;
+    Event emptyThreadEvent;
 };
 
 
@@ -91,6 +118,7 @@ template<class Iterator>
 class Range
 {
 public:
+    typedef Iterator value_type;
     Range(){}
     Range(Iterator start, Iterator end)
         : start(start)
@@ -105,27 +133,31 @@ class TaskManager;
 class ManagerThread: public Thread
 {
 public:
-    ManagerThread():done(0){}
+    ManagerThread():manager(0){}
     virtual void Run();
     void SetManager(TaskManager* manager){this->manager = manager;}
     void Finish()
     {
-        ::InterlockedIncrement(&done);
+        taskProcessEvent.Signal();
+        done.Set();
+    }
+    void NotifyScheduleTasks()
+    {
+        taskProcessEvent.Signal();
     }
 private:
-    volatile unsigned int done;
+    Event taskProcessEvent;
+    AtomicFlag done;
     TaskManager* manager;
 };
 
 class TaskManager
 {
 public:
-    TaskManager(ThreadPool& threadPool);
+    TaskManager(TaskThreadPool& threadPool);
     ~TaskManager();
 
     void StartTask(Task* task);
-
-    bool HasQueuedTasks(){return taskQueue.IsEmpty();}
 
     void ScheduleTasks();
 
@@ -140,13 +172,14 @@ public:
         {
             rangeLen /= rangesNum;
         }
-        std::vector<RANGE> ranges(rangesNum);
+        std::vector<RANGE> ranges;
+        ranges.reserve(rangesNum);
         if (rangesNum > 1)
         {
             for(decltype(rangesNum) i = 0; i < rangesNum; ++i)
             {
                 ranges.push_back(RANGE(start + (i * rangeLen), 
-                                       start + (i * rangeLen) + 1));
+                                       start + (i * rangeLen) + rangeLen));
             }
             ranges[rangesNum - 1].end = end;
         }
@@ -158,7 +191,7 @@ public:
     }
 
 private:
-    ThreadPool& threadPool;
+    TaskThreadPool& threadPool;
     MPSCQueue taskQueue;
     ManagerThread managerThread;
 };
@@ -172,11 +205,15 @@ public:
         , functor(functor)
     {
     }
+    ~ForTask()
+    {
+    }
     virtual void Execute()
     {
-        for(;range.start != range.end; ++range.start)
+        Range::value_type i = range.start;
+        for(;i !=  range.end; ++i)
         {
-            functor(*range.start);
+            functor(*i);
         };
     }
 
@@ -192,19 +229,22 @@ void ParallelFor(Iterator start, Iterator end, Functor functor, TaskManager& man
 
     typedef Range<Iterator> RANGE;
     typedef ForTask<RANGE, Functor> TASK;
-    std::vector<TASK> tasks;
+    typedef std::shared_ptr<TASK> TASKPtr;
+    std::vector<TASKPtr> tasks;
 
     std::for_each(ranges.begin(), ranges.end(),
         [&](RANGE& range)
     {
-        TASK task(range, functor);
-        manager.StartTask(&task);
+        TASK* ptr = new TASK(range, functor);
+        TASKPtr task(ptr);
+        tasks.push_back(task);
+        manager.StartTask(task.get());
     });
 
     std::for_each(tasks.begin(), tasks.end(),
-    [&](TASK& task)
+    [&](TASKPtr& task)
     {
-        task.Wait();
+        task->Wait();
     });
 }
 

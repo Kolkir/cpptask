@@ -79,6 +79,8 @@
     <ClCompile Include="thread.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="atomic.h" />
+    <ClInclude Include="event.h" />
     <ClInclude Include="exception.h" />
     <ClInclude Include="mpscqueue.h" />
     <ClInclude Include="mutex.h" />
