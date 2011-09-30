@@ -3,6 +3,7 @@
 
 #include <Windows.h>
 #include <intrin.h>
+#include "mutex.h"
 
 namespace parallel
 {
@@ -34,59 +35,47 @@ public:
         tail = &stub;
     }
 
-    bool IsEmpty()
-    {
-        if (tail == &stub)
-        {
-            if (tail->GetNext() == 0)
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
     void Push(MPSCNode* n)
-    {        
-        n->SetNext(0);        
-        MPSCNode* prev = static_cast<MPSCNode*>(InterlockedExchangePointer(&head, n));
-        prev->SetNext(n);
-        _ReadWriteBarrier(); 
+    {   
+        ScopedLock<Mutex> lock(&producerGuard);
+        n->SetNext(0);
+        //MPSCNode* prev = static_cast<MPSCNode*>(InterlockedExchangePointer(&head, n));
+        MPSCNode* prev = head;
+        head = n;
+        prev->SetNext(n); 
     }
 
     MPSCNode* Pop()
     {
-        MPSCNode* locTail = tail;
-        MPSCNode* next = locTail->GetNext();
-        if (locTail == &stub)
+        MPSCNode* next = tail->GetNext();
+        if (tail == &stub)
         {
             if (next == 0)
             {
                 return 0;
             }
             tail = next;
-            locTail = next;
             next = next->GetNext();
         }
         if (next != 0)
         {
-            tail = next;
-            return tail;
+            tail = next;           
+            return next; 
         }
-        MPSCNode* locHead = head;
-        if (locTail != locHead)
+        
+        if (tail != head)
         {
             return 0;
         }
         Push(&stub);
-        _ReadWriteBarrier(); 
-        next = locTail->GetNext();
+        next = tail->GetNext();
         if (next != 0)
         {
+            MPSCNode* prevTail = tail;
             tail = next;
-            return tail;
+            return prevTail;
         }
-        return 0; 
+        return 0;       
     }
 
 private:
@@ -94,6 +83,8 @@ private:
     MPSCNode* head;
     MPSCNode* tail;
     MPSCNode stub;
+
+    Mutex producerGuard;
 };
 
 }
