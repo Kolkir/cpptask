@@ -37,43 +37,45 @@ public:
 
     void Push(MPSCNode* n)
     {   
-        ScopedLock<Mutex> lock(&producerGuard);
+        //ScopedLock<Mutex> lock(&producerGuard);
         n->SetNext(0);
-        //MPSCNode* prev = static_cast<MPSCNode*>(InterlockedExchangePointer(&head, n));
-        MPSCNode* prev = head;
-        head = n;
+        MPSCNode* prev = static_cast<MPSCNode*>(InterlockedExchangePointer(&head, n));
+        //MPSCNode* prev = head;
+        //head = n;
         prev->SetNext(n); 
     }
 
     MPSCNode* Pop()
-    {
-        MPSCNode* next = tail->GetNext();
-        if (tail == &stub)
+    {       
+        //ScopedLock<Mutex> lock(&producerGuard);
+        MPSCNode* newTail = tail;
+        MPSCNode* next = newTail->GetNext();
+        if (newTail == &stub)
         {
             if (next == 0)
             {
                 return 0;
             }
             tail = next;
+            newTail = next;
             next = next->GetNext();
         }
         if (next != 0)
         {
-            tail = next;           
-            return next; 
+            tail = next;
+            return newTail;
         }
-        
-        if (tail != head)
+        MPSCNode* newHead = head;
+        if (newTail != newHead)
         {
             return 0;
         }
         Push(&stub);
-        next = tail->GetNext();
-        if (next != 0)
+        next = newTail->GetNext();
+        if (next)
         {
-            MPSCNode* prevTail = tail;
             tail = next;
-            return prevTail;
+            return newTail;
         }
         return 0;       
     }

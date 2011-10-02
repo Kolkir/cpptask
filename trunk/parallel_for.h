@@ -18,13 +18,12 @@ namespace parallel
 class Task : public MPSCNode
 {
 public:
-    Task(){}
+    Task(){waitEvent.Reset();}
     virtual ~Task(){}
     virtual void Execute() = 0;
 
     void Run()
-    {        
-        waitEvent.Reset();
+    {       
         try
         {
             Execute();
@@ -42,6 +41,7 @@ public:
     void Wait()
     {
         waitEvent.Wait();
+        waitEvent.Reset();
     }
 
 private:
@@ -59,6 +59,7 @@ public:
     TaskThread(Event* emptyThreadEvent):task(0),emptyThreadEvent(emptyThreadEvent){}
     ~TaskThread()
     {
+        Stop();
         taskEvent.Signal();
     }
     void SetTask(Task* t)
@@ -69,16 +70,20 @@ public:
     }
     virtual void Run()
     {
-        taskEvent.Wait();
-        if (task != 0)
+        while (!done.IsSet())
         {
-            task->Run();
-        }
-        task = 0;
-        hasTask.Reset();
-        if (emptyThreadEvent != 0)
-        {
-            emptyThreadEvent->Signal();
+            taskEvent.Wait();
+            if (task != 0)
+            {
+                task->Run();
+            }
+            task = 0;
+            taskEvent.Reset();
+            hasTask.Reset();
+            if (emptyThreadEvent != 0)
+            {
+                emptyThreadEvent->Signal();
+            }
         }
     }
     bool HasTask()
@@ -86,11 +91,16 @@ public:
         return hasTask.IsSet();
         
     }
+    void Stop()
+    {
+        done.Set();
+    }
 private:
     Task* task;
     Event taskEvent;
     AtomicFlag hasTask;
     Event* emptyThreadEvent;
+    AtomicFlag done;
 };
 
 class TaskThreadPool
@@ -120,6 +130,7 @@ class Range
 public:
     typedef Iterator value_type;
     Range(){}
+    ~Range(){}
     Range(Iterator start, Iterator end)
         : start(start)
         , end(end)
