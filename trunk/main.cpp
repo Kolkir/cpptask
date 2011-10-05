@@ -1,84 +1,64 @@
+#include "parallelfor.h"
 #include "timer.h"
 
+#include <cmath>
+#include <vector>
 #include <algorithm>
 #include <iostream>
 
-class A
-{
-public:
-    int x[11 + 16];
-    A* next;
-};
+typedef std::vector<double> ArrayType;
 
-class B
+ArrayType GetBigArray()
 {
-public:
-    int x[15 + 16];
-    B* next;
-};
+    const size_t n = 10000000;
+    ArrayType m(n);
+    for (size_t i = 0; i < n; ++i)
+    {
+        m[i] = static_cast<double>(i);
+    }
+    return m;
+}
+
+void SerialTest()
+{
+    parallel::Timer timer;
+    ArrayType big_array = GetBigArray();
+    
+    timer.Start();
+    std::for_each(big_array.begin(), big_array.end(),
+        [](double& x)
+    {
+        x = std::sqrt(std::sqrt(x));
+    });
+    
+    std::cout << "Serial time is : " << timer.End() << " ms\n";
+}
+
+void ParallelTest()
+{
+    parallel::Timer timer;
+    ArrayType big_array = GetBigArray();
+
+    parallel::TaskThreadPool threadPool(2);
+    parallel::TaskManager manager(threadPool);
+
+    big_array = GetBigArray();
+
+    timer.Start();
+    parallel::ParallelFor(big_array.begin(), big_array.end(),
+        [](double& x)
+    {
+        x = std::sqrt(std::sqrt(x));
+    }, manager);    
+    
+    std::cout << "Parallel time is : " << timer.End() << " ms\n";
+}
 
 int main(int /*argc*/, char* /*argv*/[])
 {       
-    using namespace parallel;    
+    SerialTest();
 
-    size_t l1 = sizeof(A);
-    size_t l2 = sizeof(B);
-    size_t len = 1024 * 32;
-
-    Timer timer;
-    size_t cycles = 0;
-
-    A* m1 = new A[len];
-    std::cout << "Size A = " << l1 << std::endl;
-    for(size_t i = 0; i < len; ++i)
-    {
-        m1[i].next = 0;
-        if (i > 0)
-        {
-            m1[i - 1].next = &m1[i];
-        }
-    }
-    timer.Start();
-    while (timer.End() < 10000)//10s
-    {
-        A* item = &m1[0];
-        while (item != 0)
-        {
-            item->x[4] += 5;
-            item = item->next;
-        }
-        ++cycles;
-    }
-    std::cout << "Class A cycles: " << cycles << "\n";
-    delete[] m1;
-
-
-    /*************************/
-
-    cycles = 0;
-    B* m2 = new B[len];
-    std::cout << "Size B = " << l2 << std::endl;
-    for(size_t i = 0; i < len; ++i)
-    {
-        m2[i].next = 0;
-        if (i > 0)
-        {
-            m2[i - 1].next = &m2[i];
-        }
-    }
-    timer.Start();
-    while (timer.End() < 10000)//10s
-    {
-        B* item = &m2[0];
-        while (item != 0)
-        {
-            item->x[4] += 5;
-            item = item->next;
-        }
-        ++cycles;
-    }
-    std::cout << "Class B cycles: " << cycles << "\n";
-    delete[] m2;
-
+    ParallelTest();
+    
     return 0;
 }
