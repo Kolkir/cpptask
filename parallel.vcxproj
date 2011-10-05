@@ -108,6 +108,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -134,8 +135,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="parallel_for.cpp" />
-    <ClCompile Include="thread.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="atomic.h" />
@@ -143,7 +142,10 @@
     <ClInclude Include="exception.h" />
     <ClInclude Include="mpscqueue.h" />
     <ClInclude Include="mutex.h" />
-    <ClInclude Include="parallel_for.h" />
+    <ClInclude Include="parallelfor.h" />
+    <ClInclude Include="range.h" />
+    <ClInclude Include="taskmanager.h" />
+    <ClInclude Include="task.h" />
     <ClInclude Include="thread.h" />
     <ClInclude Include="timer.h" />
   </ItemGroup>
