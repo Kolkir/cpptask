@@ -137,17 +137,17 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="atomic.h" />
-    <ClInclude Include="event.h" />
-    <ClInclude Include="exception.h" />
-    <ClInclude Include="mpscqueue.h" />
-    <ClInclude Include="mutex.h" />
-    <ClInclude Include="parallelfor.h" />
-    <ClInclude Include="range.h" />
-    <ClInclude Include="taskmanager.h" />
-    <ClInclude Include="task.h" />
-    <ClInclude Include="thread.h" />
-    <ClInclude Include="timer.h" />
+    <ClInclude Include="src\atomic.h" />
+    <ClInclude Include="src\event.h" />
+    <ClInclude Include="src\exception.h" />
+    <ClInclude Include="src\mpscqueue.h" />
+    <ClInclude Include="src\mutex.h" />
+    <ClInclude Include="src\parallelfor.h" />
+    <ClInclude Include="src\range.h" />
+    <ClInclude Include="src\task.h" />
+    <ClInclude Include="src\taskmanager.h" />
+    <ClInclude Include="src\thread.h" />
+    <ClInclude Include="src\timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
