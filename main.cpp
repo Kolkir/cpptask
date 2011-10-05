@@ -1,5 +1,5 @@
-#include "parallelfor.h"
-#include "timer.h"
+#include "src/parallelfor.h"
+#include "src/timer.h"
 
 #include <cmath>
 #include <vector>
