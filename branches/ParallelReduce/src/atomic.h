@@ -1,4 +1,5 @@
 /*
+* http://code.google.com/p/cpptask/
 * Copyright (c) 2011, Kirill Kolodyazhnyi
 * All rights reserved.
 *
@@ -58,6 +59,30 @@ private:
     const AtomicFlag& operator=(const AtomicFlag&);
 private:
     unsigned int flag;
+};
+
+class AtomicNumber
+{
+public:
+    AtomicNumber():number(0){}
+    void Inc()
+    {
+        ::InterlockedIncrement(&number);
+    }
+    void Dec()
+    {
+        ::InterlockedDecrement(&number);
+    }
+    unsigned long GetValue()
+    {
+        unsigned long value = InterlockedCompareExchange(&number, number, number);
+        return value;
+    }
+private:
+    AtomicNumber(const AtomicFlag&);
+    const AtomicNumber& operator=(const AtomicFlag&);
+private:
+    unsigned long number;
 };
 
 }

@@ -1,4 +1,5 @@
 /*
+* http://code.google.com/p/cpptask/
 * Copyright (c) 2011, Kirill Kolodyazhnyi
 * All rights reserved.
 *
@@ -101,14 +102,14 @@ public:
         while(node != 0)
         {
             Task* task = static_cast<Task*>(node);
-         
+
             TaskThread* thread = threadPool.GetEmptyThread();
             if (thread == 0)
             {
                 thread = threadPool.GetEmptyThreadWait();
             }
             thread->SetTask(task);
-        
+ 
             node = taskQueue.Pop();
         }
     }    

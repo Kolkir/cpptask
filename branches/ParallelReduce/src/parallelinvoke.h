@@ -1,4 +1,5 @@
 /*
+* http://code.google.com/p/cpptask/
 * Copyright (c) 2011, Kirill Kolodyazhnyi
 * All rights reserved.
 *
@@ -28,9 +29,6 @@
 #define _PARALLEL_INVOKE_H_
 
 #include "taskmanager.h"
-
-#include <algorithm>
-#include <vector>
 
 namespace parallel
 {

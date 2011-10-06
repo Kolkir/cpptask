@@ -144,6 +144,7 @@
     <ClInclude Include="src\mutex.h" />
     <ClInclude Include="src\parallelfor.h" />
     <ClInclude Include="src\parallelinvoke.h" />
+    <ClInclude Include="src\parallelreduce.h" />
     <ClInclude Include="src\range.h" />
     <ClInclude Include="src\task.h" />
     <ClInclude Include="src\taskmanager.h" />

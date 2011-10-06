@@ -1,4 +1,5 @@
 /*
+* http://code.google.com/p/cpptask/
 * Copyright (c) 2011, Kirill Kolodyazhnyi
 * All rights reserved.
 *
@@ -44,6 +45,10 @@ public:
         : start(start)
         , end(end)
     {
+    }
+    size_t Size()
+    {
+        return std::distance(start, end);
     }
     Iterator start;
     Iterator end;

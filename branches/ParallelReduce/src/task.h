@@ -1,4 +1,5 @@
 /*
+* http://code.google.com/p/cpptask/
 * Copyright (c) 2011, Kirill Kolodyazhnyi
 * All rights reserved.
 *
@@ -77,6 +78,7 @@ private:
     std::shared_ptr<Exception> lastException;
     Mutex exceptionGuard;
     Event waitEvent;
+    AtomicNumber childrenCount;
 };
 
 
