@@ -1,5 +1,5 @@
-#ifndef _PARALLEL_H_
-#define _PARALLEL_H_
+#ifndef _PARALLEL_FOR_H_
+#define _PARALLEL_FOR_H_
 
 #include "taskmanager.h"
 #include "range.h"

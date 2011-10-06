@@ -91,7 +91,7 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -119,7 +119,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
@@ -143,6 +143,7 @@
     <ClInclude Include="src\mpscqueue.h" />
     <ClInclude Include="src\mutex.h" />
     <ClInclude Include="src\parallelfor.h" />
+    <ClInclude Include="src\parallelinvoke.h" />
     <ClInclude Include="src\range.h" />
     <ClInclude Include="src\task.h" />
     <ClInclude Include="src\taskmanager.h" />

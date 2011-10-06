@@ -1,4 +1,5 @@
 #include "src/parallelfor.h"
+#include "src/parallelinvoke.h"
 #include "src/timer.h"
 
 #include <cmath>
@@ -19,7 +20,7 @@ ArrayType GetBigArray()
     return m;
 }
 
-void SerialTest()
+void SerialTest1()
 {
     parallel::Timer timer;
     ArrayType big_array = GetBigArray();
@@ -34,7 +35,7 @@ void SerialTest()
     std::cout << "Serial time is : " << timer.End() << " ms\n";
 }
 
-void ParallelTest()
+void ParallelTest1()
 {
     parallel::Timer timer;
     ArrayType big_array = GetBigArray();
@@ -54,11 +55,48 @@ void ParallelTest()
     std::cout << "Parallel time is : " << timer.End() << " ms\n";
 }
 
+void ParallelTest2()
+{
+    parallel::Timer timer;
+    ArrayType big_array = GetBigArray();
+
+    parallel::TaskThreadPool threadPool(2);
+    parallel::TaskManager manager(threadPool);
+
+    big_array = GetBigArray();
+
+    timer.Start();
+    parallel::ParallelInvoke(
+        [&]() {
+            ArrayType::iterator i = big_array.begin();
+            ArrayType::iterator e = big_array.begin();
+            std::advance(e, big_array.size() / 2);
+            for (;i != e; ++i)
+            {
+                *i = std::sqrt(std::sqrt(*i));
+            }
+        },
+        [&]() {
+            ArrayType::iterator i = big_array.begin();
+            ArrayType::iterator e = big_array.end();
+            std::advance(i, big_array.size() / 2);
+            for (;i != e; ++i)
+            {
+                *i = std::sqrt(std::sqrt(*i));
+            }
+        },
+        manager);    
+    
+    std::cout << "Parallel time is : " << timer.End() << " ms\n";
+}
+
 int main(int /*argc*/, char* /*argv*/[])
 {       
-    SerialTest();
+    SerialTest1();
 
-    ParallelTest();
+    ParallelTest1();
+
+    ParallelTest2();
     
     return 0;
 }

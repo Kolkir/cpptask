@@ -92,6 +92,22 @@ private:
     Exception lastException;
 };
 
+template<class F>
+class ThreadFunction : public Thread
+{
+public:
+    ThreadFunction(F f)
+        : func(f)
+    {
+    }
+    virtual void Run()
+    {
+        func();
+    }
+private:
+    F func;
+};
+
 }
 
 #endif
