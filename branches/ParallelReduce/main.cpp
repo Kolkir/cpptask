@@ -36,13 +36,13 @@
 #include <numeric>
 #include <iostream>
 
-const size_t THREADS_NUM = 2;
+const size_t THREADS_NUM = 4;
 
 typedef std::vector<double> ArrayType;
 
 ArrayType GetBigArray()
 {
-    const size_t n = 10000000;
+    const size_t n = 10000;
     ArrayType m(n);
     for (size_t i = 0; i < n; ++i)
     {
@@ -131,7 +131,7 @@ double SerialTest2()
     res = std::accumulate(big_array.begin(), big_array.end(), res, 
         [](double& x, double& y)->double
     {
-        return y + std::sqrt(std::sqrt(x));
+        return y + x;
     });
     
     std::cout << "Serial time is : " << timer.End() << " ms\n";
@@ -150,7 +150,7 @@ public:
         std::for_each(range.start, range.end,
             [&](double x)
         {
-            res += std::sqrt(std::sqrt(x));
+            res += x;
         });
     }
 

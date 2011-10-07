@@ -53,6 +53,22 @@ public:
     {
         ::WaitForSingleObject(hEvent, INFINITE);
     }
+    int WaitForTwo(Event& secondEvent)
+    {
+        HANDLE events[2];
+        events[0] = hEvent;
+        events[1] = secondEvent.hEvent;
+        DWORD rez = ::WaitForMultipleObjects(2, events, FALSE, INFINITE);
+        if (rez == WAIT_OBJECT_0)
+        {
+            return 0;
+        }
+        else if (rez == WAIT_OBJECT_0 + 1)
+        {
+            return 1;
+        }
+        return -1;
+    }
     bool Check()
     {
         DWORD rez = ::WaitForSingleObject(hEvent, 0);

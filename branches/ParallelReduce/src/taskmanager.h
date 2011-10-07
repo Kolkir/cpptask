@@ -49,8 +49,8 @@ public:
     
     void Finish()
     {
-        taskProcessEvent.Signal();
         done.Set();
+        taskProcessEvent.Signal();        
     }
     void NotifyScheduleTasks()
     {
@@ -120,7 +120,7 @@ private:
     ManagerThread managerThread;
 };
 
-void ManagerThread::Run()
+inline void ManagerThread::Run()
 {
     while(!done.IsSet())
     {

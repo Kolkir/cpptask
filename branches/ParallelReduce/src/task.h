@@ -36,16 +36,29 @@
 
 #include <algorithm>
 #include <vector>
+#include <iostream>
 
 namespace parallel
 {
 
+class TaskThread;
 class Task : public MPSCNode
 {
 public:
-    Task(){waitEvent.Reset();}
+    friend class TaskThread;
+
+    Task() 
+        : parentThread(0) 
+    {
+        waitEvent.Reset();
+    }
     virtual ~Task(){}
     virtual void Execute() = 0;
+
+    void SetParentThread(TaskThread* thread)
+    {
+        parentThread = thread;
+    }
 
     void Run()
     {       
@@ -58,30 +71,13 @@ public:
             ScopedLock<Mutex> lock(&exceptionGuard);
             lastException.reset(err.Clone());
         }
+        done.Set();
         waitEvent.Signal();
     }
 
     std::shared_ptr<Exception> GetLastException();
 
-    void WaitChild(Task* childTask)
-    {
-        if (parentThread != 0)
-        {
-            bool done = false;
-            while (!done)
-            {
-                parentThread->DoWaitingTasks();
-                if (childTask->ChechFinished())
-                {
-                    done = true;
-                }
-            }            
-        }
-        else
-        {
-            childTask->Wait();
-        }
-    }
+    void WaitChildTask(Task* childTask);
 
     bool ChechFinished()
     {
@@ -107,6 +103,8 @@ private:
     Mutex exceptionGuard;
     Event waitEvent;
     AtomicNumber childrenCount;
+    TaskThread* parentThread;
+    AtomicFlag done;
 };
 
 
@@ -118,29 +116,41 @@ public:
     {
         Stop();
         taskEvent.Signal();
+        Wait();
     }
     void SetTask(Task* t)
-    {       
+    {               
         task = t;
+        if (task == 0)
+        {
+            DebugBreak();
+        }
+        task->SetParentThread(this);
         hasTask.Set();
         taskEvent.Signal();
+    }
+    void DoWaitingTasks(Task* waitTask)
+    {
+        Task* oldTask = task;
+        hasTask.Reset();
+        task = 0;
+        taskEvent.Reset();
+                
+        if (emptyThreadEvent != 0)
+        {
+            emptyThreadEvent->Signal();
+        }
+        while (!waitTask->ChechFinished())
+        {
+            DoTask(&waitTask->waitEvent);
+        }
+        SetTask(oldTask);        
     }
     virtual void Run()
     {
         while (!done.IsSet())
         {
-            taskEvent.Wait();
-            if (task != 0)
-            {
-                task->Run();
-            }
-            task = 0;
-            taskEvent.Reset();
-            hasTask.Reset();
-            if (emptyThreadEvent != 0)
-            {
-                emptyThreadEvent->Signal();
-            }
+            DoTask();
         }
     }
     bool HasTask()
@@ -153,12 +163,65 @@ public:
         done.Set();
     }
 private:
+    void DoTask(Event* secondEvent = 0)
+    {
+        if (secondEvent != 0)
+        {
+            bool done = false;
+            while (!done)
+            //if (taskEvent.WaitForTwo(*secondEvent) == 1)
+            {
+                if (taskEvent.Check())
+                {
+                    done = true;
+                }
+                if (secondEvent->Check())
+                {
+                    if (hasTask.IsSet() != 0)
+                    {
+                        task->Run();
+                        task->SetParentThread(0);
+                    }                
+                    return;
+                }
+            }
+        }
+        else
+        {
+            taskEvent.Wait();
+        }
+        if (hasTask.IsSet() != 0)
+        {
+            task->Run();
+            task->SetParentThread(0);
+            hasTask.Reset();
+            task = 0;
+            taskEvent.Reset();            
+        }
+        if (emptyThreadEvent != 0)
+        {
+            emptyThreadEvent->Signal();
+        }
+    }
+private:
     Task* task;
     Event taskEvent;
     AtomicFlag hasTask;
     Event* emptyThreadEvent;
     AtomicFlag done;
 };
+
+inline void Task::WaitChildTask(Task* childTask)
+{
+    if (parentThread != 0)
+    {
+        parentThread->DoWaitingTasks(childTask);
+    }
+    else
+    {
+        childTask->Wait();
+    }
+}
 
 class TaskThreadPool
 {
@@ -199,9 +262,13 @@ public:
 
     TaskThread* GetEmptyThreadWait()
     {
-        emptyThreadEvent.Wait();
-        TaskThread* rez = GetEmptyThread();
-        emptyThreadEvent.Reset();
+        TaskThread* rez = 0;
+        while (rez == 0)
+        {
+            emptyThreadEvent.Wait();
+            rez = GetEmptyThread();
+            emptyThreadEvent.Reset();
+        }
         return rez;
     }
 

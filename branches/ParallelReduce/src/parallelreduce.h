@@ -46,7 +46,7 @@ class ReduceTask : public Task
 {
 public:
     ReduceTask(const Range& range, 
-               const Functor& functor, 
+               Functor& functor, 
                size_t minRangeLength,
                TaskManager* manager)
         : minRangeLength(minRangeLength)
@@ -75,11 +75,17 @@ public:
             typedef std::vector<TASKPtr> TASKS;
             TASKS tasks;
 
+            typedef std::shared_ptr<Functor> FUNCPtr;
+            typedef std::vector<FUNCPtr> FUNCTORS;
+            FUNCTORS functors;
+
             std::for_each(ranges.begin(), ranges.end(),
                 [&](Range& range)
             {
+                FUNCPtr func(new Functor(functor, SplitMark()));
+                functors.push_back(func);
                 TASK* ptr = new TASK(range, 
-                                     Functor(functor, SplitMark()), 
+                                     *func.get(), 
                                      minRangeLength, 
                                      manager);
                 TASKPtr task(ptr);
@@ -91,7 +97,7 @@ public:
             std::for_each(tasks.begin(), tasks.end(),
             [&](TASKPtr& task)
             {
-                task->Wait();
+                WaitChildTask(task.get());
             });
 
             //Join
@@ -103,6 +109,7 @@ public:
             {
                 (*first)->Join(*i->get());
             }
+            Join(*first->get());
         }
         else
         {
@@ -113,12 +120,12 @@ public:
 private:
     size_t minRangeLength;
     Range range;
-    Functor functor;
+    Functor& functor;
     TaskManager* manager;
 };
 
 template<class Iterator, class Functor>
-void ParallelReduce(Iterator start, Iterator end, Functor functor, TaskManager& manager, size_t minRangeLength = 100)
+void ParallelReduce(Iterator start, Iterator end, Functor& functor, TaskManager& manager, size_t minRangeLength = 100)
 {              
     typedef Range<Iterator> RANGE;
     typedef ReduceTask<RANGE, Functor> TASK;

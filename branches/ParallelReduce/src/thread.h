@@ -50,7 +50,6 @@ public:
 
     virtual ~Thread()
     {
-        Wait();
         CloseHandle(hThread);
     }
 
