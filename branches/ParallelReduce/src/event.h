@@ -53,6 +53,15 @@ public:
     {
         ::WaitForSingleObject(hEvent, INFINITE);
     }
+    bool Check()
+    {
+        DWORD rez = ::WaitForSingleObject(hEvent, 0);
+        if (rez == WAIT_OBJECT_0)
+        {
+            return true;
+        }
+        return false;
+    }
     void Signal()
     {
         ::SetEvent(hEvent);    

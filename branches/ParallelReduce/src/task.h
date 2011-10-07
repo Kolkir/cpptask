@@ -34,8 +34,6 @@
 #include "atomic.h"
 #include "mpscqueue.h"
 
-#include <Windows.h>
-
 #include <algorithm>
 #include <vector>
 
@@ -64,6 +62,36 @@ public:
     }
 
     std::shared_ptr<Exception> GetLastException();
+
+    void WaitChild(Task* childTask)
+    {
+        if (parentThread != 0)
+        {
+            bool done = false;
+            while (!done)
+            {
+                parentThread->DoWaitingTasks();
+                if (childTask->ChechFinished())
+                {
+                    done = true;
+                }
+            }            
+        }
+        else
+        {
+            childTask->Wait();
+        }
+    }
+
+    bool ChechFinished()
+    {
+        if (waitEvent.Check())
+        {
+            waitEvent.Reset();
+            return true;
+        }
+        return false;
+    }
 
     void Wait()
     {
