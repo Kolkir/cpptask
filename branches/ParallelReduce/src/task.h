@@ -61,18 +61,25 @@ public:
     }
 
     void Run()
-    {       
-        try
+    {     
+        if (!done.IsSet())
         {
-            Execute();
+            try
+            {
+                Execute();
+            }
+            catch(Exception& err)
+            {
+                ScopedLock<Mutex> lock(&exceptionGuard);
+                lastException.reset(err.Clone());
+            }
+            done.Set();
+            waitEvent.Signal();
         }
-        catch(Exception& err)
+        else
         {
-            ScopedLock<Mutex> lock(&exceptionGuard);
-            lastException.reset(err.Clone());
+            DebugBreak();
         }
-        done.Set();
-        waitEvent.Signal();
     }
 
     std::shared_ptr<Exception> GetLastException();
@@ -83,7 +90,7 @@ public:
     {
         if (waitEvent.Check())
         {
-            waitEvent.Reset();
+            //waitEvent.Reset();
             return true;
         }
         return false;
@@ -92,7 +99,7 @@ public:
     void Wait()
     {
         waitEvent.Wait();
-        waitEvent.Reset();
+        //waitEvent.Reset();
     }
 
 private:
@@ -119,20 +126,16 @@ public:
         Wait();
     }
     void SetTask(Task* t)
-    {               
+    {       
+        ScopedLock<Mutex> lock(&guard);
         task = t;
-        if (task == 0)
-        {
-            DebugBreak();
-        }
-        task->SetParentThread(this);
-        hasTask.Set();
+        task->SetParentThread(this);       
         taskEvent.Signal();
     }
     void DoWaitingTasks(Task* waitTask)
     {
-        Task* oldTask = task;
-        hasTask.Reset();
+        //we are inside DoTask lock
+        Task* oldTask = task;        
         task = 0;
         taskEvent.Reset();
                 
@@ -140,10 +143,16 @@ public:
         {
             emptyThreadEvent->Signal();
         }
+        //clear lock to be able process another tasks
+        guard.UnLock();
+
         while (!waitTask->ChechFinished())
         {
             DoTask(&waitTask->waitEvent);
         }
+
+        //restore lock
+        guard.Lock();
         SetTask(oldTask);        
     }
     virtual void Run()
@@ -154,9 +163,14 @@ public:
         }
     }
     bool HasTask()
-    {        
-        return hasTask.IsSet();
-        
+    {       
+        bool rez = true;
+        if (guard.WaitLock(0))
+        {
+            rez = task != 0;
+            guard.UnLock();
+        }
+        return rez;
     }
     void Stop()
     {
@@ -164,51 +178,34 @@ public:
     }
 private:
     void DoTask(Event* secondEvent = 0)
-    {
+    {        
         if (secondEvent != 0)
         {
-            bool done = false;
-            while (!done)
-            //if (taskEvent.WaitForTwo(*secondEvent) == 1)
-            {
-                if (taskEvent.Check())
-                {
-                    done = true;
-                }
-                if (secondEvent->Check())
-                {
-                    if (hasTask.IsSet() != 0)
-                    {
-                        task->Run();
-                        task->SetParentThread(0);
-                    }                
-                    return;
-                }
-            }
+            taskEvent.WaitForTwo(*secondEvent);
         }
         else
         {
             taskEvent.Wait();
         }
-        if (hasTask.IsSet() != 0)
+        ScopedLock<Mutex> lock(&guard);
+        if (task != 0)
         {
             task->Run();
-            task->SetParentThread(0);
-            hasTask.Reset();
+            task->SetParentThread(0);           
             task = 0;
-            taskEvent.Reset();            
-        }
-        if (emptyThreadEvent != 0)
-        {
-            emptyThreadEvent->Signal();
+            taskEvent.Reset();                    
+            if (emptyThreadEvent != 0)
+            {
+                emptyThreadEvent->Signal();
+            }
         }
     }
 private:
     Task* task;
-    Event taskEvent;
-    AtomicFlag hasTask;
     Event* emptyThreadEvent;
+    Mutex guard;
     AtomicFlag done;
+    Event taskEvent;
 };
 
 inline void Task::WaitChildTask(Task* childTask)

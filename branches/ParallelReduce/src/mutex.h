@@ -76,6 +76,17 @@ public:
             //log error
         }
     }
+
+    bool WaitLock(long timeWait = INFINITE)
+    {
+        DWORD rez = ::WaitForSingleObject(hMutex, timeWait);
+        if (rez == WAIT_OBJECT_0)
+        {
+            return true;
+        }
+        return false;
+    }
+
     void UnLock()
     {
         BOOL rez = ::ReleaseMutex(hMutex);

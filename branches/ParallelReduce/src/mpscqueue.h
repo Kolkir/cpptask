@@ -64,6 +64,7 @@ public:
 
     void Push(MPSCNode* n)
     {   
+        ScopedLock<Mutex> lock(&guard);
         n->SetNext(0);
         MPSCNode* prev = static_cast<MPSCNode*>(InterlockedExchangePointer((volatile PVOID*)&head, n));
         prev->SetNext(n); 
@@ -71,6 +72,7 @@ public:
 
     MPSCNode* Pop()
     {       
+        ScopedLock<Mutex> lock(&guard);
         MPSCNode* newTail = tail;
         MPSCNode* next = newTail->GetNext();
         if (newTail == &stub)
@@ -108,6 +110,7 @@ private:
     MPSCNode* head;
     MPSCNode* tail;
     MPSCNode stub;
+    Mutex guard;
 };
 
 }

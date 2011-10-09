@@ -55,8 +55,12 @@ public:
         , manager(manager)
     {
     }
-    ~ReduceTask()
+    ~ReduceTask()    
     {
+        if (!ChechFinished())
+        {
+            DebugBreak();
+        }
     }
 
     void Join(ReduceTask& task)
@@ -100,7 +104,7 @@ public:
                 WaitChildTask(task.get());
             });
 
-            //Join
+            //Join            
             TASKS::iterator first = tasks.begin();
             TASKS::iterator i = tasks.begin();
             ++i;
@@ -109,7 +113,10 @@ public:
             {
                 (*first)->Join(*i->get());
             }
-            Join(*first->get());
+            if (first != e)
+            {
+                Join(*first->get());
+            }
         }
         else
         {
