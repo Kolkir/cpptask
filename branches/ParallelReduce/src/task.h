@@ -148,8 +148,13 @@ public:
     {       
         {
             ScopedLock<Mutex> lock(&guard);
+            if (task != 0)
+            {
+                DebugBreak();
+            }
             task = t;
             task->SetParentThread(this);
+            attachTasks.push_back(task);
         }
         taskEvent.Signal();
     }
@@ -159,7 +164,8 @@ public:
         Task* oldTask = 0;
         {
             ScopedLock<Mutex> lock(&guard);
-            oldTask = task;        
+            oldTask = task;            
+            oldTasks.push_back(task);
             task = 0;
         }
         
@@ -175,10 +181,12 @@ public:
         while (!waitTask->ChechFinished())
         {
             DoTask(&waitTask->waitEvent);
-        }
+        }        
 
         //restore lock
         guard.Lock();
+
+        DoTaskImpl();        
         SetTask(oldTask);        
     }
     virtual void Run()
@@ -205,48 +213,46 @@ public:
 private:
     void DoTask(Event* secondEvent = 0)
     {        
-        int eventId = -1;
         if (secondEvent != 0)
         {
-            eventId = taskEvent.WaitForTwo(*secondEvent);
-            if (eventId == 1)
-            {
-                ScopedLock<Mutex> lock(&guard);
-                if (task != 0)
-                {
-                    eventId = 0;
-                    taskEvent.Wait();
-                }
-            }
+            taskEvent.WaitForTwo(*secondEvent);           
         }
         else
         {
-            eventId = 0;
             taskEvent.Wait();
         }        
-        {
-            ScopedLock<Mutex> lock(&guard);
-            if (task != 0)
-            {
-                task->Run();
-                task->SetParentThread(0); 
-                task->SignalDone();
-                task = 0;
-
-                if (eventId != 0)
-                {
-                    DebugBreak();
-                }
-            }
-        }
-        if (eventId == 0)
-        {
+        ScopedLock<Mutex> lock(&guard);
+        if (task != 0)
+        {               
+            runTasks.push_back(task);
+            task->Run();                
+            task->SetParentThread(0); 
+            task->SignalDone();
+            task = 0;          
             taskEvent.Reset();                    
             if (emptyThreadEvent != 0)
             {
                 emptyThreadEvent->Signal();
             }
-        }                
+        }               
+    }
+
+    void DoTaskImpl()
+    {        
+        ScopedLock<Mutex> lock(&guard);
+        if (task != 0)
+        {               
+            runTasks.push_back(task);
+            task->Run();                
+            task->SetParentThread(0); 
+            task->SignalDone();
+            task = 0;          
+            taskEvent.Reset();                    
+            if (emptyThreadEvent != 0)
+            {
+                emptyThreadEvent->Signal();
+            }
+        }               
     }
 private:
     Task* task;
@@ -254,6 +260,9 @@ private:
     Mutex guard;
     AtomicFlag done;
     Event taskEvent;
+    std::vector<Task*> oldTasks;
+    std::vector<Task*> runTasks;
+    std::vector<Task*> attachTasks;
 };
 
 inline void Task::WaitChildTask(Task* childTask)
