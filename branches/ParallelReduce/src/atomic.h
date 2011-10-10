@@ -39,12 +39,12 @@ public:
     AtomicFlag():flag(0){}
     void Set()
     {
-        ::InterlockedIncrement(&flag);
+        ::InterlockedExchange(&flag, 1);
     }
     bool IsSet()
     {
-        unsigned int f = InterlockedCompareExchange(&flag, 1, 1);
-        if (f == 1)
+        unsigned int f = ::InterlockedCompareExchange(&flag, 1, 1);
+        if (f > 0)
         {
             return true;
         }
@@ -52,7 +52,7 @@ public:
     }
     void Reset()
     {
-        ::InterlockedDecrement(&flag);
+        ::InterlockedExchange(&flag, 0);
     }
 private:
     AtomicFlag(const AtomicFlag&);

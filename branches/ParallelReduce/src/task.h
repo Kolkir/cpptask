@@ -50,6 +50,7 @@ public:
     Task() 
         : parentThread(0) 
     {
+        done.Reset();
         waitEvent.Reset();
     }
     virtual ~Task(){}
@@ -58,6 +59,12 @@ public:
     void SetParentThread(TaskThread* thread)
     {
         parentThread = thread;
+    }
+
+    void SignalDone()
+    {
+        done.Set();
+        waitEvent.Signal();
     }
 
     void Run()
@@ -73,13 +80,16 @@ public:
                 ScopedLock<Mutex> lock(&exceptionGuard);
                 lastException.reset(err.Clone());
             }
-            done.Set();
-            waitEvent.Signal();
         }
         else
         {
             DebugBreak();
         }
+    }
+
+    bool IsDone()
+    {
+        return done.IsSet();
     }
 
     std::shared_ptr<Exception> GetLastException();
@@ -102,6 +112,15 @@ public:
         //waitEvent.Reset();
     }
 
+    void AddChild()
+    {
+        childrenCount.Inc();
+    }
+    void DelChild()
+    {
+        childrenCount.Dec();
+    }
+
 private:
     Task(const Task&);
     const Task& operator=(const Task&);
@@ -109,9 +128,9 @@ private:
     std::shared_ptr<Exception> lastException;
     Mutex exceptionGuard;
     Event waitEvent;
-    AtomicNumber childrenCount;
     TaskThread* parentThread;
     AtomicFlag done;
+    AtomicNumber childrenCount;
 };
 
 
@@ -127,24 +146,31 @@ public:
     }
     void SetTask(Task* t)
     {       
-        ScopedLock<Mutex> lock(&guard);
-        task = t;
-        task->SetParentThread(this);       
+        {
+            ScopedLock<Mutex> lock(&guard);
+            task = t;
+            task->SetParentThread(this);
+        }
         taskEvent.Signal();
     }
     void DoWaitingTasks(Task* waitTask)
     {
         //we are inside DoTask lock
-        Task* oldTask = task;        
-        task = 0;
-        taskEvent.Reset();
-                
+        Task* oldTask = 0;
+        {
+            ScopedLock<Mutex> lock(&guard);
+            oldTask = task;        
+            task = 0;
+        }
+        
+        //clear lock to be able process another tasks
+        guard.UnLock();
+
+        taskEvent.Reset();                
         if (emptyThreadEvent != 0)
         {
             emptyThreadEvent->Signal();
         }
-        //clear lock to be able process another tasks
-        guard.UnLock();
 
         while (!waitTask->ChechFinished())
         {
@@ -179,26 +205,48 @@ public:
 private:
     void DoTask(Event* secondEvent = 0)
     {        
+        int eventId = -1;
         if (secondEvent != 0)
         {
-            taskEvent.WaitForTwo(*secondEvent);
+            eventId = taskEvent.WaitForTwo(*secondEvent);
+            if (eventId == 1)
+            {
+                ScopedLock<Mutex> lock(&guard);
+                if (task != 0)
+                {
+                    eventId = 0;
+                    taskEvent.Wait();
+                }
+            }
         }
         else
         {
+            eventId = 0;
             taskEvent.Wait();
-        }
-        ScopedLock<Mutex> lock(&guard);
-        if (task != 0)
+        }        
         {
-            task->Run();
-            task->SetParentThread(0);           
-            task = 0;
+            ScopedLock<Mutex> lock(&guard);
+            if (task != 0)
+            {
+                task->Run();
+                task->SetParentThread(0); 
+                task->SignalDone();
+                task = 0;
+
+                if (eventId != 0)
+                {
+                    DebugBreak();
+                }
+            }
+        }
+        if (eventId == 0)
+        {
             taskEvent.Reset();                    
             if (emptyThreadEvent != 0)
             {
                 emptyThreadEvent->Signal();
             }
-        }
+        }                
     }
 private:
     Task* task;

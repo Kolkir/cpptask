@@ -57,7 +57,7 @@ public:
     }
     ~ReduceTask()    
     {
-        if (!ChechFinished())
+        if (!ChechFinished() || !IsDone())
         {
             DebugBreak();
         }
@@ -94,6 +94,7 @@ public:
                                      manager);
                 TASKPtr task(ptr);
                 tasks.push_back(task);
+                AddChild();
                 manager->AddTask(task.get());
             });
             manager->StartTasks();
@@ -102,6 +103,11 @@ public:
             [&](TASKPtr& task)
             {
                 WaitChildTask(task.get());
+                if (!task->IsDone())
+                {
+                    DebugBreak();
+                }
+                DelChild();
             });
 
             //Join            
