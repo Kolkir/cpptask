@@ -51,17 +51,21 @@ ArrayType GetBigArray()
     return m;
 }
 
+struct Test1
+{
+    void operator()(double& x)
+    {
+        x = std::sqrt(std::sqrt(x));
+    }
+};
+
 void SerialTest1()
 {
     parallel::Timer timer;
     ArrayType big_array = GetBigArray();
     
     timer.Start();
-    std::for_each(big_array.begin(), big_array.end(),
-        [](double& x)
-    {
-        x = std::sqrt(std::sqrt(x));
-    });
+    std::for_each(big_array.begin(), big_array.end(), Test1());
     
     std::cout << "Serial time is : " << timer.End() << " ms\n";
 }
@@ -77,15 +81,41 @@ void ParallelTest1()
     big_array = GetBigArray();
 
     timer.Start();
-    parallel::ParallelFor(big_array.begin(), big_array.end(),
-        [](double& x)
-    {
-        x = std::sqrt(std::sqrt(x));
-    }, manager);    
+    parallel::ParallelFor(big_array.begin(), big_array.end(), Test1(), manager);    
     
     std::cout << "Parallel time is : " << timer.End() << " ms\n";
 }
 
+struct Test21
+{
+    Test21(ArrayType* big_array) : big_array(big_array){}
+    void operator()()
+    {
+        ArrayType::iterator i = big_array->begin();
+        ArrayType::iterator e = big_array->begin();
+        std::advance(e, big_array->size() / 2);
+        for (;i != e; ++i)
+        {
+            *i = std::sqrt(std::sqrt(*i));
+        }
+    }
+    ArrayType* big_array;
+};
+struct Test22
+{
+    Test22(ArrayType* big_array) : big_array(big_array){}
+    void operator()()
+    {
+        ArrayType::iterator i = big_array->begin();
+        ArrayType::iterator e = big_array->end();
+        std::advance(i, big_array->size() / 2);
+        for (;i != e; ++i)
+        {
+            *i = std::sqrt(std::sqrt(*i));
+        }
+    }
+    ArrayType* big_array;
+};
 void ParallelTest2()
 {
     parallel::Timer timer;
@@ -97,29 +127,20 @@ void ParallelTest2()
     big_array = GetBigArray();
 
     timer.Start();
-    parallel::ParallelInvoke(
-        [&]() {
-            ArrayType::iterator i = big_array.begin();
-            ArrayType::iterator e = big_array.begin();
-            std::advance(e, big_array.size() / 2);
-            for (;i != e; ++i)
-            {
-                *i = std::sqrt(std::sqrt(*i));
-            }
-        },
-        [&]() {
-            ArrayType::iterator i = big_array.begin();
-            ArrayType::iterator e = big_array.end();
-            std::advance(i, big_array.size() / 2);
-            for (;i != e; ++i)
-            {
-                *i = std::sqrt(std::sqrt(*i));
-            }
-        },
-        manager);    
+    parallel::ParallelInvoke(Test21(&big_array), Test22(&big_array), manager);    
     
     std::cout << "Parallel time is : " << timer.End() << " ms\n";
 }
+
+struct Test3
+{
+    double operator()(double& x, double& y)
+    {
+        double rez = y + x;
+        double t = std::sqrt(std::sqrt(rez));
+        return rez + t;
+    }
+};
 
 double SerialTest2()
 {
@@ -128,13 +149,7 @@ double SerialTest2()
     
     timer.Start();
     double res = 0;
-    res = std::accumulate(big_array.begin(), big_array.end(), res, 
-        [](double& x, double& y)->double
-    {
-        double rez = y + x;
-        double t = std::sqrt(std::sqrt(rez));
-        return rez + t;
-    });
+    res = std::accumulate(big_array.begin(), big_array.end(), res, Test3());
     
     std::cout << "Serial time is : " << timer.End() << " ms\n";
     return res;
@@ -149,13 +164,14 @@ public:
 
     void operator()(const parallel::Range<ArrayType::iterator>& range)
     {
-        std::for_each(range.start, range.end,
-            [&](double x)
+        ArrayType::iterator i = range.start;
+        ArrayType::iterator e = range.end;
+        for(; i != e; ++i)
         {
-            res += x;
+            res += *i;
             double t = std::sqrt(std::sqrt(res));
             res += t;
-        });
+        };
     }
 
     void Join(const Accumulator& accumulator)

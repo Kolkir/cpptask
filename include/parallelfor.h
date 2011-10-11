@@ -64,30 +64,46 @@ private:
 };
 
 template<class Iterator, class Functor>
-void ParallelFor(Iterator start, Iterator end, Functor functor, TaskManager& manager)
+inline void ParallelFor(Iterator start, Iterator end, Functor functor, TaskManager& manager)
 {        
-    auto ranges = SplitRange(start, end, manager.GetThreadsNum());
+    std::vector<Range<Iterator>> ranges = SplitRange(start, end, manager.GetThreadsNum());
 
     typedef Range<Iterator> RANGE;
     typedef ForTask<RANGE, Functor> TASK;
-    typedef std::shared_ptr<TASK> TASKPtr;
-    std::vector<TASKPtr> tasks;
+    typedef RefPtr<TASK> TASKPtr;
+    typedef std::vector<TASKPtr> TASKS;
+    TASKS tasks;
 
-    std::for_each(ranges.begin(), ranges.end(),
-        [&](RANGE& range)
+    struct AddTask
     {
-        TASK* ptr = new(manager.GetCacheLineSize()) TASK(range, functor);
-        TASKPtr task(ptr);
-        tasks.push_back(task);
-        manager.AddTask(task.get());
-    });
+        AddTask(TaskManager* manager, TASKS* tasks, Functor* functor)
+            : manager(manager)
+            , tasks(tasks)
+            , functor(functor)
+        {}
+        void operator()(RANGE& range)
+        {
+            TASK* ptr = new(manager->GetCacheLineSize()) TASK(range, *functor);
+            TASKPtr task(ptr);
+            tasks->push_back(task);
+            manager->AddTask(task.Get());
+        }
+        TaskManager* manager;
+        TASKS* tasks;
+        Functor* functor;
+    };
+
+    std::for_each(ranges.begin(), ranges.end(), AddTask(&manager, &tasks, &functor));
     manager.StartTasks();
-
-    std::for_each(tasks.begin(), tasks.end(),
-    [&](TASKPtr& task)
+    
+    struct WaitTask
     {
-        task->Wait();
-    });
+        void operator()(TASKPtr& task)
+        {
+            task->Wait();
+        }
+    };
+    std::for_each(tasks.begin(), tasks.end(), WaitTask());
 }
 
 }

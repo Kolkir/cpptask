@@ -39,11 +39,11 @@ public:
     AtomicFlag():flag(0){}
     void Set()
     {
-        ::InterlockedExchange(&flag, 1);
+        ::InterlockedExchange((volatile LONG*)&flag, 1);
     }
     bool IsSet()
     {
-        unsigned int f = ::InterlockedCompareExchange(&flag, 1, 1);
+        unsigned int f = ::InterlockedCompareExchange((volatile LONG*)&flag, 1, 1);
         if (f > 0)
         {
             return true;
@@ -52,13 +52,13 @@ public:
     }
     void Reset()
     {
-        ::InterlockedExchange(&flag, 0);
+        ::InterlockedExchange((volatile LONG*)&flag, 0);
     }
 private:
     AtomicFlag(const AtomicFlag&);
     const AtomicFlag& operator=(const AtomicFlag&);
 private:
-    unsigned int flag;
+    LONG flag;
 };
 
 class AtomicNumber
@@ -67,22 +67,22 @@ public:
     AtomicNumber():number(0){}
     void Inc()
     {
-        ::InterlockedIncrement(&number);
+        ::InterlockedIncrement((volatile LONG*)&number);
     }
     void Dec()
     {
-        ::InterlockedDecrement(&number);
+        ::InterlockedDecrement((volatile LONG*)&number);
     }
-    unsigned long GetValue()
+    long GetValue()
     {
-        unsigned long value = InterlockedCompareExchange(&number, number, number);
+        unsigned long value = ::InterlockedCompareExchange((volatile LONG*)&number, number, number);
         return value;
     }
 private:
     AtomicNumber(const AtomicFlag&);
     const AtomicNumber& operator=(const AtomicFlag&);
 private:
-    unsigned long number;
+    LONG number;
 };
 
 }
