@@ -25,10 +25,10 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "src/parallelfor.h"
-#include "src/parallelinvoke.h"
-#include "src/parallelreduce.h"
-#include "src/timer.h"
+#include <parallelfor.h>
+#include <parallelinvoke.h>
+#include <parallelreduce.h>
+#include <timer.h>
 
 #include <cmath>
 #include <vector>
