@@ -20,7 +20,7 @@ solution "CppTaskTest"
 		kind "ConsoleApp"
 		language "C++"        
 		files { "**.h", "**.cpp", "../include/**.h" } 
-        includedirs { "../include" }        
+        includedirs { "../include" }
 
 		configuration "Debug"
 			defines { "DEBUG" }
@@ -28,6 +28,6 @@ solution "CppTaskTest"
 
 		configuration "Release"
 			defines { "NDEBUG" }
-			flags { "Optimize", "ExtraWarnings"  }
+			flags { "OptimizeSpeed", "ExtraWarnings"  }
 
 	
