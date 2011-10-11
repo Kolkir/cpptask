@@ -1,4 +1,5 @@
 /*
+* http://code.google.com/p/cpptask/
 * Copyright (c) 2011, Kirill Kolodyazhnyi
 * All rights reserved.
 *
@@ -75,7 +76,7 @@ void ParallelFor(Iterator start, Iterator end, Functor functor, TaskManager& man
     std::for_each(ranges.begin(), ranges.end(),
         [&](RANGE& range)
     {
-        TASK* ptr = new TASK(range, functor);
+        TASK* ptr = new(manager.GetCacheLineSize()) TASK(range, functor);
         TASKPtr task(ptr);
         tasks.push_back(task);
         manager.AddTask(task.get());

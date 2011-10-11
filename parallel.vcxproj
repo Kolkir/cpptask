@@ -115,6 +115,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -131,12 +132,14 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\alignedalloc.h" />
     <ClInclude Include="src\atomic.h" />
     <ClInclude Include="src\event.h" />
     <ClInclude Include="src\exception.h" />
@@ -144,6 +147,7 @@
     <ClInclude Include="src\mutex.h" />
     <ClInclude Include="src\parallelfor.h" />
     <ClInclude Include="src\parallelinvoke.h" />
+    <ClInclude Include="src\parallelreduce.h" />
     <ClInclude Include="src\range.h" />
     <ClInclude Include="src\task.h" />
     <ClInclude Include="src\taskmanager.h" />

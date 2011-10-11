@@ -25,82 +25,49 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _MUTEX_H_
-#define _MUTEX_H_
+#ifndef _ALIGNED_ALLOC_H_
+#define _ALIGNED_ALLOC_H_
 
-#include <Windows.h>
+#include <malloc.h>
+#include <stdlib.h>
+#include <windows.h>
 
 namespace parallel
 {
 
-template <class T>
-class ScopedLock
+inline size_t GetCacheLineSize() 
 {
-public:
-    ScopedLock(T* guard)
-        : guard(guard)
-    {
-        guard->Lock();
-    }
-    ~ScopedLock()
-    {
-        guard->UnLock();
-    }
-private:
-    ScopedLock(const ScopedLock&);
-    const ScopedLock& operator=(const ScopedLock&);
-private:
-    T* guard;
-};
+    size_t line_size = 0;
+    DWORD buffer_size = 0;
+    DWORD i = 0;
+    SYSTEM_LOGICAL_PROCESSOR_INFORMATION * buffer = 0;
 
-class Mutex
+    GetLogicalProcessorInformation(0, &buffer_size);
+    buffer = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION *)malloc(buffer_size);
+    GetLogicalProcessorInformation(&buffer[0], &buffer_size);
+
+    for (i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i) 
+    {
+        if (buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == 1) 
+        {
+            line_size = buffer[i].Cache.LineSize;
+            break;
+        }
+    }
+
+    free(buffer);
+    return line_size;
+}
+
+void* AlignedAlloc(size_t size, size_t alignment)
 {
-public:
-    Mutex()
-    {
-        hMutex = ::CreateMutex(NULL, FALSE, NULL);
-        if (hMutex == NULL)
-        {
-            throw std::runtime_error("Can't create a mutex");
-        }
-    }
-    ~Mutex()
-    {
-        CloseHandle(hMutex);
-    }
-    void Lock()
-    {
-        DWORD rez = ::WaitForSingleObject(hMutex, INFINITE);
-        if (rez != WAIT_OBJECT_0)
-        {
-            //log error
-        }
-    }
+    return _aligned_malloc(size, alignment);
+}
 
-    bool WaitLock(long timeWait = INFINITE)
-    {
-        DWORD rez = ::WaitForSingleObject(hMutex, timeWait);
-        if (rez == WAIT_OBJECT_0)
-        {
-            return true;
-        }
-        return false;
-    }
-
-    void UnLock()
-    {
-        BOOL rez = ::ReleaseMutex(hMutex);
-        if (rez == FALSE)
-        {
-            //log error
-        }
-    }
-private:
-    Mutex(const Mutex&);
-    const Mutex& operator=(const Mutex&);
-private:
-    HANDLE hMutex;
-};
+void AlignedFree(void* ptr)
+{
+    _aligned_free(ptr);
+}
 
 }
 

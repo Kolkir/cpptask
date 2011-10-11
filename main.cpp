@@ -1,4 +1,5 @@
 /*
+* http://code.google.com/p/cpptask/
 * Copyright (c) 2011, Kirill Kolodyazhnyi
 * All rights reserved.
 *
@@ -26,12 +27,16 @@
 
 #include "src/parallelfor.h"
 #include "src/parallelinvoke.h"
+#include "src/parallelreduce.h"
 #include "src/timer.h"
 
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include <numeric>
 #include <iostream>
+
+const size_t THREADS_NUM = 4;
 
 typedef std::vector<double> ArrayType;
 
@@ -66,7 +71,7 @@ void ParallelTest1()
     parallel::Timer timer;
     ArrayType big_array = GetBigArray();
 
-    parallel::TaskThreadPool threadPool(2);
+    parallel::TaskThreadPool threadPool(THREADS_NUM);
     parallel::TaskManager manager(threadPool);
 
     big_array = GetBigArray();
@@ -86,7 +91,7 @@ void ParallelTest2()
     parallel::Timer timer;
     ArrayType big_array = GetBigArray();
 
-    parallel::TaskThreadPool threadPool(2);
+    parallel::TaskThreadPool threadPool(THREADS_NUM);
     parallel::TaskManager manager(threadPool);
 
     big_array = GetBigArray();
@@ -116,6 +121,69 @@ void ParallelTest2()
     std::cout << "Parallel time is : " << timer.End() << " ms\n";
 }
 
+double SerialTest2()
+{
+    parallel::Timer timer;
+    ArrayType big_array = GetBigArray();
+    
+    timer.Start();
+    double res = 0;
+    res = std::accumulate(big_array.begin(), big_array.end(), res, 
+        [](double& x, double& y)->double
+    {
+        double rez = y + x;
+        double t = std::sqrt(std::sqrt(rez));
+        return rez + t;
+    });
+    
+    std::cout << "Serial time is : " << timer.End() << " ms\n";
+    return res;
+}
+
+class Accumulator
+{
+public:
+    Accumulator(double init) : res(init){}
+    Accumulator(const Accumulator& accumulator, parallel::SplitMark) 
+        : res(accumulator.res){}
+
+    void operator()(const parallel::Range<ArrayType::iterator>& range)
+    {
+        std::for_each(range.start, range.end,
+            [&](double x)
+        {
+            res += x;
+            double t = std::sqrt(std::sqrt(res));
+            res += t;
+        });
+    }
+
+    void Join(const Accumulator& accumulator)
+    {
+        res += accumulator.res;
+    }
+
+    double res;
+};
+
+double ParallelTest3()
+{
+    parallel::Timer timer;
+    ArrayType big_array = GetBigArray();
+
+    parallel::TaskThreadPool threadPool(THREADS_NUM);
+    parallel::TaskManager manager(threadPool);
+
+    big_array = GetBigArray();
+
+    timer.Start();
+    Accumulator accumulator(0);
+    parallel::ParallelReduce(big_array.begin(), big_array.end(), accumulator, manager);    
+    
+    std::cout << "Parallel time is : " << timer.End() << " ms\n";
+    return accumulator.res;
+}
+
 int main(int /*argc*/, char* /*argv*/[])
 {       
     SerialTest1();
@@ -123,6 +191,12 @@ int main(int /*argc*/, char* /*argv*/[])
     ParallelTest1();
 
     ParallelTest2();
-    
+
+    double r1 = SerialTest2();
+
+    double r2 = ParallelTest3();
+
+    std::cout << "Results are " << (r1 == r2)  << "\n";
+
     return 0;
 }

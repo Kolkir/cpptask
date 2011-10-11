@@ -1,4 +1,5 @@
 /*
+* http://code.google.com/p/cpptask/
 * Copyright (c) 2011, Kirill Kolodyazhnyi
 * All rights reserved.
 *
@@ -51,6 +52,15 @@ public:
     void Wait()
     {
         ::WaitForSingleObject(hEvent, INFINITE);
+    }   
+    bool Check()
+    {
+        DWORD rez = ::WaitForSingleObject(hEvent, 0);
+        if (rez == WAIT_OBJECT_0)
+        {
+            return true;
+        }
+        return false;
     }
     void Signal()
     {
@@ -60,12 +70,31 @@ public:
     {
         ::ResetEvent(hEvent);
     }
+    friend int WaitForTwo(Event& firstEvent, Event& secondEvent);
 private:
     Event(const Event&);
     const Event& operator=(const Event&);
 private:
    HANDLE hEvent;
 };
+
+inline int WaitForTwo(Event& firstEvent, Event& secondEvent)
+{
+    HANDLE events[2];
+    events[0] = firstEvent.hEvent;
+    events[1] = secondEvent.hEvent;
+    DWORD rez = ::WaitForMultipleObjects(2, events, FALSE, INFINITE);
+    if (rez == WAIT_OBJECT_0)
+    {
+        return 0;
+    }
+    else if (rez == WAIT_OBJECT_0 + 1)
+    {
+        return 1;
+    }
+    return -1;
+}
+
 
 }
 
