@@ -25,69 +25,48 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _PARALLEL_FOR_H_
-#define _PARALLEL_FOR_H_
+#ifndef _ALIGNED_ALLOC_H_
+#define _ALIGNED_ALLOC_H_
 
-#include "taskmanager.h"
-#include "range.h"
-
-#include <algorithm>
-#include <vector>
+#include <malloc.h>
+#include <stdlib.h>
+#include <windows.h>
 
 namespace parallel
 {
 
-template<class Range, class Functor>
-class ForTask : public Task
+inline size_t GetCacheLineSize() 
 {
-public:
-    ForTask(const Range& range, const Functor& functor)
-        : range(range)
-        , functor(functor)
+    size_t line_size = 0;
+    DWORD buffer_size = 0;
+    DWORD i = 0;
+    SYSTEM_LOGICAL_PROCESSOR_INFORMATION * buffer = 0;
+
+    GetLogicalProcessorInformation(0, &buffer_size);
+    buffer = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION *)malloc(buffer_size);
+    GetLogicalProcessorInformation(&buffer[0], &buffer_size);
+
+    for (i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i) 
     {
-    }
-    ~ForTask()
-    {
-    }
-    virtual void Execute()
-    {
-        Range::value_type i = range.start;
-        for(;i !=  range.end; ++i)
+        if (buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == 1) 
         {
-            functor(*i);
-        };
+            line_size = buffer[i].Cache.LineSize;
+            break;
+        }
     }
 
-private:
-    Range range;
-    Functor functor;
-};
+    free(buffer);
+    return line_size;
+}
 
-template<class Iterator, class Functor>
-void ParallelFor(Iterator start, Iterator end, Functor functor, TaskManager& manager)
-{        
-    auto ranges = SplitRange(start, end, manager.GetThreadsNum());
+void* AlignedAlloc(size_t size, size_t alignment)
+{
+    return _aligned_malloc(size, alignment);
+}
 
-    typedef Range<Iterator> RANGE;
-    typedef ForTask<RANGE, Functor> TASK;
-    typedef std::shared_ptr<TASK> TASKPtr;
-    std::vector<TASKPtr> tasks;
-
-    std::for_each(ranges.begin(), ranges.end(),
-        [&](RANGE& range)
-    {
-        TASK* ptr = new(manager.GetCacheLineSize()) TASK(range, functor);
-        TASKPtr task(ptr);
-        tasks.push_back(task);
-        manager.AddTask(task.get());
-    });
-    manager.StartTasks();
-
-    std::for_each(tasks.begin(), tasks.end(),
-    [&](TASKPtr& task)
-    {
-        task->Wait();
-    });
+void AlignedFree(void* ptr)
+{
+    _aligned_free(ptr);
 }
 
 }

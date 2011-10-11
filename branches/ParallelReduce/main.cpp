@@ -186,11 +186,11 @@ double ParallelTest3()
 
 int main(int /*argc*/, char* /*argv*/[])
 {       
-    //SerialTest1();
+    SerialTest1();
 
-    //ParallelTest1();
+    ParallelTest1();
 
-    //ParallelTest2();
+    ParallelTest2();
 
     double r1 = SerialTest2();
 

@@ -33,6 +33,7 @@
 #include "event.h"
 #include "atomic.h"
 #include "mpscqueue.h"
+#include "alignedalloc.h"
 
 #include <algorithm>
 #include <vector>
@@ -94,6 +95,16 @@ public:
     void Wait()
     {
         waitEvent.Wait();
+    }
+
+    void* operator new(size_t size, size_t alignment)
+    {
+        return AlignedAlloc(size, alignment);
+    }
+    
+    void operator delete(void* ptr, size_t)
+    {
+        AlignedFree(ptr);
     }
 
 private:

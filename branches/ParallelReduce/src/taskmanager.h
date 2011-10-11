@@ -33,6 +33,7 @@
 #include "event.h"
 #include "atomic.h"
 #include "mpscqueue.h"
+#include "alignedalloc.h"
 
 namespace parallel
 {
@@ -68,6 +69,7 @@ public:
     TaskManager(TaskThreadPool& threadPool)
         : threadPool(threadPool)
     {
+        cacheLineSize = parallel::GetCacheLineSize();
         managerThread.SetManager(this);
         managerThread.Start();
     }
@@ -112,12 +114,18 @@ public:
  
             node = taskQueue.Pop();
         }
-    }    
+    }
+
+    size_t GetCacheLineSize() const
+    {
+        return cacheLineSize;
+    }
 
 private:
     TaskThreadPool& threadPool;
     MPSCQueue taskQueue;
     ManagerThread managerThread;
+    size_t cacheLineSize;
 };
 
 inline void ManagerThread::Run()

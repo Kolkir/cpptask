@@ -59,13 +59,13 @@ void ParallelInvoke(Functor1 func1, Functor2 func2, TaskManager& manager)
     typedef InvokeTask<Functor1> TASK1;
     typedef std::shared_ptr<TASK1> TASKPtr1;
 
-    TASKPtr1 task1(new TASK1(func1));
+    TASKPtr1 task1(new(manager.GetCacheLineSize()) TASK1(func1));
     manager.AddTask(task1.get());
 
     typedef InvokeTask<Functor2> TASK2;
     typedef std::shared_ptr<TASK2> TASKPtr2;
 
-    TASKPtr2 task2(new TASK2(func2));
+    TASKPtr2 task2(new(manager.GetCacheLineSize()) TASK2(func2));
     manager.AddTask(task2.get());
 
     manager.StartTasks();
