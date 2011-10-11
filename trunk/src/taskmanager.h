@@ -1,4 +1,5 @@
 /*
+* http://code.google.com/p/cpptask/
 * Copyright (c) 2011, Kirill Kolodyazhnyi
 * All rights reserved.
 *
@@ -32,6 +33,7 @@
 #include "event.h"
 #include "atomic.h"
 #include "mpscqueue.h"
+#include "alignedalloc.h"
 
 namespace parallel
 {
@@ -48,8 +50,8 @@ public:
     
     void Finish()
     {
-        taskProcessEvent.Signal();
         done.Set();
+        taskProcessEvent.Signal();        
     }
     void NotifyScheduleTasks()
     {
@@ -67,6 +69,7 @@ public:
     TaskManager(TaskThreadPool& threadPool)
         : threadPool(threadPool)
     {
+        cacheLineSize = parallel::GetCacheLineSize();
         managerThread.SetManager(this);
         managerThread.Start();
     }
@@ -101,25 +104,31 @@ public:
         while(node != 0)
         {
             Task* task = static_cast<Task*>(node);
-         
+
             TaskThread* thread = threadPool.GetEmptyThread();
             if (thread == 0)
             {
                 thread = threadPool.GetEmptyThreadWait();
             }
             thread->SetTask(task);
-        
+ 
             node = taskQueue.Pop();
         }
-    }    
+    }
+
+    size_t GetCacheLineSize() const
+    {
+        return cacheLineSize;
+    }
 
 private:
     TaskThreadPool& threadPool;
     MPSCQueue taskQueue;
     ManagerThread managerThread;
+    size_t cacheLineSize;
 };
 
-void ManagerThread::Run()
+inline void ManagerThread::Run()
 {
     while(!done.IsSet())
     {
