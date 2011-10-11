@@ -154,7 +154,6 @@ public:
             }
             task = t;
             task->SetParentThread(this);
-            attachTasks.push_back(task);
         }
         taskEvent.Signal();
     }
@@ -165,7 +164,6 @@ public:
         {
             ScopedLock<Mutex> lock(&guard);
             oldTask = task;            
-            oldTasks.push_back(task);
             task = 0;
         }
         
@@ -215,7 +213,7 @@ private:
     {        
         if (secondEvent != 0)
         {
-            taskEvent.WaitForTwo(*secondEvent);           
+            WaitForTwo(taskEvent, *secondEvent);           
         }
         else
         {
@@ -224,7 +222,6 @@ private:
         ScopedLock<Mutex> lock(&guard);
         if (task != 0)
         {               
-            runTasks.push_back(task);
             task->Run();                
             task->SetParentThread(0); 
             task->SignalDone();
@@ -242,7 +239,6 @@ private:
         ScopedLock<Mutex> lock(&guard);
         if (task != 0)
         {               
-            runTasks.push_back(task);
             task->Run();                
             task->SetParentThread(0); 
             task->SignalDone();
@@ -260,9 +256,6 @@ private:
     Mutex guard;
     AtomicFlag done;
     Event taskEvent;
-    std::vector<Task*> oldTasks;
-    std::vector<Task*> runTasks;
-    std::vector<Task*> attachTasks;
 };
 
 inline void Task::WaitChildTask(Task* childTask)

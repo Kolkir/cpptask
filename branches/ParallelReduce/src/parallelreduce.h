@@ -47,9 +47,10 @@ class ReduceTask : public Task
 public:
     ReduceTask(const Range& range, 
                Functor& functor, 
-               size_t minRangeLength,
+               size_t maxDepth,
                TaskManager* manager)
-        : minRangeLength(minRangeLength)
+        : maxDepth(maxDepth)
+        , myDepth(maxDepth)
         , range(range)
         , functor(functor)
         , manager(manager)
@@ -70,8 +71,9 @@ public:
 
     virtual void Execute()
     {
-        if (range.Size() > minRangeLength)
+        if (myDepth > 0)
         {
+            --myDepth;
             auto ranges = SplitRange(range.start, range.end, 2);
         
             typedef ReduceTask<Range, Functor> TASK;
@@ -90,7 +92,7 @@ public:
                 functors.push_back(func);
                 TASK* ptr = new TASK(range, 
                                      *func.get(), 
-                                     minRangeLength, 
+                                     myDepth, 
                                      manager);
                 TASKPtr task(ptr);
                 tasks.push_back(task);
@@ -131,19 +133,20 @@ public:
     }
 
 private:
-    size_t minRangeLength;
+    size_t maxDepth;
+    size_t myDepth;
     Range range;
     Functor& functor;
     TaskManager* manager;
 };
 
 template<class Iterator, class Functor>
-void ParallelReduce(Iterator start, Iterator end, Functor& functor, TaskManager& manager, size_t minRangeLength = 100)
+void ParallelReduce(Iterator start, Iterator end, Functor& functor, TaskManager& manager, size_t maxDepth = 5)
 {              
     typedef Range<Iterator> RANGE;
     typedef ReduceTask<RANGE, Functor> TASK;
     typedef std::shared_ptr<TASK> TASKPtr;
-    TASKPtr task(new TASK(RANGE(start, end), functor, minRangeLength, &manager));
+    TASKPtr task(new TASK(RANGE(start, end), functor, maxDepth, &manager));
     manager.AddTask(task.get());
     manager.StartTasks();
     task->Wait();

@@ -131,7 +131,9 @@ double SerialTest2()
     res = std::accumulate(big_array.begin(), big_array.end(), res, 
         [](double& x, double& y)->double
     {
-        return y + x;
+        double rez = y + x;
+        double t = std::sqrt(std::sqrt(rez));
+        return rez + t;
     });
     
     std::cout << "Serial time is : " << timer.End() << " ms\n";
@@ -151,6 +153,8 @@ public:
             [&](double x)
         {
             res += x;
+            double t = std::sqrt(std::sqrt(res));
+            res += t;
         });
     }
 
@@ -182,17 +186,17 @@ double ParallelTest3()
 
 int main(int /*argc*/, char* /*argv*/[])
 {       
-    //SerialTest1();
+    SerialTest1();
 
-    //ParallelTest1();
+    ParallelTest1();
 
-    //ParallelTest2();
+    ParallelTest2();
 
     double r1 = SerialTest2();
 
     double r2 = ParallelTest3();
 
-    std::cout << "Results are " << (r1 == r2)  << " ms\n";
+    std::cout << "Results are " << (r1 == r2)  << "\n";
 
     return 0;
 }
