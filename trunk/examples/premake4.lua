@@ -8,6 +8,7 @@ end
 solution "CppTaskTest"
 	location(scripts_path)
 	configurations { "Debug", "Release" }
+    platforms { "x32", "x64" }
    
 	configuration { "Debug" }
 		targetdir "bin/debug"

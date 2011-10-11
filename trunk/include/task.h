@@ -34,6 +34,7 @@
 #include "atomic.h"
 #include "mpscqueue.h"
 #include "alignedalloc.h"
+#include "refptr.h"
 
 #include <algorithm>
 #include <vector>
@@ -75,11 +76,11 @@ public:
         catch(Exception& err)
         {
             ScopedLock<Mutex> lock(&exceptionGuard);
-            lastException.reset(err.Clone());
+            lastException.Reset(err.Clone());
         }
     }
 
-    std::shared_ptr<Exception> GetLastException();
+    RefPtr<Exception> GetLastException();
 
     void WaitChildTask(Task* childTask);
 
@@ -111,7 +112,7 @@ private:
     Task(const Task&);
     const Task& operator=(const Task&);
 private:
-    std::shared_ptr<Exception> lastException;
+    RefPtr<Exception> lastException;
     Mutex exceptionGuard;
     Event waitEvent;
     TaskThread* parentThread;
@@ -254,19 +255,23 @@ public:
 
     TaskThread* GetEmptyThread()
     {
-        Threads::iterator i =
-        std::find_if(threads.begin(), threads.end(),
-            [&](TaskThreadPtr& thread)->bool
+        struct GetEmptyThread
         {
-            if (!thread->HasTask())
+            bool operator()(TaskThreadPtr& thread)
             {
-                return true;
+                if (!thread->HasTask())
+                {
+                    return true;
+                }
+                return false;
             }
-            return false;
-        });
+        };
+        Threads::iterator i =
+        std::find_if(threads.begin(), threads.end(), GetEmptyThread());
+
         if (i != threads.end())
         {
-            return i->get();
+            return i->Get();
         }
         return 0;
     }
@@ -287,7 +292,7 @@ private:
     TaskThreadPool(const TaskThreadPool&);
     const TaskThreadPool& operator=(const TaskThreadPool&);
 private:
-    typedef std::shared_ptr<TaskThread> TaskThreadPtr;
+    typedef RefPtr<TaskThread> TaskThreadPtr;
     typedef std::vector<TaskThreadPtr> Threads;
     Threads threads;
     Event emptyThreadEvent;

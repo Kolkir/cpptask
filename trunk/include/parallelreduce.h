@@ -71,46 +71,43 @@ public:
         {
             const size_t splitCount = 2;
             --myDepth;            
-            auto ranges = SplitRange(range.start, range.end, splitCount);
+            std::vector<Range> ranges = SplitRange(range.start, range.end, splitCount);
         
             typedef ReduceTask<Range, Functor> TASK;
-            typedef std::shared_ptr<TASK> TASKPtr;
+            typedef RefPtr<TASK> TASKPtr;
             TASKPtr tasks[splitCount];            
 
             typedef Functor* FUNCPtr;            
             FUNCPtr functors[splitCount];
             void* mems[splitCount];
 
-            size_t index = 0;
-            std::for_each(ranges.begin(), ranges.end(),
-                [&](Range& range)
+            for (size_t i = 0; i != splitCount; ++i)
             {
-                mems[index] = AlignedAlloc(sizeof(Functor), manager->GetCacheLineSize());               
-                functors[index] = new(mems[index]) Functor(functor, SplitMark());
+                mems[i] = AlignedAlloc(sizeof(Functor), manager->GetCacheLineSize());               
+                functors[i] = new(mems[i]) Functor(functor, SplitMark());
                 
-                TASK* ptr = new(manager->GetCacheLineSize()) TASK(range, 
-                                     *functors[index], 
+                TASK* ptr = new(manager->GetCacheLineSize()) TASK(ranges[i], 
+                                     *functors[i], 
                                      myDepth, 
                                      manager);          
 
-                tasks[index].reset(ptr);
-                manager->AddTask(tasks[index].get());
-                ++index;
-            });
+                tasks[i].Reset(ptr);
+                manager->AddTask(tasks[i].Get());
+  
+            };
             manager->StartTasks();
 
-            std::for_each(tasks, tasks + splitCount,
-            [&](TASKPtr& task)
+            for (size_t i = 0; i != splitCount; ++i)            
             {
-                WaitChildTask(task.get());                
-            });
+                WaitChildTask(tasks[i].Get());                
+            };
 
             //Join                        
             for (size_t i = 1; i != splitCount; ++i)
             {
-                tasks[0]->Join(*tasks[i].get());
+                tasks[0]->Join(*tasks[i].Get());
             }
-            Join(*tasks[0].get());
+            Join(*tasks[0].Get());
             
             //free memory
             for (size_t i = 0; i != splitCount; ++i)
@@ -134,13 +131,13 @@ private:
 };
 
 template<class Iterator, class Functor>
-void ParallelReduce(Iterator start, Iterator end, Functor& functor, TaskManager& manager, size_t maxDepth = 5)
+inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, TaskManager& manager, size_t maxDepth = 5)
 {              
     typedef Range<Iterator> RANGE;
     typedef ReduceTask<RANGE, Functor> TASK;
-    typedef std::shared_ptr<TASK> TASKPtr;
+    typedef RefPtr<TASK> TASKPtr;
     TASKPtr task(new(manager.GetCacheLineSize()) TASK(RANGE(start, end), functor, maxDepth, &manager));
-    manager.AddTask(task.get());
+    manager.AddTask(task.Get());
     manager.StartTasks();
     task->Wait();
 }
