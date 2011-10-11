@@ -58,10 +58,6 @@ public:
     }
     ~ReduceTask()    
     {
-        if (!ChechFinished() || !IsDone())
-        {
-            DebugBreak();
-        }
     }
 
     void Join(ReduceTask& task)
@@ -96,7 +92,6 @@ public:
                                      manager);
                 TASKPtr task(ptr);
                 tasks.push_back(task);
-                AddChild();
                 manager->AddTask(task.get());
             });
             manager->StartTasks();
@@ -104,12 +99,7 @@ public:
             std::for_each(tasks.begin(), tasks.end(),
             [&](TASKPtr& task)
             {
-                WaitChildTask(task.get());
-                if (!task->IsDone())
-                {
-                    DebugBreak();
-                }
-                DelChild();
+                WaitChildTask(task.get());                
             });
 
             //Join            

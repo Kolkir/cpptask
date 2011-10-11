@@ -50,7 +50,6 @@ public:
     Task() 
         : parentThread(0) 
     {
-        done.Reset();
         waitEvent.Reset();
     }
     virtual ~Task(){}
@@ -63,33 +62,20 @@ public:
 
     void SignalDone()
     {
-        done.Set();
         waitEvent.Signal();
     }
 
     void Run()
     {     
-        if (!done.IsSet())
+        try
         {
-            try
-            {
-                Execute();
-            }
-            catch(Exception& err)
-            {
-                ScopedLock<Mutex> lock(&exceptionGuard);
-                lastException.reset(err.Clone());
-            }
+            Execute();
         }
-        else
+        catch(Exception& err)
         {
-            DebugBreak();
+            ScopedLock<Mutex> lock(&exceptionGuard);
+            lastException.reset(err.Clone());
         }
-    }
-
-    bool IsDone()
-    {
-        return done.IsSet();
     }
 
     std::shared_ptr<Exception> GetLastException();
@@ -100,7 +86,6 @@ public:
     {
         if (waitEvent.Check())
         {
-            //waitEvent.Reset();
             return true;
         }
         return false;
@@ -109,16 +94,6 @@ public:
     void Wait()
     {
         waitEvent.Wait();
-        //waitEvent.Reset();
-    }
-
-    void AddChild()
-    {
-        childrenCount.Inc();
-    }
-    void DelChild()
-    {
-        childrenCount.Dec();
     }
 
 private:
@@ -129,8 +104,6 @@ private:
     Mutex exceptionGuard;
     Event waitEvent;
     TaskThread* parentThread;
-    AtomicFlag done;
-    AtomicNumber childrenCount;
 };
 
 
@@ -148,24 +121,18 @@ public:
     {       
         {
             ScopedLock<Mutex> lock(&guard);
-            if (task != 0)
-            {
-                DebugBreak();
-            }
             task = t;
             task->SetParentThread(this);
+            hasTask.Set();
         }
         taskEvent.Signal();
     }
     void DoWaitingTasks(Task* waitTask)
     {
         //we are inside DoTask lock
-        Task* oldTask = 0;
-        {
-            ScopedLock<Mutex> lock(&guard);
-            oldTask = task;            
-            task = 0;
-        }
+        Task* oldTask = task;            
+        task = 0;
+        hasTask.Reset();
         
         //clear lock to be able process another tasks
         guard.UnLock();
@@ -184,8 +151,10 @@ public:
         //restore lock
         guard.Lock();
 
-        DoTaskImpl();        
-        SetTask(oldTask);        
+        DoTaskImpl();                
+        task = oldTask;
+        task->SetParentThread(this);
+        hasTask.Set();
     }
     virtual void Run()
     {
@@ -195,14 +164,8 @@ public:
         }
     }
     bool HasTask()
-    {       
-        bool rez = true;
-        if (guard.WaitLock(0))
-        {
-            rez = task != 0;
-            guard.UnLock();
-        }
-        return rez;
+    {               
+        return hasTask.IsSet();
     }
     void Stop()
     {
@@ -220,29 +183,18 @@ private:
             taskEvent.Wait();
         }        
         ScopedLock<Mutex> lock(&guard);
-        if (task != 0)
-        {               
-            task->Run();                
-            task->SetParentThread(0); 
-            task->SignalDone();
-            task = 0;          
-            taskEvent.Reset();                    
-            if (emptyThreadEvent != 0)
-            {
-                emptyThreadEvent->Signal();
-            }
-        }               
+        DoTaskImpl();             
     }
 
     void DoTaskImpl()
-    {        
-        ScopedLock<Mutex> lock(&guard);
+    {                
         if (task != 0)
         {               
             task->Run();                
             task->SetParentThread(0); 
             task->SignalDone();
             task = 0;          
+            hasTask.Reset();
             taskEvent.Reset();                    
             if (emptyThreadEvent != 0)
             {
@@ -256,6 +208,7 @@ private:
     Mutex guard;
     AtomicFlag done;
     Event taskEvent;
+    AtomicFlag hasTask;
 };
 
 inline void Task::WaitChildTask(Task* childTask)
