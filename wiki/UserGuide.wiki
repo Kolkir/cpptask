@@ -1,3 +1,29 @@
 = User guide =
+<wiki:toc max_depth="2" />
 
-Hello
+== Getting sources ==
+
+You need checkout source code from the trunk of project repository, please find links at [http://code.google.com/p/cpptask/source/checkout Source] page.
+
+== Building examples ==
+
+== Thread class ==
+
+== Atomic variables ==
+
+== Mutex primitive ==
+
+== Event primitive ==
+
+== Task class for faster delivering to threads ==
+
+== Parallel-For algorithm ==
+
+== Parallel-Reduce algorithm ==
+
+== Parallel-Invoke algorithm ==
+
+== Delivering exceptions from threads and tasks to caller ==
+
+== Support of lambda expressions  ==
+
