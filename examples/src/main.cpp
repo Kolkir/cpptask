@@ -56,6 +56,7 @@ struct Test1
     void operator()(double& x)
     {
         x = std::sqrt(std::sqrt(x));
+        x = std::sqrt(std::sqrt(x));
     }
 };
 
@@ -96,7 +97,7 @@ struct Test21
         std::advance(e, big_array->size() / 2);
         for (;i != e; ++i)
         {
-            *i = std::sqrt(std::sqrt(*i));
+            Test1()(*i);            
         }
     }
     ArrayType* big_array;
@@ -111,7 +112,7 @@ struct Test22
         std::advance(i, big_array->size() / 2);
         for (;i != e; ++i)
         {
-            *i = std::sqrt(std::sqrt(*i));
+            Test1()(*i);
         }
     }
     ArrayType* big_array;
@@ -138,7 +139,7 @@ struct Test3
     {
         double rez = y + x;
         double t = std::sqrt(std::sqrt(rez));
-        return rez + t;
+        return rez + t - t;
     }
 };
 
@@ -170,7 +171,7 @@ public:
         {
             res += *i;
             double t = std::sqrt(std::sqrt(res));
-            res += t;
+            res += t - t;
         };
     }
 
@@ -200,6 +201,26 @@ double ParallelTest3()
     return accumulator.res;
 }
 
+void Test4()
+{
+    throw parallel::Exception("Test exception message");
+}
+
+void ExceptionTest()
+{
+    try
+    {
+        parallel::TaskThreadPool threadPool(THREADS_NUM);
+        parallel::TaskManager manager(threadPool);
+
+        parallel::ParallelInvoke(&Test4, &Test4, manager);
+    }
+    catch(parallel::Exception& err)
+    {
+        std::cout << "Exception in task : " << err.what() << "\n";
+    }
+};
+
 int main(int /*argc*/, char* /*argv*/[])
 {       
     SerialTest1();
@@ -213,6 +234,8 @@ int main(int /*argc*/, char* /*argv*/[])
     double r2 = ParallelTest3();
 
     std::cout << "Results are " << (r1 == r2)  << "\n";
+
+    ExceptionTest();
 
     return 0;
 }

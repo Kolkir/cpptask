@@ -72,6 +72,15 @@ inline void ParallelInvoke(Functor1 func1, Functor2 func2, TaskManager& manager)
 
     task1->Wait();
     task2->Wait();
+
+    if (task1->GetLastException() != 0)
+    {
+        task1->GetLastException()->Throw();
+    }
+    if (task2->GetLastException() != 0)
+    {
+        task2->GetLastException()->Throw();
+    }
 }
 
 }

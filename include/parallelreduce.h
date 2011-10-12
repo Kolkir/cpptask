@@ -79,12 +79,12 @@ public:
 
             typedef Functor* FUNCPtr;            
             FUNCPtr functors[splitCount];
-            void* mems[splitCount];
+            AlignedPointer<Functor> mems[splitCount];
 
             for (size_t i = 0; i != splitCount; ++i)
             {
-                mems[i] = AlignedAlloc(sizeof(Functor), manager->GetCacheLineSize());               
-                functors[i] = new(mems[i]) Functor(functor, SplitMark());
+                mems[i].SetMemory(AlignedAlloc(sizeof(Functor), manager->GetCacheLineSize()));
+                functors[i] = new(mems[i].GetMemory()) Functor(functor, SplitMark());
                 
                 TASK* ptr = new(manager->GetCacheLineSize()) TASK(ranges[i], 
                                      *functors[i], 
@@ -102,19 +102,21 @@ public:
                 WaitChildTask(tasks[i].Get());                
             };
 
+            //check exceptions in child tasks
+            for (size_t i = 0; i != splitCount; ++i)            
+            {
+                if (tasks[i]->GetLastException() != 0)
+                {
+                    tasks[i]->GetLastException()->Throw();
+                }
+            };
+
             //Join                        
             for (size_t i = 1; i != splitCount; ++i)
             {
                 tasks[0]->Join(*tasks[i].Get());
             }
             Join(*tasks[0].Get());
-            
-            //free memory
-            for (size_t i = 0; i != splitCount; ++i)
-            {
-                functors[i]->~Functor();
-                AlignedFree(mems[i]);
-            }
         }
         else
         {
@@ -140,6 +142,10 @@ inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, TaskM
     manager.AddTask(task.Get());
     manager.StartTasks();
     task->Wait();
+    if (task->GetLastException() != 0)
+    {
+        task->GetLastException()->Throw();
+    }
 }
 
 }

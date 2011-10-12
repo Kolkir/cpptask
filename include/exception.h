@@ -51,9 +51,14 @@ public:
     {
     }
 
-    Exception* Clone() const
+    virtual Exception* Clone() const
     {
         return new Exception(*this);
+    }
+
+    virtual void Throw() const
+    {
+        throw *this;
     }
 };
 
