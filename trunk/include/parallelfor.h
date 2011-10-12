@@ -104,6 +104,18 @@ inline void ParallelFor(Iterator start, Iterator end, Functor functor, TaskManag
         }
     };
     std::for_each(tasks.begin(), tasks.end(), WaitTask());
+
+    struct CheckTaskException
+    {
+        void operator()(TASKPtr& task)
+        {
+            if (task->GetLastException() != 0)
+            {
+                task->GetLastException()->Throw();
+            }
+        }
+    };
+    std::for_each(tasks.begin(), tasks.end(), CheckTaskException());
 }
 
 }

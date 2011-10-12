@@ -78,9 +78,20 @@ public:
             ScopedLock<Mutex> lock(&exceptionGuard);
             lastException.Reset(err.Clone());
         }
+        catch(...)
+        {
+            lastException.Reset(new Exception("Unknown exception"));
+        }
     }
 
-    RefPtr<Exception> GetLastException();
+    const Exception* GetLastException() const
+    {
+        if (lastException.IsNull())
+        {
+            return 0;
+        }
+        return lastException.Get();
+    }
 
     void WaitChildTask(Task* childTask);
 

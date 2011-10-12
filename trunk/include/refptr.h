@@ -188,7 +188,7 @@ public:
 
     bool IsNull()const
     {
-        return (pointer == 0 && counter == 0);
+        return (pointer == 0 || counter == 0);
     }
 
     void Delete()

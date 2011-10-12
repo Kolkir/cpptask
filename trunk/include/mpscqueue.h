@@ -29,7 +29,6 @@
 #define _MPSCQUEUE_H_
 
 #include <Windows.h>
-#include <intrin.h>
 #include "mutex.h"
 
 namespace parallel
