@@ -30,33 +30,21 @@
 
 #include <malloc.h>
 #include <stdlib.h>
-#include <windows.h>
+#include <stdio.h>
 
 namespace cpptask
 {
 
-inline size_t GetCacheLineSize() 
+inline size_t GetCacheLineSize()
 {
-    size_t line_size = 0;
-    DWORD buffer_size = 0;
-    DWORD i = 0;
-    SYSTEM_LOGICAL_PROCESSOR_INFORMATION * buffer = 0;
-
-    GetLogicalProcessorInformation(0, &buffer_size);
-    buffer = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION *)malloc(buffer_size);
-    GetLogicalProcessorInformation(&buffer[0], &buffer_size);
-
-    for (i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i) 
-    {
-        if (buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == 1) 
-        {
-            line_size = buffer[i].Cache.LineSize;
-            break;
-        }
+    FILE * p = 0;
+    p = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
+    unsigned int i = 0;
+    if (p) {
+        fscanf(p, "%d", &i);
+        fclose(p);
     }
-
-    free(buffer);
-    return line_size;
+    return i;
 }
 
 void* AlignedAlloc(size_t size, size_t alignment)
@@ -77,7 +65,7 @@ public:
         : p(0)
         , memory(0)
     {
-    }    
+    }
     ~AlignedPointer()
     {
         if (p != 0)

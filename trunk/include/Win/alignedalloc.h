@@ -28,27 +28,96 @@
 #ifndef _ALIGNED_ALLOC_H_
 #define _ALIGNED_ALLOC_H_
 
-#include <malloc.h>
 #include <stdlib.h>
+#include <malloc.h>
 #include <windows.h>
 
 namespace cpptask
 {
+#ifdef __GNUC__
+#ifndef HAVE_PROCESSOR_CACHE_TYPE
+typedef enum _PROCESSOR_CACHE_TYPE
+{
+    CacheUnified,
+    CacheInstruction,
+    CacheData,
+    CacheTrace
+} PROCESSOR_CACHE_TYPE;
+#endif
 
-inline size_t GetCacheLineSize() 
+#ifndef HAVE_CACHE_DESCRIPTOR
+typedef struct _CACHE_DESCRIPTOR
+{
+    BYTE Level;
+    BYTE Associativity;
+    WORD LineSize;
+    DWORD Size;
+    PROCESSOR_CACHE_TYPE Type;
+} CACHE_DESCRIPTOR, *PCACHE_DESCRIPTOR;
+#endif
+
+#ifndef HAVE_LOGICAL_PROCESSOR_RELATIONSHIP
+typedef enum _LOGICAL_PROCESSOR_RELATIONSHIP
+{
+    RelationProcessorCore,
+    RelationNumaNode,
+    RelationCache,
+    RelationProcessorPackage,
+    RelationGroup,
+    RelationAll = 0xffff,
+} LOGICAL_PROCESSOR_RELATIONSHIP;
+#endif
+
+#ifndef HAVE_SYSTEM_LOGICAL_PROCESSOR_INFORMATION
+typedef struct _SYSTEM_LOGICAL_PROCESSOR_INFORMATION
+{
+    ULONG_PTR ProcessorMask;
+    LOGICAL_PROCESSOR_RELATIONSHIP Relationship;
+    _ANONYMOUS_UNION
+    union
+    {
+        struct
+        {
+            BYTE flags;
+        } ProcessorCore;
+        struct
+        {
+            DWORD NodeNumber;
+        } NumaNode;
+        CACHE_DESCRIPTOR Cache;
+        ULONGLONG Reserved[2];
+    } DUMMYUNIONNAME;
+} SYSTEM_LOGICAL_PROCESSOR_INFORMATION, *PSYSTEM_LOGICAL_PROCESSOR_INFORMATION;
+#endif
+#endif
+
+typedef BOOL (WINAPI *LPFN_GLPI)(
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION,
+    PDWORD);
+
+inline size_t GetCacheLineSize()
 {
     size_t line_size = 0;
     DWORD buffer_size = 0;
     DWORD i = 0;
+
     SYSTEM_LOGICAL_PROCESSOR_INFORMATION * buffer = 0;
 
-    GetLogicalProcessorInformation(0, &buffer_size);
-    buffer = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION *)malloc(buffer_size);
-    GetLogicalProcessorInformation(&buffer[0], &buffer_size);
-
-    for (i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i) 
+    LPFN_GLPI glpi = (LPFN_GLPI) GetProcAddress(
+                            GetModuleHandle(TEXT("kernel32")),
+                            "GetLogicalProcessorInformation");
+    if (0 == glpi)
     {
-        if (buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == 1) 
+        throw std::logic_error("Can't get address of GetLogicalProcessorInformation function");
+    }
+
+    glpi(0, &buffer_size);
+    buffer = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION *)malloc(buffer_size);
+    glpi(&buffer[0], &buffer_size);
+
+    for (i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i)
+    {
+        if (buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == 1)
         {
             line_size = buffer[i].Cache.LineSize;
             break;
@@ -56,17 +125,26 @@ inline size_t GetCacheLineSize()
     }
 
     free(buffer);
+
     return line_size;
 }
 
-void* AlignedAlloc(size_t size, size_t alignment)
+void* AlignedAlloc(size_t size, size_t align_size)
 {
-    return _aligned_malloc(size, alignment);
+#ifdef __GNUC__
+    return __mingw_aligned_malloc(size, align_size);
+#else
+    return _aligned_malloc(size, align_size);
+#endif
 }
 
 void AlignedFree(void* ptr)
 {
-    _aligned_free(ptr);
+#ifdef __GNUC__
+    return __mingw_aligned_free(ptr);
+#else
+    return _aligned_free(ptr);
+#endif
 }
 
 template<class T>
@@ -77,7 +155,7 @@ public:
         : p(0)
         , memory(0)
     {
-    }    
+    }
     ~AlignedPointer()
     {
         if (p != 0)

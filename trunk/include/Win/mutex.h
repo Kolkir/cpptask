@@ -29,6 +29,7 @@
 #define _MUTEX_H_
 
 #include <Windows.h>
+#include <stdexcept>
 
 namespace cpptask
 {

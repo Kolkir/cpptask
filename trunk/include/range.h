@@ -55,7 +55,7 @@ public:
 };
 
 template<class Iterator>
-std::vector<Range<Iterator>> SplitRange(Iterator start, Iterator end, size_t rangesNum)
+std::vector<Range<Iterator> > SplitRange(Iterator start, Iterator end, size_t rangesNum)
 {
     typedef Range<Iterator> RANGE;
     size_t dist = std::distance(start, end);
@@ -70,7 +70,7 @@ std::vector<Range<Iterator>> SplitRange(Iterator start, Iterator end, size_t ran
     {
         for(size_t i = 0; i < rangesNum; ++i)
         {
-            ranges.push_back(RANGE(start + (i * rangeLen), 
+            ranges.push_back(RANGE(start + (i * rangeLen),
                                    start + (i * rangeLen) + rangeLen));
         }
         ranges[rangesNum - 1].end = end;
