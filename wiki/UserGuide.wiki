@@ -14,12 +14,13 @@ If you need only simple thread implementation, you could use cpptask::Thread cla
 {{{
 #include <Thread.h>
 ...
-void SomeFunc()
+typedef void (*ThreadFunc)(void);
+void ThreadFunc1()
 {
    //do work
 }
 ...
-spptask::ThreadFunction<SomeFunc> mythread(&SomeFunc);
+spptask::ThreadFunction<ThreadFunc> mythread(&ThreadFunc1);
 mythread.Start();
 ...
 mythread.Wait();
