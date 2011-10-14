@@ -25,87 +25,13 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _ALIGNED_ALLOC_H_
-#define _ALIGNED_ALLOC_H_
+#ifndef _ALIGNED_ALLOC_SELECT_H_
+#define _ALIGNED_ALLOC_SELECT_H_
 
-#include <malloc.h>
-#include <stdlib.h>
-#include <windows.h>
-
-namespace cpptask
-{
-
-inline size_t GetCacheLineSize() 
-{
-    size_t line_size = 0;
-    DWORD buffer_size = 0;
-    DWORD i = 0;
-    SYSTEM_LOGICAL_PROCESSOR_INFORMATION * buffer = 0;
-
-    GetLogicalProcessorInformation(0, &buffer_size);
-    buffer = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION *)malloc(buffer_size);
-    GetLogicalProcessorInformation(&buffer[0], &buffer_size);
-
-    for (i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i) 
-    {
-        if (buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == 1) 
-        {
-            line_size = buffer[i].Cache.LineSize;
-            break;
-        }
-    }
-
-    free(buffer);
-    return line_size;
-}
-
-void* AlignedAlloc(size_t size, size_t alignment)
-{
-    return _aligned_malloc(size, alignment);
-}
-
-void AlignedFree(void* ptr)
-{
-    _aligned_free(ptr);
-}
-
-template<class T>
-class AlignedPointer
-{
-public:
-     AlignedPointer()
-        : p(0)
-        , memory(0)
-    {
-    }    
-    ~AlignedPointer()
-    {
-        if (p != 0)
-        {
-            p->~T();
-        }
-        if (memory != 0)
-        {
-            AlignedFree(memory);
-        }
-    }
-    void SetPointer(T* p)
-    {
-        this->p = p;
-    }
-    void SetMemory(void* memory)
-    {
-        this->memory = memory;
-    }
-    void* GetMemory()
-    {
-        return memory;
-    }
-private:
-    T* p;
-    void* memory;
-};
-
-}
+#ifdef _WIN32
+#include "Win/alignedalloc.h"
+#else
+#include "Unix/alignedalloc.h"
+#endif
 
 #endif

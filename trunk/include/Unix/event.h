@@ -25,13 +25,77 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _ATOMIC_SELECT_H_
-#define _ATOMIC_SELECT_H_
+#ifndef _EVENT_H_
+#define _EVENT_H_
 
-#ifdef _WIN32
-#include "Win/atomic.h"
-#else
-#include "Unix/atomic.h"
-#endif
+#include <windows.h>
+
+namespace cpptask
+{
+
+class Event
+{
+public:
+    Event()
+    {    
+        // Manual reset since multiple threads can wait on this
+        hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+        if(hEvent == NULL)
+        {
+            throw std::runtime_error("Can't create event.");
+        }
+    }
+    ~Event()
+    {  
+        ::CloseHandle(hEvent);
+    }
+    void Wait()
+    {
+        ::WaitForSingleObject(hEvent, INFINITE);
+    }   
+    bool Check()
+    {
+        DWORD rez = ::WaitForSingleObject(hEvent, 0);
+        if (rez == WAIT_OBJECT_0)
+        {
+            return true;
+        }
+        return false;
+    }
+    void Signal()
+    {
+        ::SetEvent(hEvent);    
+    }
+    void Reset()
+    {
+        ::ResetEvent(hEvent);
+    }
+    friend int WaitForTwo(Event& firstEvent, Event& secondEvent);
+private:
+    Event(const Event&);
+    const Event& operator=(const Event&);
+private:
+   HANDLE hEvent;
+};
+
+inline int WaitForTwo(Event& firstEvent, Event& secondEvent)
+{
+    HANDLE events[2];
+    events[0] = firstEvent.hEvent;
+    events[1] = secondEvent.hEvent;
+    DWORD rez = ::WaitForMultipleObjects(2, events, FALSE, INFINITE);
+    if (rez == WAIT_OBJECT_0)
+    {
+        return 0;
+    }
+    else if (rez == WAIT_OBJECT_0 + 1)
+    {
+        return 1;
+    }
+    return -1;
+}
+
+
+}
 
 #endif
