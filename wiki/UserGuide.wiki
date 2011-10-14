@@ -6,10 +6,25 @@ You need checkout source code from the trunk of the project repository, please f
 
 == Building examples ==
 
-Root directory of the project contain [http://industriousone.com/premake Premake] executable. You can make build scripts for system you like. For example if you need solution for VS2010 you need type in console "premake4 vs2010", after that you will get directory named "build_scripts" where VS projects and solution will be placed.
+Root directory of the project contain sub directory named "examples" where you can find [http://industriousone.com/premake Premake] executable. You can make build scripts for system you like. For example if you need solution for VS2010 you need type in console "premake4 vs2010", after that you will get directory named "build_scripts" where VS projects and solution will be placed.
 
 == Thread class ==
 
+If you need only simple thread implementation, you could use cpptask::Thread class. You will need override Run method of the class. Or you can use cpptask::ThreadFunction class, which take functor as constructor parameter.
+{{{
+#include <Thread.h>
+...
+void SomeFunc()
+{
+   //do work
+}
+...
+std::shared_ptr<Thread> mythread(cpptask::MakeThread(&SomeFunc));
+mythread->Start();
+...
+mythread->Wait();
+...
+}}}
 == Atomic variables ==
 
 == Mutex primitive ==
