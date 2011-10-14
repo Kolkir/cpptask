@@ -32,11 +32,12 @@ mythread.Wait();
 Library provide only two types of atomics values:
  * {{{cpptask::AtomicFlag}}} - class represents boolean values you can Set flag and Reset it.
  * {{{cpptask::AtomicNumber}}} - class represents c++ long value type you can atomicaly {{{Inc/Dec}}} and {{{SetValue/GetValue}}} from it.
+
 == Mutex primitive ==
 
 == Event primitive ==
 
-== Task class for faster delivering to threads ==
+== Task class for faster job delivering to threads ==
 
 == Parallel-For algorithm ==
 
