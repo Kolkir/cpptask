@@ -37,6 +37,7 @@
 #include "refptr.h"
 
 #include <algorithm>
+#include <functional>
 #include <vector>
 #include <iostream>
 
@@ -49,8 +50,8 @@ class Task : public MPSCNode
 public:
     friend class TaskThread;
 
-    Task() 
-        : parentThread(0) 
+    Task()
+        : parentThread(0)
     {
         waitEvent.Reset();
     }
@@ -68,7 +69,7 @@ public:
     }
 
     void Run()
-    {     
+    {
         try
         {
             Execute();
@@ -113,7 +114,12 @@ public:
     {
         return AlignedAlloc(size, alignment);
     }
-    
+
+    void operator delete(void* ptr)
+    {
+        AlignedFree(ptr);
+    }
+
     void operator delete(void* ptr, size_t)
     {
         AlignedFree(ptr);
@@ -141,7 +147,7 @@ public:
         Wait();
     }
     void SetTask(Task* t)
-    {       
+    {
         {
             ScopedLock<Mutex> lock(&guard);
             task = t;
@@ -153,14 +159,14 @@ public:
     void DoWaitingTasks(Task* waitTask)
     {
         //we are inside DoTask lock
-        Task* oldTask = task;            
+        Task* oldTask = task;
         task = 0;
         hasTask.Reset();
-        
+
         //clear lock to be able process another tasks
         guard.UnLock();
 
-        taskEvent.Reset();                
+        taskEvent.Reset();
         if (emptyThreadEvent != 0)
         {
             emptyThreadEvent->Signal();
@@ -169,12 +175,12 @@ public:
         while (!waitTask->ChechFinished())
         {
             DoTask(&waitTask->waitEvent);
-        }        
+        }
 
         //restore lock
         guard.Lock();
 
-        DoTaskImpl();                
+        DoTaskImpl();
         task = oldTask;
         task->SetParentThread(this);
         hasTask.Set();
@@ -187,7 +193,7 @@ public:
         }
     }
     bool HasTask()
-    {               
+    {
         return hasTask.IsSet();
     }
     void Stop()
@@ -196,34 +202,34 @@ public:
     }
 private:
     void DoTask(Event* secondEvent = 0)
-    {        
+    {
         if (secondEvent != 0)
         {
-            WaitForTwo(taskEvent, *secondEvent);           
+            WaitForTwo(taskEvent, *secondEvent);
         }
         else
         {
             taskEvent.Wait();
-        }        
+        }
         ScopedLock<Mutex> lock(&guard);
-        DoTaskImpl();             
+        DoTaskImpl();
     }
 
     void DoTaskImpl()
-    {                
+    {
         if (task != 0)
-        {               
-            task->Run();                
-            task->SetParentThread(0); 
+        {
+            task->Run();
+            task->SetParentThread(0);
             task->SignalDone();
-            task = 0;          
+            task = 0;
             hasTask.Reset();
-            taskEvent.Reset();                    
+            taskEvent.Reset();
             if (emptyThreadEvent != 0)
             {
                 emptyThreadEvent->Signal();
             }
-        }               
+        }
     }
 private:
     Task* task;
@@ -246,6 +252,21 @@ inline void Task::WaitChildTask(Task* childTask)
     }
 }
 
+namespace
+{
+struct GetEmptyThreadOp : public std::unary_function<RefPtr<TaskThread>&, bool>
+{
+    bool operator()(RefPtr<TaskThread>& thread) const
+    {
+        if (!thread->HasTask())
+        {
+            return true;
+        }
+        return false;
+    }
+};
+}
+
 class TaskThreadPool
 {
 public:
@@ -258,7 +279,7 @@ public:
             tptr->Start();
         }
     }
-    
+
     size_t GetThreadsNum() const
     {
         return threads.size();
@@ -266,19 +287,7 @@ public:
 
     TaskThread* GetEmptyThread()
     {
-        struct GetEmptyThread
-        {
-            bool operator()(TaskThreadPtr& thread)
-            {
-                if (!thread->HasTask())
-                {
-                    return true;
-                }
-                return false;
-            }
-        };
-        Threads::iterator i =
-        std::find_if(threads.begin(), threads.end(), GetEmptyThread());
+        Threads::iterator i = std::find_if(threads.begin(), threads.end(), GetEmptyThreadOp());
 
         if (i != threads.end())
         {

@@ -39,15 +39,16 @@ class Exception: public std::exception
 public:
     typedef std::exception BaseType;
 
-    Exception(){}
+    Exception() throw() {}
+    virtual ~Exception() throw(){}
 
     explicit Exception(const std::string& message)
-    : BaseType(message.c_str())
+    : message(message)
     {
     }
 
     explicit Exception(const char *message)
-    : BaseType(message)
+    : message(message)
     {
     }
 
@@ -60,6 +61,13 @@ public:
     {
         throw *this;
     }
+
+    virtual const char* what() const throw()
+    {
+        return message.c_str();
+    }
+private:
+    std::string message;
 };
 
 }

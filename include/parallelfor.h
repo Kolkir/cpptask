@@ -51,7 +51,7 @@ public:
     }
     virtual void Execute()
     {
-        Range::value_type i = range.start;
+        typename Range::value_type i = range.start;
         for(;i !=  range.end; ++i)
         {
             functor(*i);
@@ -65,8 +65,9 @@ private:
 
 template<class Iterator, class Functor>
 inline void ParallelFor(Iterator start, Iterator end, Functor functor, TaskManager& manager)
-{        
-    std::vector<Range<Iterator>> ranges = SplitRange(start, end, manager.GetThreadsNum());
+{
+    typedef std::vector<Range<Iterator> > RANGES;
+    RANGES ranges = SplitRange(start, end, manager.GetThreadsNum());
 
     typedef Range<Iterator> RANGE;
     typedef ForTask<RANGE, Functor> TASK;
@@ -74,48 +75,32 @@ inline void ParallelFor(Iterator start, Iterator end, Functor functor, TaskManag
     typedef std::vector<TASKPtr> TASKS;
     TASKS tasks;
 
-    struct AddTask
+    typename RANGES::iterator i = ranges.begin();
+    typename RANGES::iterator e = ranges.end();
+    for (; i != e; ++i)
     {
-        AddTask(TaskManager* manager, TASKS* tasks, Functor* functor)
-            : manager(manager)
-            , tasks(tasks)
-            , functor(functor)
-        {}
-        void operator()(RANGE& range)
-        {
-            TASK* ptr = new(manager->GetCacheLineSize()) TASK(range, *functor);
-            TASKPtr task(ptr);
-            tasks->push_back(task);
-            manager->AddTask(task.Get());
-        }
-        TaskManager* manager;
-        TASKS* tasks;
-        Functor* functor;
-    };
+        TASK* ptr = new(manager.GetCacheLineSize()) TASK(*i, functor);
+        TASKPtr task(ptr);
+        tasks.push_back(task);
+        manager.AddTask(task.Get());
+    }
 
-    std::for_each(ranges.begin(), ranges.end(), AddTask(&manager, &tasks, &functor));
     manager.StartTasks();
-    
-    struct WaitTask
-    {
-        void operator()(TASKPtr& task)
-        {
-            task->Wait();
-        }
-    };
-    std::for_each(tasks.begin(), tasks.end(), WaitTask());
 
-    struct CheckTaskException
+    typename TASKS::iterator it = tasks.begin();
+    typename TASKS::iterator et = tasks.end();
+    for (; it != et; ++it)
     {
-        void operator()(TASKPtr& task)
+        (*it)->Wait();
+    }
+    it = tasks.begin();
+    for (; it != et; ++it)
+    {
+        if ((*it)->GetLastException() != 0)
         {
-            if (task->GetLastException() != 0)
-            {
-                task->GetLastException()->Throw();
-            }
+            (*it)->GetLastException()->Throw();
         }
-    };
-    std::for_each(tasks.begin(), tasks.end(), CheckTaskException());
+    }
 }
 
 }
