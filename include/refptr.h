@@ -31,7 +31,7 @@
 #include "atomic.h"
 #include <stdexcept>
 
-namespace parallel
+namespace cpptask
 {
 
 class Counter

@@ -35,7 +35,7 @@
 #include "mpscqueue.h"
 #include "alignedalloc.h"
 
-namespace parallel
+namespace cpptask
 {
 
 class TaskManager;
@@ -69,7 +69,7 @@ public:
     TaskManager(TaskThreadPool& threadPool)
         : threadPool(threadPool)
     {
-        cacheLineSize = parallel::GetCacheLineSize();
+        cacheLineSize = cpptask::GetCacheLineSize();
         managerThread.SetManager(this);
         managerThread.Start();
     }

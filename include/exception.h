@@ -31,7 +31,7 @@
 #include <exception>
 #include <string>
 
-namespace parallel
+namespace cpptask
 {
 
 class Exception: public std::exception

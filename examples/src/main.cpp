@@ -62,7 +62,7 @@ struct Test1
 
 void SerialTest1()
 {
-    parallel::Timer timer;
+    cpptask::Timer timer;
     ArrayType big_array = GetBigArray();
     
     timer.Start();
@@ -73,16 +73,16 @@ void SerialTest1()
 
 void ParallelTest1()
 {
-    parallel::Timer timer;
+    cpptask::Timer timer;
     ArrayType big_array = GetBigArray();
 
-    parallel::TaskThreadPool threadPool(THREADS_NUM);
-    parallel::TaskManager manager(threadPool);
+    cpptask::TaskThreadPool threadPool(THREADS_NUM);
+    cpptask::TaskManager manager(threadPool);
 
     big_array = GetBigArray();
 
     timer.Start();
-    parallel::ParallelFor(big_array.begin(), big_array.end(), Test1(), manager);    
+    cpptask::ParallelFor(big_array.begin(), big_array.end(), Test1(), manager);    
     
     std::cout << "Parallel time is : " << timer.End() << " ms\n";
 }
@@ -119,16 +119,16 @@ struct Test22
 };
 void ParallelTest2()
 {
-    parallel::Timer timer;
+    cpptask::Timer timer;
     ArrayType big_array = GetBigArray();
 
-    parallel::TaskThreadPool threadPool(THREADS_NUM);
-    parallel::TaskManager manager(threadPool);
+    cpptask::TaskThreadPool threadPool(THREADS_NUM);
+    cpptask::TaskManager manager(threadPool);
 
     big_array = GetBigArray();
 
     timer.Start();
-    parallel::ParallelInvoke(Test21(&big_array), Test22(&big_array), manager);    
+    cpptask::ParallelInvoke(Test21(&big_array), Test22(&big_array), manager);    
     
     std::cout << "Parallel time is : " << timer.End() << " ms\n";
 }
@@ -145,7 +145,7 @@ struct Test3
 
 double SerialTest2()
 {
-    parallel::Timer timer;
+    cpptask::Timer timer;
     ArrayType big_array = GetBigArray();
     
     timer.Start();
@@ -160,10 +160,10 @@ class Accumulator
 {
 public:
     Accumulator(double init) : res(init){}
-    Accumulator(const Accumulator& accumulator, parallel::SplitMark) 
+    Accumulator(const Accumulator& accumulator, cpptask::SplitMark) 
         : res(accumulator.res){}
 
-    void operator()(const parallel::Range<ArrayType::iterator>& range)
+    void operator()(const cpptask::Range<ArrayType::iterator>& range)
     {
         ArrayType::iterator i = range.start;
         ArrayType::iterator e = range.end;
@@ -185,17 +185,17 @@ public:
 
 double ParallelTest3()
 {
-    parallel::Timer timer;
+    cpptask::Timer timer;
     ArrayType big_array = GetBigArray();
 
-    parallel::TaskThreadPool threadPool(THREADS_NUM);
-    parallel::TaskManager manager(threadPool);
+    cpptask::TaskThreadPool threadPool(THREADS_NUM);
+    cpptask::TaskManager manager(threadPool);
 
     big_array = GetBigArray();
 
     timer.Start();
     Accumulator accumulator(0);
-    parallel::ParallelReduce(big_array.begin(), big_array.end(), accumulator, manager);    
+    cpptask::ParallelReduce(big_array.begin(), big_array.end(), accumulator, manager);    
     
     std::cout << "Parallel time is : " << timer.End() << " ms\n";
     return accumulator.res;
@@ -203,26 +203,54 @@ double ParallelTest3()
 
 void Test4()
 {
-    throw parallel::Exception("Test exception message");
+    throw cpptask::Exception("Test exception message");
 }
 
 void ExceptionTest()
 {
     try
     {
-        parallel::TaskThreadPool threadPool(THREADS_NUM);
-        parallel::TaskManager manager(threadPool);
+        cpptask::TaskThreadPool threadPool(THREADS_NUM);
+        cpptask::TaskManager manager(threadPool);
 
-        parallel::ParallelInvoke(&Test4, &Test4, manager);
+        cpptask::ParallelInvoke(&Test4, &Test4, manager);
     }
-    catch(parallel::Exception& err)
+    catch(cpptask::Exception& err)
     {
         std::cout << "Exception in task : " << err.what() << "\n";
     }
 };
 
+typedef void (*ThreadFunc)(void);
+
+void ThreadFunc1()
+{
+    for (int i = 0; i < 100; ++i)
+    {
+        std::cout << "Hello 1\n";
+        cpptask::Sleep(10);
+    }
+}
+
+void ThreadFunc2()
+{
+    for (int i = 0; i < 100; ++i)
+    {
+        std::cout << "Hello 2\n";
+        cpptask::Sleep(10);
+    }
+}
+
 int main(int /*argc*/, char* /*argv*/[])
-{       
+{
+    cpptask::ThreadFunction<ThreadFunc> t1(&ThreadFunc1);
+    cpptask::ThreadFunction<ThreadFunc> t2(&ThreadFunc2);
+    t1.Start();
+    t2.Start();
+    t1.Wait();
+    t2.Wait();
+
+
     SerialTest1();
 
     ParallelTest1();

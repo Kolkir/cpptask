@@ -30,7 +30,7 @@
 
 #include <Windows.h>
 
-namespace parallel
+namespace cpptask
 {
 
 template <class T>

@@ -30,7 +30,7 @@
 
 #include <windows.h>
 
-namespace parallel
+namespace cpptask
 {
 
 class Event
