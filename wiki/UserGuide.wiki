@@ -10,7 +10,7 @@ Root directory of the project contain sub directory named "examples" where you c
 
 == Thread class ==
 
-If you need only simple thread implementation, you could use cpptask::Thread class. You will need override Run method of the class. Or you can use cpptask::ThreadFunction class, which take functor as constructor parameter.
+If you need only simple thread implementation, you could use {{{cpptask::Thread}}} class, where you will need override Run method of the class. Or you can use {{{cpptask::ThreadFunction}}} class, which take functor as constructor parameter.
 {{{
 #include <Thread.h>
 ...
