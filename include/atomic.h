@@ -78,6 +78,10 @@ public:
         unsigned long value = ::InterlockedCompareExchange((volatile LONG*)&number, number, number);
         return value;
     }
+    void SetValue(long value)
+    {
+        ::InterlockedExchange((volatile LONG*)&number, value);
+    }
 private:
     AtomicNumber(const AtomicFlag&);
     const AtomicNumber& operator=(const AtomicFlag&);
