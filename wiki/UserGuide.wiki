@@ -6,7 +6,7 @@ You need checkout source code from the trunk of the project repository, please f
 
 == Building examples ==
 
-Root directory of the project contain [http://http://industriousone.com/premake Premake] executable. You can make build scripts for system you like. For example if you need solution for VS2010 you need type in console "premake4 vs2010", after that you will get directory named "build_scripts" where VS projects and solution will be placed.
+Root directory of the project contain [http://industriousone.com/premake Premake] executable. You can make build scripts for system you like. For example if you need solution for VS2010 you need type in console "premake4 vs2010", after that you will get directory named "build_scripts" where VS projects and solution will be placed.
 
 == Thread class ==
 
