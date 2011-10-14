@@ -32,7 +32,7 @@
 #include <process.h>
 #include "exception.h"
 
-namespace parallel
+namespace cpptask
 {
 
 class Thread
@@ -133,6 +133,11 @@ public:
 private:
     F func;
 };
+
+inline void Sleep(size_t ms)
+{
+    ::Sleep(static_cast<DWORD>(ms));
+}
 
 }
 

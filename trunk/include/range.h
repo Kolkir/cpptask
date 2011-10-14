@@ -31,7 +31,7 @@
 #include <algorithm>
 #include <vector>
 
-namespace parallel
+namespace cpptask
 {
 
 template<class Iterator>

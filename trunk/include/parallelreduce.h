@@ -34,7 +34,7 @@
 #include <algorithm>
 #include <vector>
 
-namespace parallel
+namespace cpptask
 {
 
 class SplitMark

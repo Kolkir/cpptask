@@ -31,7 +31,7 @@
 #include <Windows.h>
 #include "mutex.h"
 
-namespace parallel
+namespace cpptask
 {
 
 class MPSCNode

@@ -40,7 +40,7 @@
 #include <vector>
 #include <iostream>
 
-namespace parallel
+namespace cpptask
 {
 
 class TaskThread;

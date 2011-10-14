@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <windows.h>
 
-namespace parallel
+namespace cpptask
 {
 
 inline size_t GetCacheLineSize() 

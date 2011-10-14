@@ -30,7 +30,7 @@
 
 #include "taskmanager.h"
 
-namespace parallel
+namespace cpptask
 {
 
 template<class Functor>
