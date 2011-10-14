@@ -1,3 +1,4 @@
+#labels Phase-Deploy
 <wiki:toc max_depth="2" />
 
 == Getting sources ==
@@ -28,6 +29,9 @@ mythread.Wait();
 }}}
 == Atomic variables ==
 
+Library provide only two types of atomics values:
+ * {{{cpptask::AtomicFlag}}} - class represents boolean values you can Set flag and Reset it.
+ * {{{cpptask::AtomicNumber}}} - class represents c++ long value type you can atomicaly {{{Inc/Dec}}} and {{{SetValue/GetValue}}} from it.
 == Mutex primitive ==
 
 == Event primitive ==
