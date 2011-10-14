@@ -25,13 +25,70 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _ATOMIC_SELECT_H_
-#define _ATOMIC_SELECT_H_
+#ifndef _ATOMIC_H_
+#define _ATOMIC_H_
 
-#ifdef _WIN32
-#include "Win/atomic.h"
-#else
-#include "Unix/atomic.h"
-#endif
+#include <windows.h>
+
+namespace cpptask
+{
+
+class AtomicFlag
+{
+public:
+    AtomicFlag():flag(0){}
+    void Set()
+    {
+        ::InterlockedExchange((volatile LONG*)&flag, 1);
+    }
+    bool IsSet()
+    {
+        unsigned int f = ::InterlockedCompareExchange((volatile LONG*)&flag, 1, 1);
+        if (f > 0)
+        {
+            return true;
+        }
+        return false;
+    }
+    void Reset()
+    {
+        ::InterlockedExchange((volatile LONG*)&flag, 0);
+    }
+private:
+    AtomicFlag(const AtomicFlag&);
+    const AtomicFlag& operator=(const AtomicFlag&);
+private:
+    LONG flag;
+};
+
+class AtomicNumber
+{
+public:
+    AtomicNumber():number(0){}
+    void Inc()
+    {
+        ::InterlockedIncrement((volatile LONG*)&number);
+    }
+    void Dec()
+    {
+        ::InterlockedDecrement((volatile LONG*)&number);
+    }
+    long GetValue()
+    {
+        unsigned long value = ::InterlockedCompareExchange((volatile LONG*)&number, number, number);
+        return value;
+    }
+    void SetValue(long value)
+    {
+        ::InterlockedExchange((volatile LONG*)&number, value);
+    }
+private:
+    AtomicNumber(const AtomicFlag&);
+    const AtomicNumber& operator=(const AtomicFlag&);
+private:
+    LONG number;
+};
+
+}
 
 #endif
