@@ -19,10 +19,10 @@ void SomeFunc()
    //do work
 }
 ...
-std::shared_ptr<Thread> mythread(cpptask::MakeThread(&SomeFunc));
-mythread->Start();
+spptask::ThreadFunction<SomeFunc> mythread(&SomeFunc);
+mythread.Start();
 ...
-mythread->Wait();
+mythread.Wait();
 ...
 }}}
 == Atomic variables ==
