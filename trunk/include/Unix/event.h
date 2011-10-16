@@ -28,7 +28,7 @@
 #ifndef _EVENT_H_
 #define _EVENT_H_
 
-#include <windows.h>
+#include <pthread.h>
 
 namespace cpptask
 {
@@ -37,38 +37,66 @@ class Event
 {
 public:
     Event()
-    {    
-        // Manual reset since multiple threads can wait on this
-        hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-        if(hEvent == NULL)
-        {
-            throw std::runtime_error("Can't create event.");
-        }
+    {
+        pthread_mutexattr_t attr;
+        pthread_mutexattr_init(&attr);
+        pthread_mutex_init(&pmutex, &attr);
+        pthread_mutexattr_destroy(&attr);
+        pthread_cond_init(&pcond, NULL);
+        signaled = false;
+        count = 0;
     }
     ~Event()
-    {  
-        ::CloseHandle(hEvent);
+    {
+        pthread_cond_destroy(&pcond);
+        pthread_mutex_destroy(&pmutex);
     }
     void Wait()
     {
-        ::WaitForSingleObject(hEvent, INFINITE);
-    }   
+        const unsigned long NANOSEC_PER_MILLISEC = 1000000;
+        int rc = 0;
+        timespec spec;
+        timeb currSysTime;
+        ftime(&currSysTime);
+
+        spec.tv_sec = static_cast<long>(currSysTime.time);
+        spec.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+        spec.tv_nsec += time * NANOSEC_PER_MILLISEC;
+
+        pthread_mutex_lock(&m_mutex);
+        long count = m_count;
+        while(!m_signaled && m_count == count)
+        {
+            if(time != INFINITE)
+            {
+                rc = pthread_cond_timedwait(&m_cond, &m_mutex, &spec);
+            }
+            else
+            {
+                pthread_cond_wait(&m_cond, &m_mutex);
+            }
+            if(rc != 0)
+            {
+                break;
+            }
+        }
+        pthread_mutex_unlock(&m_mutex);
+    }
     bool Check()
     {
-        DWORD rez = ::WaitForSingleObject(hEvent, 0);
-        if (rez == WAIT_OBJECT_0)
-        {
-            return true;
-        }
         return false;
     }
     void Signal()
     {
-        ::SetEvent(hEvent);    
+        pthread_mutex_lock(&m_mutex);
+        m_signaled = true;
+        ++m_count;
+        pthread_cond_broadcast(&m_cond);
+        pthread_mutex_unlock(&m_mutex);
     }
     void Reset()
     {
-        ::ResetEvent(hEvent);
+        m_signaled = false;
     }
     friend int WaitForTwo(Event& firstEvent, Event& secondEvent);
 private:

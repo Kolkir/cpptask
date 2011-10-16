@@ -32,7 +32,86 @@
 
 namespace cpptask
 {
+       /*****************************************************************************************************/
+        long AtomicExchange(volatile long * Target, long Value)
+        {
+#ifdef _MSC_VER
+                return _InterlockedExchange(const_cast<long*>(Target),Value);
+#else
+                asm( "xchg %0, (%1)" : "+r"(Value) : "r"(Target) );
+                return Value;
+#endif
+        }
+        /*****************************************************************************************************/
+        void AtomicIncrement(volatile long * Target)
+        {
+#ifdef _MSC_VER
+                _InterlockedIncrement(const_cast<long*>(Target));
+#else
+                asm volatile
+                (
+                        "lock; incl (%0)"
+                        : // No outputs
+                        : "q" (Target)
+                        : "cc", "memory"
+                );
+#endif
+        }
+        /*****************************************************************************************************/
+        void AtomicDecrement(volatile long * Target)
+        {
+#ifdef _MSC_VER
+                _InterlockedDecrement(const_cast<long*>(Target));
+#else
+        asm volatile
+        (
+            "lock; decl (%0)"
+            : // No outputs
+            : "q" (Target)
+            : "cc", "memory"
+        );
+#endif
+        }
+        /*****************************************************************************************************/
+        bool AtomicCompareExchange(volatile long* ptr, long oldVal, long newVal)
+        {
+#ifdef _MSC_VER
+        return _InterlockedCompareExchange(ptr, newVal, oldVal) == oldVal;
+#else
+        register bool f;
+        __asm__ __volatile__
+        (
+            "lock; cmpxchgl %%ebx, %1;"
+            "setz %0;"
+            : "=r"(f), "=m"(*(ptr))
+            : "a"(oldVal), "b" (newVal)
+            : "memory"
+        );
+        return f;
+#endif
+        }
+        /*****************************************************************************************************/
+        bool AtomicCompareExchange64(volatile long* ptr, long old1, unsigned int old2, long new1, unsigned int new2)
+        {
+#ifdef _MSC_VER
+                LONGLONG Comperand = old1 | (static_cast<LONGLONG>(old2) << 32);
+                LONGLONG Exchange  = new1 | (static_cast<LONGLONG>(new2) << 32);
 
+                return _InterlockedCompareExchange64(reinterpret_cast<LONGLONG volatile *>(ptr), Exchange, Comperand) == Comperand;
+#else
+
+                register bool f;
+        __asm__ __volatile__
+        (
+            "lock; cmpxchg8b %1;"
+            "setz %0;"
+            : "=r"(f), "=m"(*(ptr))
+            : "a"(old1), "b" (new1), "c" (new2), "d" (old2)
+            : "memory");
+                return f;
+#endif
+        }
+        /*****************************************************************************************************/
 class AtomicFlag
 {
 public:
