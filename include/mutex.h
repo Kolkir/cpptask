@@ -34,4 +34,28 @@
 #include "Unix/mutex.h"
 #endif
 
+namespace cpptask
+{
+
+template <class T>
+class ScopedLock
+{
+public:
+    ScopedLock(T* guard)
+        : guard(guard)
+    {
+        guard->Lock();
+    }
+    ~ScopedLock()
+    {
+        guard->UnLock();
+    }
+private:
+    ScopedLock(const ScopedLock&);
+    const ScopedLock& operator=(const ScopedLock&);
+private:
+    T* guard;
+};
+
+}
 #endif

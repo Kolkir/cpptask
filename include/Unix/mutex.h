@@ -28,59 +28,33 @@
 #ifndef _MUTEX_H_
 #define _MUTEX_H_
 
-#include <Windows.h>
+#include <pthread.h>
 
 namespace cpptask
 {
-
-template <class T>
-class ScopedLock
-{
-public:
-    ScopedLock(T* guard)
-        : guard(guard)
-    {
-        guard->Lock();
-    }
-    ~ScopedLock()
-    {
-        guard->UnLock();
-    }
-private:
-    ScopedLock(const ScopedLock&);
-    const ScopedLock& operator=(const ScopedLock&);
-private:
-    T* guard;
-};
 
 class Mutex
 {
 public:
     Mutex()
     {
-        hMutex = ::CreateMutex(NULL, FALSE, NULL);
-        if (hMutex == NULL)
+        if (::pthread_mutex_init(&pmutex, 0) != 0)
         {
             throw std::runtime_error("Can't create a mutex");
         }
     }
     ~Mutex()
     {
-        CloseHandle(hMutex);
+        ::pthread_mutex_destroy(&pmutex);
     }
     void Lock()
     {
-        DWORD rez = ::WaitForSingleObject(hMutex, INFINITE);
-        if (rez != WAIT_OBJECT_0)
-        {
-            //log error
-        }
+        ::pthread_mutex_lock(&pmutex);
     }
 
     bool WaitLock(long timeWait = INFINITE)
     {
-        DWORD rez = ::WaitForSingleObject(hMutex, timeWait);
-        if (rez == WAIT_OBJECT_0)
+        if (::hread_mutex_trylock(&pmutex) == 0)
         {
             return true;
         }
@@ -89,17 +63,13 @@ public:
 
     void UnLock()
     {
-        BOOL rez = ::ReleaseMutex(hMutex);
-        if (rez == FALSE)
-        {
-            //log error
-        }
+        ::pthread_mutex_unlock(&pmutex);
     }
 private:
     Mutex(const Mutex&);
     const Mutex& operator=(const Mutex&);
 private:
-    HANDLE hMutex;
+    mutable pthread_mutex_t pmutex;
 };
 
 }

@@ -29,9 +29,30 @@
 #define _THREAD_SELECT_H_
 
 #ifdef _WIN32
-#include "Win/Thread.h"
+#include "Win/thread.h"
 #else
-#include "Unix/Thread.h"
+#include "Unix/thread.h"
 #endif
+
+namespace cpptask
+{
+
+template<class F>
+class ThreadFunction : public Thread
+{
+public:
+    ThreadFunction(F f)
+        : func(f)
+    {
+    }
+    virtual void Run()
+    {
+        func();
+    }
+private:
+    F func;
+};
+
+}
 
 #endif

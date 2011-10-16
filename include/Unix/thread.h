@@ -28,8 +28,7 @@
 #ifndef _THREAD_H_
 #define _THREAD_H_
 
-#include <Windows.h>
-#include <process.h>
+#include <pthread.h>
 #include "exception.h"
 
 namespace cpptask
@@ -40,21 +39,24 @@ class Thread
 public:
     Thread()
     {
-        hThread = reinterpret_cast<HANDLE>(_beginthreadex(NULL, 
-                                                             0, 
-                                           &Thread::ThreadFunc, 
-                                                          this, 
-                                              CREATE_SUSPENDED, 
-                                                     &threadID));
+        pthread_attr_t attr;
+        pthread_attr_init(&attr);
+        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+        int created = pthread_create(&pthread, &attr, &Thread::ThreadFunc, this);
+        pthread_attr_destroy(&attr);
+        if(created != 0)
+        {
+            throw std::logic_error("Can't create pthread.");
+        }
     }
 
     virtual ~Thread()
     {
-        CloseHandle(hThread);
     }
 
     virtual void Run() = 0;
-    
+
     void Start()
     {
         ::ResumeThread(hThread);
@@ -62,14 +64,13 @@ public:
 
     bool Wait() const
     {
-        DWORD rez = ::WaitForSingleObject(hThread, INFINITE);
-        if (rez != WAIT_OBJECT_0)
+        if (::pthread_join(pthread, 0) != 0)
         {
             return false;
         }
         return true;
     }
-    
+
     unsigned GetExitCode() const
     {
         DWORD code;
@@ -113,26 +114,10 @@ private:
     Thread(const Thread&);
     const Thread& operator=(const Thread&);
 private:
-    HANDLE hThread;
-    unsigned threadID;
-    Exception lastException;
+    unsigned long m_exitCode;
+    pthread_t     pthread;
 };
 
-template<class F>
-class ThreadFunction : public Thread
-{
-public:
-    ThreadFunction(F f)
-        : func(f)
-    {
-    }
-    virtual void Run()
-    {
-        func();
-    }
-private:
-    F func;
-};
 
 inline void Sleep(size_t ms)
 {
