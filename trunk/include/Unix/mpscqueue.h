@@ -28,7 +28,7 @@
 #ifndef _MPSCQUEUE_H_
 #define _MPSCQUEUE_H_
 
-#include <Windows.h>
+#include "atomic.h"
 #include "mutex.h"
 
 namespace cpptask

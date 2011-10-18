@@ -53,38 +53,11 @@ public:
     }
     void Wait()
     {
-        const unsigned long NANOSEC_PER_MILLISEC = 1000000;
-        int rc = 0;
-        timespec spec;
-        timeb currSysTime;
-        ftime(&currSysTime);
-
-        spec.tv_sec = static_cast<long>(currSysTime.time);
-        spec.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
-        spec.tv_nsec += time * NANOSEC_PER_MILLISEC;
-
-        pthread_mutex_lock(&m_mutex);
-        long count = m_count;
-        while(!m_signaled && m_count == count)
-        {
-            if(time != INFINITE)
-            {
-                rc = pthread_cond_timedwait(&m_cond, &m_mutex, &spec);
-            }
-            else
-            {
-                pthread_cond_wait(&m_cond, &m_mutex);
-            }
-            if(rc != 0)
-            {
-                break;
-            }
-        }
-        pthread_mutex_unlock(&m_mutex);
+        Wait(0, true);
     }
     bool Check()
     {
-        return false;
+        return Wait(0, false);
     }
     void Signal()
     {
@@ -102,24 +75,59 @@ public:
 private:
     Event(const Event&);
     const Event& operator=(const Event&);
+
+    bool Wait(unsigned long time, bool infiniteWait)
+    {
+        const unsigned long NANOSEC_PER_MILLISEC = 1000000;
+        int rc = 0;
+        timespec spec;
+        timeb currSysTime;
+        ftime(&currSysTime);
+
+        spec.tv_sec = static_cast<long>(currSysTime.time);
+        spec.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+        spec.tv_nsec += time * NANOSEC_PER_MILLISEC;
+
+        pthread_mutex_lock(&m_mutex);
+        long count = m_count;
+        while(!m_signaled && m_count == count)
+        {
+            if(!infiniteWait)
+            {
+                rc = pthread_cond_timedwait(&m_cond, &m_mutex, &spec);
+            }
+            else
+            {
+                pthread_cond_wait(&m_cond, &m_mutex);
+            }
+            if(rc != 0)
+            {
+                break;
+            }
+        }
+        pthread_mutex_unlock(&m_mutex);
+        if (rc == ETIMEDOUT && time != INFINITE)
+        {
+            return false;
+        }
+        return true;
+    }
 private:
-   HANDLE hEvent;
+    pthread_mutex_t m_mutex;
+    pthread_cond_t m_cond;
+    bool m_signaled;
+    int m_count;
 };
 
 inline int WaitForTwo(Event& firstEvent, Event& secondEvent)
 {
-    HANDLE events[2];
-    events[0] = firstEvent.hEvent;
-    events[1] = secondEvent.hEvent;
-    DWORD rez = ::WaitForMultipleObjects(2, events, FALSE, INFINITE);
-    if (rez == WAIT_OBJECT_0)
-    {
-        return 0;
-    }
-    else if (rez == WAIT_OBJECT_0 + 1)
-    {
-        return 1;
-    }
+    //create common Event
+    //firstEvent - add common Event
+    //secondEvent - add common Event
+    //wait for common Event
+
+    //when signal event - signal all common events in list
+    //add list of events to event
     return -1;
 }
 

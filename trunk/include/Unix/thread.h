@@ -29,6 +29,7 @@
 #define _THREAD_H_
 
 #include <pthread.h>
+#include <unistd.h>
 #include "exception.h"
 
 namespace cpptask
@@ -38,6 +39,7 @@ class Thread
 {
 public:
     Thread()
+        : exitCode(0xFFFF)
     {
         pthread_attr_t attr;
         pthread_attr_init(&attr);
@@ -59,7 +61,7 @@ public:
 
     void Start()
     {
-        ::ResumeThread(hThread);
+        startEvent.Signal();
     }
 
     bool Wait() const
@@ -71,11 +73,9 @@ public:
         return true;
     }
 
-    unsigned GetExitCode() const
-    {
-        DWORD code;
-        ::GetExitCodeThread(hThread, &code);
-        return static_cast<unsigned>(code);
+    unsigned long GetExitCode() const
+    {        
+        return exitCode;
     }
 
     const Exception& GetLastException() const
@@ -83,14 +83,14 @@ public:
         return lastException;
     }
 private:
-    static unsigned __stdcall ThreadFunc(void* arguments)
-    {
-        Thread* owner = static_cast<Thread*>(arguments);
+    static void ThreadFunc(void* arguments)
+    {        
+        Thread* owner = static_cast<Thread*>(arguments);        
         if (owner != 0)
         {
-            return owner->ThreadFuncImpl();
+            owner->startEvent.Wait();
+            owner->exitCode = owner->ThreadFuncImpl();
         }
-        return 0;
     }
 
     unsigned ThreadFuncImpl()
@@ -114,14 +114,22 @@ private:
     Thread(const Thread&);
     const Thread& operator=(const Thread&);
 private:
-    unsigned long m_exitCode;
-    pthread_t     pthread;
+    unsigned long exitCode;
+    pthread_t pthread;
+    Exception lastException;
+    Event startEvent;
 };
 
-
-inline void Sleep(size_t ms)
+void Sleep(unsigned long milliseconds)
 {
-    ::Sleep(static_cast<DWORD>(ms));
+    if (milliseconds<1000)
+    {
+        usleep(milliseconds*1000);
+    }
+    else
+    {
+        sleep(milliseconds/1000);
+    }
 }
 
 }
