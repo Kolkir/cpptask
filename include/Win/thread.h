@@ -70,11 +70,11 @@ public:
         return true;
     }
     
-    unsigned GetExitCode() const
+    unsigned long GetExitCode() const
     {
         DWORD code;
         ::GetExitCodeThread(hThread, &code);
-        return static_cast<unsigned>(code);
+        return static_cast<unsigned long>(code);
     }
 
     const Exception& GetLastException() const
@@ -116,22 +116,6 @@ private:
     HANDLE hThread;
     unsigned threadID;
     Exception lastException;
-};
-
-template<class F>
-class ThreadFunction : public Thread
-{
-public:
-    ThreadFunction(F f)
-        : func(f)
-    {
-    }
-    virtual void Run()
-    {
-        func();
-    }
-private:
-    F func;
 };
 
 inline void Sleep(size_t ms)
