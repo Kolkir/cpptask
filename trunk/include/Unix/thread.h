@@ -30,7 +30,9 @@
 
 #include <pthread.h>
 #include <unistd.h>
+
 #include "exception.h"
+#include "event.h"
 
 namespace cpptask
 {
@@ -66,7 +68,7 @@ public:
 
     bool Wait() const
     {
-        if (::pthread_join(pthread, 0) != 0)
+        if (pthread_join(pthread, 0) != 0)
         {
             return false;
         }
@@ -74,7 +76,7 @@ public:
     }
 
     unsigned long GetExitCode() const
-    {        
+    {
         return exitCode;
     }
 
@@ -83,14 +85,15 @@ public:
         return lastException;
     }
 private:
-    static void ThreadFunc(void* arguments)
-    {        
-        Thread* owner = static_cast<Thread*>(arguments);        
+    static void* ThreadFunc(void* arguments)
+    {
+        Thread* owner = static_cast<Thread*>(arguments);
         if (owner != 0)
         {
             owner->startEvent.Wait();
             owner->exitCode = owner->ThreadFuncImpl();
         }
+        return 0;
     }
 
     unsigned ThreadFuncImpl()

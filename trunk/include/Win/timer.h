@@ -25,90 +25,55 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _MPSCQUEUE_H_
-#define _MPSCQUEUE_H_
+#ifndef _TIMER_H_
+#define _TIMER_H_
 
-#include "atomic.h"
-#include "mutex.h"
+#include <windows.h>
 
 namespace cpptask
 {
-
-class MPSCNode
+class Timer
 {
 public:
-    virtual ~MPSCNode(){}
-    MPSCNode():next(0){}
-    void SetNext(MPSCNode* n)
+    Timer()
     {
-        next = n;
+         threadHandle = ::GetCurrentThread();
+        ::GetProcessAffinityMask(GetCurrentProcess(), &processAffinityMask, &systemMask);
+        ::SetThreadAffinityMask(threadHandle, 1);
+        ::QueryPerformanceFrequency(&frequency);
+        ::SetThreadAffinityMask(threadHandle, processAffinityMask);
     }
-    MPSCNode* GetNext()
+    void Start()
     {
-        return next;
+        ::SetThreadAffinityMask(threadHandle, 1);
+        ::QueryPerformanceCounter(&startTime);
+        ::SetThreadAffinityMask(threadHandle, processAffinityMask);
+    }
+    double End()
+    {
+        ::SetThreadAffinityMask(threadHandle, 1);
+        ::QueryPerformanceCounter(&endTime);
+        ::SetThreadAffinityMask(threadHandle, processAffinityMask);
+
+         __int64 elapsedTime = endTime.QuadPart - startTime.QuadPart;
+        double const mseconds = double(elapsedTime) / (double(frequency.QuadPart) / 1000.0);
+        return mseconds;
     }
 private:
-    MPSCNode* next;
-};
-
-class MPSCQueue
-{
-public:
-
-    MPSCQueue()
-    {
-        head = &stub;
-        tail = &stub;
-    }
-
-    void Push(MPSCNode* n)
-    {
-        n->SetNext(0);
-        MPSCNode* prev = static_cast<MPSCNode*>(InterlockedExchangePointer((volatile void*)&head, n));
-        prev->SetNext(n);
-    }
-
-    MPSCNode* Pop()
-    {
-        MPSCNode* newTail = tail;
-        MPSCNode* next = newTail->GetNext();
-        if (newTail == &stub)
-        {
-            if (next == 0)
-            {
-                return 0;
-            }
-            tail = next;
-            newTail = next;
-            next = next->GetNext();
-        }
-        if (next != 0)
-        {
-            tail = next;
-            return const_cast<MPSCNode*>(newTail);
-        }
-        volatile MPSCNode* newHead = head;
-        if (newTail != newHead)
-        {
-            return 0;
-        }
-        Push(&stub);
-        next = newTail->GetNext();
-        if (next)
-        {
-            tail = next;
-            return const_cast<MPSCNode*>(newTail);
-        }
-        return 0;
-    }
-
+    Timer(const Timer&);
+    const Timer& operator=(const Timer&);
 private:
-
-    MPSCNode* head;
-    MPSCNode* tail;
-    MPSCNode stub;
+    LARGE_INTEGER startTime;
+    LARGE_INTEGER endTime;
+	LARGE_INTEGER frequency;
+    void* threadHandle;
+#if defined(_WIN64)
+    unsigned __int64 processAffinityMask;
+#else
+    unsigned long processAffinityMask;
+#endif
+    DWORD_PTR systemMask;
 };
-
 }
 
 #endif

@@ -25,90 +25,33 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _MPSCQUEUE_H_
-#define _MPSCQUEUE_H_
+#ifndef _TIMER_H_
+#define _TIMER_H_
 
-#include "atomic.h"
-#include "mutex.h"
 
 namespace cpptask
 {
-
-class MPSCNode
+class Timer
 {
 public:
-    virtual ~MPSCNode(){}
-    MPSCNode():next(0){}
-    void SetNext(MPSCNode* n)
+    Timer()
     {
-        next = n;
-    }
-    MPSCNode* GetNext()
-    {
-        return next;
-    }
-private:
-    MPSCNode* next;
-};
 
-class MPSCQueue
-{
-public:
-
-    MPSCQueue()
-    {
-        head = &stub;
-        tail = &stub;
     }
-
-    void Push(MPSCNode* n)
+    void Start()
     {
-        n->SetNext(0);
-        MPSCNode* prev = static_cast<MPSCNode*>(InterlockedExchangePointer((volatile void*)&head, n));
-        prev->SetNext(n);
+
     }
-
-    MPSCNode* Pop()
+    double End()
     {
-        MPSCNode* newTail = tail;
-        MPSCNode* next = newTail->GetNext();
-        if (newTail == &stub)
-        {
-            if (next == 0)
-            {
-                return 0;
-            }
-            tail = next;
-            newTail = next;
-            next = next->GetNext();
-        }
-        if (next != 0)
-        {
-            tail = next;
-            return const_cast<MPSCNode*>(newTail);
-        }
-        volatile MPSCNode* newHead = head;
-        if (newTail != newHead)
-        {
-            return 0;
-        }
-        Push(&stub);
-        next = newTail->GetNext();
-        if (next)
-        {
-            tail = next;
-            return const_cast<MPSCNode*>(newTail);
-        }
         return 0;
     }
-
+private:
+    Timer(const Timer&);
+    const Timer& operator=(const Timer&);
 private:
 
-    MPSCNode* head;
-    MPSCNode* tail;
-    MPSCNode stub;
 };
-
 }
 
 #endif

@@ -28,8 +28,11 @@
 #ifndef _EVENT_H_
 #define _EVENT_H_
 
-#include <pthread.h>
 #include "../mutex.h"
+
+#include <sys/timeb.h>
+#include <pthread.h>
+#include <cerrno>
 
 #include <vector>
 #include <algorithm>
@@ -67,13 +70,13 @@ public:
     {
         ScopedLock<Mutex> lock(&waitGuard);
 
-        pthread_mutex_lock(&m_mutex);
-        m_signaled = true;
-        ++m_count;
-        pthread_cond_broadcast(&m_cond);
-        pthread_mutex_unlock(&m_mutex);
-       
-        std::vector<Event*>::iterator i = waitEvents.begin(), 
+        pthread_mutex_lock(&pmutex);
+        signaled = true;
+        ++count;
+        pthread_cond_broadcast(&pcond);
+        pthread_mutex_unlock(&pmutex);
+
+        std::vector<Event*>::iterator i = waitEvents.begin(),
                                       e = waitEvents.end();
         for (;i != e; ++i)
         {
@@ -82,7 +85,7 @@ public:
     }
     void Reset()
     {
-        m_signaled = false;
+        signaled = false;
     }
     friend inline int WaitForMultiple(std::vector<Event*>& events);
 private:
@@ -101,25 +104,25 @@ private:
         spec.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
         spec.tv_nsec += time * NANOSEC_PER_MILLISEC;
 
-        pthread_mutex_lock(&m_mutex);
-        long count = m_count;
-        while(!m_signaled && m_count == count)
+        pthread_mutex_lock(&pmutex);
+        long curcount = count;
+        while (!signaled && count == curcount)
         {
-            if(!infiniteWait)
+            if (!infiniteWait)
             {
-                rc = pthread_cond_timedwait(&m_cond, &m_mutex, &spec);
+                rc = pthread_cond_timedwait(&pcond, &pmutex, &spec);
             }
             else
             {
-                pthread_cond_wait(&m_cond, &m_mutex);
+                pthread_cond_wait(&pcond, &pmutex);
             }
-            if(rc != 0)
+            if (rc != 0)
             {
                 break;
             }
         }
-        pthread_mutex_unlock(&m_mutex);
-        if (rc == ETIMEDOUT && time != INFINITE)
+        pthread_mutex_unlock(&pmutex);
+        if (rc == ETIMEDOUT)
         {
             return false;
         }
@@ -132,9 +135,9 @@ private:
         waitEvents.push_back(event);
     }
     void DelWaitEvent(Event* event)
-    {        
+    {
         ScopedLock<Mutex> lock(&waitGuard);
-        std::vector<Event*>::iterator i = std::find(waitEvents.begin(), 
+        std::vector<Event*>::iterator i = std::find(waitEvents.begin(),
                                                     waitEvents.end(),
                                                     event);
         if (i != waitEvents.end())
@@ -143,17 +146,17 @@ private:
         }
     }
 private:
-    pthread_mutex_t m_mutex;
-    pthread_cond_t m_cond;
-    bool m_signaled;
-    int m_count;
+    pthread_mutex_t pmutex;
+    pthread_cond_t pcond;
+    bool signaled;
+    int count;
     //multiple wait implementation
     Mutex waitGuard;
     std::vector<Event*> waitEvents;
 };
 
 inline int WaitForMultiple(std::vector<Event*>& events)
-{    
+{
     Event commonEvent;
 
     std::vector<Event*>::iterator i = events.begin();
