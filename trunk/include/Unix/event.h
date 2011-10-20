@@ -65,13 +65,14 @@ public:
     }
     void Signal()
     {
+        ScopedLock<Mutex> lock(&waitGuard);
+
         pthread_mutex_lock(&m_mutex);
         m_signaled = true;
         ++m_count;
         pthread_cond_broadcast(&m_cond);
         pthread_mutex_unlock(&m_mutex);
-
-        ScopedLock<Mutex> lock(&waitGuard);
+       
         std::vector<Event*>::iterator i = waitEvents.begin(), 
                                       e = waitEvents.end();
         for (;i != e; ++i)
@@ -83,7 +84,7 @@ public:
     {
         m_signaled = false;
     }
-    friend void WaitForTwo(Event& firstEvent, Event& secondEvent);
+    friend inline int WaitForMultiple(std::vector<Event*>& events);
 private:
     Event(const Event&);
     const Event& operator=(const Event&);
@@ -151,37 +152,38 @@ private:
     std::vector<Event*> waitEvents;
 };
 
-inline void WaitForTwo(Event& firstEvent, Event& secondEvent)
+inline int WaitForMultiple(std::vector<Event*>& events)
 {    
     Event commonEvent;
 
-    bool signaled = firstEvent.CheckAndLock();
-    if (!signaled)
+    std::vector<Event*>::iterator i = events.begin();
+    std::vector<Event*>::iterator e = events.end();
+
+    int index = 0;
+    for (; i != e; ++i, ++index)
     {
-        firstEvent.AddWaitEvent(&commonEvent);
-    }
-    else
-    {
-        firstEvent.UnLock();
-        return;
+        (*i)->AddWaitEvent(&commonEvent);
+        if ((*i)->Check())
+        {
+            return index;
+        }
     }
 
-    signaled = secondEvent.CheckAndLock();
-    if (!signaled)
-    {
-        secondEvent.AddWaitEvent(&commonEvent);
-    }
-    else
-    {
-        secondEvent.UnLock();
-        return;
-    }
-    firstEvent.UnLock();
-    secondEvent.UnLock();
     commonEvent.Wait();
 
-    firstEvent.DelWaitEvent(&commonEvent);
-    secondEvent.DelWaitEvent(&commonEvent);
+    i = events.begin();
+    index = 0;
+    int rez = -1;
+    for (; i != e; ++i, ++index)
+    {
+        (*i)->DelWaitEvent(&commonEvent);
+        if ((*i)->Check())
+        {
+            rez = index;
+        }
+    }
+
+    return rez;
 }
 
 

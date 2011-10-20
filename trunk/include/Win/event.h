@@ -30,6 +30,8 @@
 
 #include <windows.h>
 
+#include <vector>
+
 namespace cpptask
 {
 
@@ -70,7 +72,7 @@ public:
     {
         ::ResetEvent(hEvent);
     }
-    friend int WaitForTwo(Event& firstEvent, Event& secondEvent);
+    friend int WaitForMultiple(std::vector<Event*>& events);
 private:
     Event(const Event&);
     const Event& operator=(const Event&);
@@ -78,19 +80,22 @@ private:
    HANDLE hEvent;
 };
 
-inline int WaitForTwo(Event& firstEvent, Event& secondEvent)
+inline int WaitForMultiple(std::vector<Event*>& events)
 {
-    HANDLE events[2];
-    events[0] = firstEvent.hEvent;
-    events[1] = secondEvent.hEvent;
-    DWORD rez = ::WaitForMultipleObjects(2, events, FALSE, INFINITE);
-    if (rez == WAIT_OBJECT_0)
+    if (!events.empty())
     {
-        return 0;
-    }
-    else if (rez == WAIT_OBJECT_0 + 1)
-    {
-        return 1;
+        std::vector<HANDLE> handles;
+        std::vector<Event*>::iterator i = events.begin();
+        std::vector<Event*>::iterator e = events.end();
+        for (; i != e; ++i)
+        {
+            handles.push_back((*i)->hEvent);
+        }        
+        DWORD rez = ::WaitForMultipleObjects(handles.size(), &handles[0], FALSE, INFINITE);
+        if (rez >= WAIT_OBJECT_0 && rez <= WAIT_OBJECT_0 + handles.size() - 1)
+        {
+            return rez - WAIT_OBJECT_0;
+        }        
     }
     return -1;
 }

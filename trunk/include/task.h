@@ -205,7 +205,10 @@ private:
     {
         if (secondEvent != 0)
         {
-            WaitForTwo(taskEvent, *secondEvent);
+            std::vector<Event*> events(2);
+            events[0] = &taskEvent;
+            events[1] = secondEvent;
+            WaitForMultiple(events);
         }
         else
         {
