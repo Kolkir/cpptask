@@ -28,29 +28,57 @@
 #ifndef _ATOMIC_H_
 #define _ATOMIC_H_
 
-#include <windows.h>
-
 namespace cpptask
 {
 
-inline long AtomicExchange(volatile long * target, long newVal)
+inline long InterlockedExchange(volatile long* target, long newVal)
 {
+#if (defined(__GNUC__) || defined(__ICC)) && (defined(__i386__) || defined(__x86_64__))
+    long ret = newVal;
+     __asm__ __volatile__("lock\n\t"
+                          "xchgl %0,%1\n\t" : "=r" (ret) : "m" (target), "0" (ret) : "memory");
+     return ret;
+#else
+#warning Synchronizing not supported
+     long ret = *target;
+     *target = newVal;
+     return ret;
+#endif
 }
 
-inline void AtomicIncrement(volatile long * target)
+inline void InterlockedIncrement(volatile long* target)
 {
+    __sync_fetch_and_add(target, 1);
 }
 
-inline void AtomicDecrement(volatile long * target)
-{    
-}
-
-inline long AtomicCompareExchange(volatile long* target, long oldVal, long newVal)
-{   
-}
-
-inline long InterlockedExchangePointer(volatile long* target, long newVal)
+inline void InterlockedDecrement(volatile long* target)
 {
+    __sync_fetch_and_add(target, -1);
+}
+
+inline long InterlockedCompareExchange(volatile long* target, long expect, long newVal)
+{
+    return __sync_val_compare_and_swap(target, expect, newVal);
+}
+
+inline void* InterlockedExchangePointer(volatile void* target, void* newVal)
+{
+#if (defined(__GNUC__) || defined(__ICC)) && defined(__i386__)
+     void* ret = newVal;
+     __asm__ __volatile__("lock\n\t"
+                          "xchgl %0,%1\n\t" : "=r" (ret) : "m" (target), "0" (ret) : "memory");
+     return ret;
+#elif (defined(__GNUC__) || defined(__ICC)) && defined(__x86_64__)
+     EType* ret=p;
+     __asm__ __volatile__("lock\n\t"
+                          "xchgq %0,%1\n\t" : "=r" (ret) : "m" (target), "0" (ret) : "memory");
+     return ret;
+#else
+#warning Synchronizing not supported
+    void* ret = target;
+    *target = p;
+    return ret;
+ #endif
 }
 
 class AtomicFlag
@@ -100,7 +128,7 @@ public:
     }
     void SetValue(long value)
     {
-        InterlockedExchange((volatile LONG*)&number, value);
+        InterlockedExchange((volatile long*)&number, value);
     }
 private:
     AtomicNumber(const AtomicFlag&);

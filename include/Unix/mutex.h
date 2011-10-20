@@ -28,7 +28,10 @@
 #ifndef _MUTEX_H_
 #define _MUTEX_H_
 
+#include <sys/timeb.h>
 #include <pthread.h>
+#include <stdexcept>
+#include <cerrno>
 
 namespace cpptask
 {
@@ -52,13 +55,22 @@ public:
         ::pthread_mutex_lock(&pmutex);
     }
 
-    bool WaitLock(long timeWait = INFINITE)
+    bool WaitLock(unsigned long time)
     {
-        if (::hread_mutex_trylock(&pmutex) == 0)
+        const unsigned long NANOSEC_PER_MILLISEC = 1000000;
+        timespec spec;
+        timeb currSysTime;
+        ftime(&currSysTime);
+
+        spec.tv_sec = static_cast<long>(currSysTime.time);
+        spec.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+        spec.tv_nsec += time * NANOSEC_PER_MILLISEC;
+
+        if (::pthread_mutex_timedlock(&pmutex, &spec) == ETIMEDOUT)
         {
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
     void UnLock()

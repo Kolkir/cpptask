@@ -49,12 +49,13 @@ inline size_t GetCacheLineSize()
 
 void* AlignedAlloc(size_t size, size_t alignment)
 {
-    return _aligned_malloc(size, alignment);
+#warning Need implementation
+    return 0;
 }
 
 void AlignedFree(void* ptr)
 {
-    _aligned_free(ptr);
+#warning Need implementation
 }
 
 template<class T>
