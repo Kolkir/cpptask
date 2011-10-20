@@ -33,46 +33,24 @@
 namespace cpptask
 {
 
-inline long AtomicExchange(volatile long * Target, long Value)
+inline long AtomicExchange(volatile long * target, long newVal)
 {
-    asm( "xchg %0, (%1)" : "+r"(Value) : "r"(Target) );
-    return Value;
 }
 
-inline void AtomicIncrement(volatile long * Target)
+inline void AtomicIncrement(volatile long * target)
 {
-    asm volatile
-    (
-            "lock; incl (%0)"
-            : // No outputs
-            : "q" (Target)
-            : "cc", "memory"
-    );
 }
 
-inline void AtomicDecrement(volatile long * Target)
-{
-    asm volatile
-    (
-        "lock; decl (%0)"
-        : // No outputs
-        : "q" (Target)
-        : "cc", "memory"
-    );
+inline void AtomicDecrement(volatile long * target)
+{    
 }
 
-inline bool AtomicCompareExchange(volatile long* ptr, long oldVal, long newVal)
+inline long AtomicCompareExchange(volatile long* target, long oldVal, long newVal)
+{   
+}
+
+inline long InterlockedExchangePointer(volatile long* target, long newVal)
 {
-    register bool f;
-    __asm__ __volatile__
-    (
-        "lock; cmpxchgl %%ebx, %1;"
-        "setz %0;"
-        : "=r"(f), "=m"(*(ptr))
-        : "a"(oldVal), "b" (newVal)
-        : "memory"
-    );
-    return f;
 }
 
 class AtomicFlag
@@ -85,7 +63,7 @@ public:
     }
     bool IsSet()
     {
-        unsigned int f = InterlockedCompareExchange((volatile long*)&flag, 1, 1);
+        long f = InterlockedCompareExchange((volatile long*)&flag, 1, 1);
         if (f > 0)
         {
             return true;

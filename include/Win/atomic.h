@@ -43,7 +43,7 @@ public:
     }
     bool IsSet()
     {
-        unsigned int f = ::InterlockedCompareExchange((volatile LONG*)&flag, 1, 1);
+        LONG f = ::InterlockedCompareExchange((volatile LONG*)&flag, 1, 1);
         if (f > 0)
         {
             return true;
@@ -75,7 +75,7 @@ public:
     }
     long GetValue()
     {
-        unsigned long value = ::InterlockedCompareExchange((volatile LONG*)&number, number, number);
+        LONG value = ::InterlockedCompareExchange((volatile LONG*)&number, number, number);
         return value;
     }
     void SetValue(long value)
