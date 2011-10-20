@@ -29,6 +29,10 @@
 #define _EVENT_H_
 
 #include <pthread.h>
+#include "../mutex.h"
+
+#include <vector>
+#include <algorithm>
 
 namespace cpptask
 {
@@ -66,12 +70,20 @@ public:
         ++m_count;
         pthread_cond_broadcast(&m_cond);
         pthread_mutex_unlock(&m_mutex);
+
+        ScopedLock<Mutex> lock(&waitGuard);
+        std::vector<Event*>::iterator i = waitEvents.begin(), 
+                                      e = waitEvents.end();
+        for (;i != e; ++i)
+        {
+            (*i)->Signal();
+        }
     }
     void Reset()
     {
         m_signaled = false;
     }
-    friend int WaitForTwo(Event& firstEvent, Event& secondEvent);
+    friend void WaitForTwo(Event& firstEvent, Event& secondEvent);
 private:
     Event(const Event&);
     const Event& operator=(const Event&);
@@ -112,23 +124,64 @@ private:
         }
         return true;
     }
+
+    void AddWaitEvent(Event* event)
+    {
+        ScopedLock<Mutex> lock(&waitGuard);
+        waitEvents.push_back(event);
+    }
+    void DelWaitEvent(Event* event)
+    {        
+        ScopedLock<Mutex> lock(&waitGuard);
+        std::vector<Event*>::iterator i = std::find(waitEvents.begin(), 
+                                                    waitEvents.end(),
+                                                    event);
+        if (i != waitEvents.end())
+        {
+            waitEvents.erase(i);
+        }
+    }
 private:
     pthread_mutex_t m_mutex;
     pthread_cond_t m_cond;
     bool m_signaled;
     int m_count;
+    //multiple wait implementation
+    Mutex waitGuard;
+    std::vector<Event*> waitEvents;
 };
 
-inline int WaitForTwo(Event& firstEvent, Event& secondEvent)
-{
-    //create common Event
-    //firstEvent - add common Event
-    //secondEvent - add common Event
-    //wait for common Event
+inline void WaitForTwo(Event& firstEvent, Event& secondEvent)
+{    
+    Event commonEvent;
 
-    //when signal event - signal all common events in list
-    //add list of events to event
-    return -1;
+    bool signaled = firstEvent.CheckAndLock();
+    if (!signaled)
+    {
+        firstEvent.AddWaitEvent(&commonEvent);
+    }
+    else
+    {
+        firstEvent.UnLock();
+        return;
+    }
+
+    signaled = secondEvent.CheckAndLock();
+    if (!signaled)
+    {
+        secondEvent.AddWaitEvent(&commonEvent);
+    }
+    else
+    {
+        secondEvent.UnLock();
+        return;
+    }
+    firstEvent.UnLock();
+    secondEvent.UnLock();
+    commonEvent.Wait();
+
+    firstEvent.DelWaitEvent(&commonEvent);
+    secondEvent.DelWaitEvent(&commonEvent);
 }
 
 
