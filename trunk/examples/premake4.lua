@@ -9,7 +9,10 @@ solution "CppTaskTest"
 	location(scripts_path)
 	configurations { "Debug", "Release" }
     platforms { "x32", "x64" }
-   
+    if (linux) then
+        package.linkoptions = { "-pthread" }
+    end
+    
 	configuration { "Debug" }
 		targetdir "bin/debug"
  
