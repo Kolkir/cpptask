@@ -91,6 +91,34 @@ if (quard.WaitLock(timeInMiliseconds))
 
 == Event primitive ==
 
+Windows API like Event synchronization primitive. One thread can wait for an event which can be signaled from many other threads.
+{{{
+#include <event.h>
+...
+cpptask::Event event;
+...
+event.Signal();
+...
+event.Wait();
+// do work work
+event.Reset();
+...
+std::vector<Events*> events;
+int signaled = WaitForMultiple(events);
+switch (signaled)
+{
+case -1: 
+    // error
+    break;
+case 0:
+    // first event is in signaled state
+    break;
+case 1:
+    // second event is in signaled state
+    break;
+}
+}}}
+
 == Task class for faster job delivering to threads ==
 
 == Parallel-For algorithm ==
