@@ -28,6 +28,7 @@
 #ifndef _TIMER_H_
 #define _TIMER_H_
 
+#include <sys/time.h>
 
 namespace cpptask
 {
@@ -36,21 +37,28 @@ class Timer
 public:
     Timer()
     {
-
+        startTime.tv_sec = 0;
+        startTime.tv_usec = 0;
     }
     void Start()
     {
-
+        gettimeofday(&startTime, 0);
     }
     double End()
     {
-        return 0;
+        struct timeval currentTime;
+        gettimeofday(&currentTime, 0);
+	
+        double const secs = currentTime.tv_sec - startTime.tv_sec;
+        double const us = currentTime.tv_usec - startTime.tv_usec;
+ 	
+        return (secs * 1000.0) + (us / 1000.0);
     }
 private:
     Timer(const Timer&);
     const Timer& operator=(const Timer&);
 private:
-
+    struct timeval startTime; 
 };
 }
 

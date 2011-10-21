@@ -25,14 +25,13 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _TIMER_BASE_H_
-#define _TIMER_BASE_H_
+#ifndef _TIMER_SELECT_H_
+#define _TIMER_SELECT_H_
 
 #ifdef _WIN32
 #include "Win/timer.h"
 #else
 #include "Unix/timer.h"
 #endif
-
 
 #endif
