@@ -47,53 +47,20 @@ inline size_t GetCacheLineSize()
     return i;
 }
 
-void* AlignedAlloc(size_t size, size_t alignment)
+inline void* AlignedAlloc(size_t size, size_t alignment)
 {
-#warning Need implementation
+    void* ret = 0;
+    if (posix_memalign(&ret, alignment, size) != 0)
+    {
+        ret = 0;
+    }
     return 0;
 }
 
-void AlignedFree(void* ptr)
+inline void AlignedFree(void* ptr)
 {
-#warning Need implementation
+    free(ptr);
 }
-
-template<class T>
-class AlignedPointer
-{
-public:
-     AlignedPointer()
-        : p(0)
-        , memory(0)
-    {
-    }
-    ~AlignedPointer()
-    {
-        if (p != 0)
-        {
-            p->~T();
-        }
-        if (memory != 0)
-        {
-            AlignedFree(memory);
-        }
-    }
-    void SetPointer(T* p)
-    {
-        this->p = p;
-    }
-    void SetMemory(void* memory)
-    {
-        this->memory = memory;
-    }
-    void* GetMemory()
-    {
-        return memory;
-    }
-private:
-    T* p;
-    void* memory;
-};
 
 }
 

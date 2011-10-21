@@ -34,4 +34,44 @@
 #include "Unix/alignedalloc.h"
 #endif
 
+namespace cpptask
+{
+
+template<class T>
+class AlignedPointer
+{
+public:
+     AlignedPointer()
+        : p(0)
+        , memory(0)
+    {
+    }
+    ~AlignedPointer()
+    {
+        if (p != 0)
+        {
+            p->~T();
+        }
+        if (memory != 0)
+        {
+            AlignedFree(memory);
+        }
+    }
+    void SetPointer(T* p)
+    {
+        this->p = p;
+    }
+    void SetMemory(void* memory)
+    {
+        this->memory = memory;
+    }
+    void* GetMemory()
+    {
+        return memory;
+    }
+private:
+    T* p;
+    void* memory;
+};
+}
 #endif

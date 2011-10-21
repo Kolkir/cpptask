@@ -129,7 +129,7 @@ inline size_t GetCacheLineSize()
     return line_size;
 }
 
-void* AlignedAlloc(size_t size, size_t align_size)
+inline void* AlignedAlloc(size_t size, size_t align_size)
 {
 #ifdef __GNUC__
     return __mingw_aligned_malloc(size, align_size);
@@ -138,7 +138,7 @@ void* AlignedAlloc(size_t size, size_t align_size)
 #endif
 }
 
-void AlignedFree(void* ptr)
+inline void AlignedFree(void* ptr)
 {
 #ifdef __GNUC__
     return __mingw_aligned_free(ptr);
@@ -146,43 +146,6 @@ void AlignedFree(void* ptr)
     return _aligned_free(ptr);
 #endif
 }
-
-template<class T>
-class AlignedPointer
-{
-public:
-     AlignedPointer()
-        : p(0)
-        , memory(0)
-    {
-    }
-    ~AlignedPointer()
-    {
-        if (p != 0)
-        {
-            p->~T();
-        }
-        if (memory != 0)
-        {
-            AlignedFree(memory);
-        }
-    }
-    void SetPointer(T* p)
-    {
-        this->p = p;
-    }
-    void SetMemory(void* memory)
-    {
-        this->memory = memory;
-    }
-    void* GetMemory()
-    {
-        return memory;
-    }
-private:
-    T* p;
-    void* memory;
-};
 
 }
 

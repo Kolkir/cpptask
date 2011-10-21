@@ -91,7 +91,7 @@ inline int WaitForMultiple(std::vector<Event*>& events)
         {
             handles.push_back((*i)->hEvent);
         }        
-        DWORD rez = ::WaitForMultipleObjects(handles.size(), &handles[0], FALSE, INFINITE);
+        DWORD rez = ::WaitForMultipleObjects(static_cast<DWORD>(handles.size()), &handles[0], FALSE, INFINITE);
         if (rez >= WAIT_OBJECT_0 && rez <= WAIT_OBJECT_0 + handles.size() - 1)
         {
             return rez - WAIT_OBJECT_0;
