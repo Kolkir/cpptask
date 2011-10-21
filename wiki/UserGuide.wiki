@@ -13,7 +13,7 @@ Root directory of the project contain sub directory named "examples" where you c
 
 If you need only simple thread implementation, you could use {{{cpptask::Thread}}} class, where you will need override Run method of the class. Or you can use {{{cpptask::ThreadFunction}}} class, which take functor as constructor parameter.
 {{{
-#include <Thread.h>
+#include <thread.h>
 ...
 typedef void (*ThreadFunc)(void);
 void ThreadFunc1()
@@ -31,9 +31,39 @@ mythread.Wait();
 
 Library provide only two types of atomics values:
  * {{{cpptask::AtomicFlag}}} - class represents boolean values you can Set flag and Reset it.
+{{{
+#include <atomic.h>
+...
+cpptask::AtomicFlag someFlag;
+someFlag.Set();
+if (someFlag.IsSet())
+{
+    ...
+    someFlag.Reset();
+}
+...
+}}}
  * {{{cpptask::AtomicNumber}}} - class represents c++ long value type you can atomicaly {{{Inc/Dec}}} and {{{SetValue/GetValue}}} from it.
+{{{
+#include <atomic.h>
+...
+cpptask::AtomicNumber counter;
+counter.SetValue(10);
+...
+counter.Inc();
+...
+counter.Dec();
+...
+if (counter.GetValue() == 10)
+{
+    ...
+}
+...
+}}}
 
 == Mutex primitive ==
+
+
 
 == Event primitive ==
 
