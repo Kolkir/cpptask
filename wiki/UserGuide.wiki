@@ -67,7 +67,27 @@ if (counter.GetValue() == 10)
 
 == Mutex primitive ==
 
-
+Standard Mutex synchronization primitive:
+{{{
+#include <mutex.h>
+...
+cpptask::Mutex guard;
+...
+{
+   cpptask::ScopedLock(&guard);
+   // synchronized work
+   ...
+}
+...
+long timeInMiliseconds = 10;
+if (quard.WaitLock(timeInMiliseconds))
+{
+   // wait for given time when mutex will be released and make a lock
+   ...
+   quard.UnLock();
+}
+...
+}}}
 
 == Event primitive ==
 
