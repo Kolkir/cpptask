@@ -8,10 +8,7 @@ end
 solution "CppTaskTest"
 	location(scripts_path)
 	configurations { "Debug", "Release" }
-    platforms { "x32", "x64" }
-    if (linux) then
-        package.linkoptions = { "-pthread" }
-    end
+	platforms { "x32", "x64" }
     
 	configuration { "Debug" }
 		targetdir "bin/debug"
@@ -23,7 +20,10 @@ solution "CppTaskTest"
 		kind "ConsoleApp"
 		language "C++"        
 		files { "**.h", "**.cpp", "../include/**.h" } 
-        includedirs { "../include" }
+		includedirs { "../include" }
+		if (_OPTIONS["os"] == "linux") then
+			links  { "pthread" }
+		end
 
 		configuration "Debug"
 			defines { "DEBUG" }

@@ -54,7 +54,7 @@ inline void* AlignedAlloc(size_t size, size_t alignment)
     {
         ret = 0;
     }
-    return 0;
+    return ret;
 }
 
 inline void AlignedFree(void* ptr)
