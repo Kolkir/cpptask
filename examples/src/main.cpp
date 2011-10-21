@@ -64,10 +64,10 @@ void SerialTest1()
 {
     cpptask::Timer timer;
     ArrayType big_array = GetBigArray();
-    
+
     timer.Start();
     std::for_each(big_array.begin(), big_array.end(), Test1());
-    
+
     std::cout << "Serial time is : " << timer.End() << " ms\n";
 }
 
@@ -82,8 +82,8 @@ void ParallelTest1()
     big_array = GetBigArray();
 
     timer.Start();
-    cpptask::ParallelFor(big_array.begin(), big_array.end(), Test1(), manager);    
-    
+    cpptask::ParallelFor(big_array.begin(), big_array.end(), Test1(), manager);
+
     std::cout << "Parallel time is : " << timer.End() << " ms\n";
 }
 
@@ -97,7 +97,7 @@ struct Test21
         std::advance(e, big_array->size() / 2);
         for (;i != e; ++i)
         {
-            Test1()(*i);            
+            Test1()(*i);
         }
     }
     ArrayType* big_array;
@@ -128,8 +128,8 @@ void ParallelTest2()
     big_array = GetBigArray();
 
     timer.Start();
-    cpptask::ParallelInvoke(Test21(&big_array), Test22(&big_array), manager);    
-    
+    cpptask::ParallelInvoke(Test21(&big_array), Test22(&big_array), manager);
+
     std::cout << "Parallel time is : " << timer.End() << " ms\n";
 }
 
@@ -147,11 +147,11 @@ double SerialTest2()
 {
     cpptask::Timer timer;
     ArrayType big_array = GetBigArray();
-    
+
     timer.Start();
     double res = 0;
     res = std::accumulate(big_array.begin(), big_array.end(), res, Test3());
-    
+
     std::cout << "Serial time is : " << timer.End() << " ms\n";
     return res;
 }
@@ -160,7 +160,7 @@ class Accumulator
 {
 public:
     Accumulator(double init) : res(init){}
-    Accumulator(const Accumulator& accumulator, cpptask::SplitMark) 
+    Accumulator(const Accumulator& accumulator, cpptask::SplitMark)
         : res(accumulator.res){}
 
     void operator()(const cpptask::Range<ArrayType::iterator>& range)
@@ -195,8 +195,8 @@ double ParallelTest3()
 
     timer.Start();
     Accumulator accumulator(0);
-    cpptask::ParallelReduce(big_array.begin(), big_array.end(), accumulator, manager);    
-    
+    cpptask::ParallelReduce(big_array.begin(), big_array.end(), accumulator, manager);
+
     std::cout << "Parallel time is : " << timer.End() << " ms\n";
     return accumulator.res;
 }
@@ -250,20 +250,27 @@ int main(int /*argc*/, char* /*argv*/[])
     t1.Wait();
     t2.Wait();
 
-
+    std::cout << "------------------------\n";
     SerialTest1();
 
+    std::cout << "------------------------\n";
     ParallelTest1();
 
+    std::cout << "------------------------\n";
     ParallelTest2();
 
+    std::cout << "------------------------\n";
     double r1 = SerialTest2();
 
+    std::cout << "------------------------\n";
     double r2 = ParallelTest3();
 
+    std::cout << "------------------------\n";
     std::cout << "Results are " << (r1 == r2)  << "\n";
 
+    std::cout << "------------------------\n";
     ExceptionTest();
 
+    std::cout << "------------------------\n";
     return 0;
 }

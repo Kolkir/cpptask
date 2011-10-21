@@ -96,13 +96,6 @@ private:
     {
         const unsigned long NANOSEC_PER_MILLISEC = 1000000;
         int rc = 0;
-        timespec spec;
-        timeb currSysTime;
-        ftime(&currSysTime);
-
-        spec.tv_sec = static_cast<long>(currSysTime.time);
-        spec.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
-        spec.tv_nsec += time * NANOSEC_PER_MILLISEC;
 
         pthread_mutex_lock(&pmutex);
         long curcount = count;
@@ -110,6 +103,14 @@ private:
         {
             if (!infiniteWait)
             {
+                timespec spec;
+                timeb currSysTime;
+                ftime(&currSysTime);
+
+                spec.tv_sec = static_cast<long>(currSysTime.time);
+                spec.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
+                spec.tv_nsec += time * NANOSEC_PER_MILLISEC;
+
                 rc = pthread_cond_timedwait(&pcond, &pmutex, &spec);
             }
             else

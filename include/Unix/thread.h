@@ -93,7 +93,7 @@ private:
             owner->startEvent.Wait();
             owner->exitCode = owner->ThreadFuncImpl();
         }
-        return 0;
+        pthread_exit(0);
     }
 
     unsigned ThreadFuncImpl()
