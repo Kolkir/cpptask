@@ -64,7 +64,7 @@ public:
     void Push(MPSCNode* n)
     {
         n->SetNext(0);
-        MPSCNode* prev = static_cast<MPSCNode*>(InterlockedExchangePointer((volatile void*)&head, n));
+        MPSCNode* prev = static_cast<MPSCNode*>(InterlockedExchangePointer((volatile void**)&head, n));
         prev->SetNext(n);
     }
 

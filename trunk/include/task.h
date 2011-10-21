@@ -39,7 +39,6 @@
 #include <algorithm>
 #include <functional>
 #include <vector>
-#include <iostream>
 
 namespace cpptask
 {
@@ -189,7 +188,7 @@ public:
     {
         while (!done.IsSet())
         {
-            DoTask();
+            DoTask();;
         }
     }
     bool HasTask()
@@ -224,7 +223,7 @@ private:
         {
             task->Run();
             task->SetParentThread(0);
-            task->SignalDone();
+            task->SignalDone();;
             task = 0;
             hasTask.Reset();
             taskEvent.Reset();
@@ -280,6 +279,15 @@ public:
             TaskThreadPtr tptr(new TaskThread(&emptyThreadEvent));
             threads.push_back(tptr);
             tptr->Start();
+        }
+    }
+    ~TaskThreadPool()
+    {
+        Threads::iterator i = threads.begin();
+        Threads::iterator e = threads.end();
+        for (; i != e; ++i)
+        {
+            i->Reset(0);
         }
     }
 
