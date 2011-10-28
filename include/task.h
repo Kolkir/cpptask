@@ -95,7 +95,7 @@ public:
 
     void WaitChildTask(Task* childTask);
 
-    bool ChechFinished()
+    bool CheckFinished()
     {
         if (waitEvent.Check())
         {
@@ -171,7 +171,7 @@ public:
             emptyThreadEvent->Signal();
         }
 
-        while (!waitTask->ChechFinished())
+        while (!waitTask->CheckFinished())
         {
             DoTask(&waitTask->waitEvent);
         }
@@ -223,7 +223,7 @@ private:
         {
             task->Run();
             task->SetParentThread(0);
-            task->SignalDone();;
+            task->SignalDone();
             task = 0;
             hasTask.Reset();
             taskEvent.Reset();

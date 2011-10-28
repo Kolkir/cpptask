@@ -39,12 +39,17 @@ inline size_t GetCacheLineSize()
 {
     FILE * p = 0;
     p = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
-    unsigned int i = 0;
-    if (p) {
-        fscanf(p, "%d", &i);
+    unsigned int size = 0;
+    if (p)
+    {
+        fscanf(p, "%d", &size);
         fclose(p);
     }
-    return i;
+    else
+    {
+        size = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+    }
+    return size;
 }
 
 inline void* AlignedAlloc(size_t size, size_t alignment)

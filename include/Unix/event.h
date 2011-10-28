@@ -36,6 +36,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <time.h>
 
 namespace cpptask
 {
@@ -51,7 +52,6 @@ public:
         pthread_mutexattr_destroy(&attr);
         pthread_cond_init(&pcond, NULL);
         signaled = false;
-        count = 0;
     }
     ~Event()
     {
@@ -60,84 +60,63 @@ public:
     }
     void Wait()
     {
-        Wait(0, true);
-    }
-    bool Check()
-    {
-        return Wait(0, false);
-    }
-    void Signal()
-    {
-        ScopedLock<Mutex> lock(&waitGuard);
-
-        pthread_mutex_lock(&pmutex);
-        signaled = true;
-        ++count;
-        pthread_cond_broadcast(&pcond);
-        pthread_mutex_unlock(&pmutex);
-
-        std::vector<Event*>::iterator i = waitEvents.begin(),
-                                      e = waitEvents.end();
-        for (;i != e; ++i)
-        {
-            (*i)->Signal();
-        }
-    }
-    void Reset()
-    {
-        signaled = false;
-    }
-    friend inline int WaitForMultiple(std::vector<Event*>& events);
-private:
-    Event(const Event&);
-    const Event& operator=(const Event&);
-
-    bool Wait(unsigned long time, bool infiniteWait)
-    {
-        const unsigned long NANOSEC_PER_MILLISEC = 1000000;
         int rc = 0;
-
         pthread_mutex_lock(&pmutex);
-        long curcount = count;
-        while (!signaled && count == curcount)
+        while (!signaled)
         {
-            if (!infiniteWait)
-            {
-                timespec spec;
-                timeb currSysTime;
-                ftime(&currSysTime);
-
-                spec.tv_sec = static_cast<long>(currSysTime.time);
-                spec.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
-                spec.tv_nsec += time * NANOSEC_PER_MILLISEC;
-
-                rc = pthread_cond_timedwait(&pcond, &pmutex, &spec);
-            }
-            else
-            {
-                pthread_cond_wait(&pcond, &pmutex);
-            }
+            rc = pthread_cond_wait(&pcond, &pmutex);
             if (rc != 0)
             {
                 break;
             }
         }
         pthread_mutex_unlock(&pmutex);
-        if (rc == ETIMEDOUT)
-        {
-            return false;
-        }
-        return true;
     }
+    bool Check()
+    {
+        bool isSignaled = false;
+        pthread_mutex_lock(&pmutex);
+        isSignaled = signaled;
+        pthread_mutex_unlock(&pmutex);
+        return isSignaled;
+    }
+    void Signal()
+    {
+        pthread_mutex_lock(&pmutex);
+        if (!signaled)
+        {
+            signaled = true;
+            pthread_cond_broadcast(&pcond);
+
+            std::vector<Event*>::iterator i = waitEvents.begin(),
+                                          e = waitEvents.end();
+            for (;i != e; ++i)
+            {
+                (*i)->Signal();
+            }
+        }
+        pthread_mutex_unlock(&pmutex);
+    }
+    void Reset()
+    {
+        pthread_mutex_lock(&pmutex);
+        signaled = false;
+        pthread_mutex_unlock(&pmutex);
+    }
+    friend inline int WaitForMultiple(std::vector<Event*>& events);
+private:
+    Event(const Event&);
+    const Event& operator=(const Event&);
 
     void AddWaitEvent(Event* event)
     {
-        ScopedLock<Mutex> lock(&waitGuard);
+        pthread_mutex_lock(&pmutex);
         waitEvents.push_back(event);
+        pthread_mutex_unlock(&pmutex);
     }
     void DelWaitEvent(Event* event)
     {
-        ScopedLock<Mutex> lock(&waitGuard);
+        pthread_mutex_lock(&pmutex);
         std::vector<Event*>::iterator i = std::find(waitEvents.begin(),
                                                     waitEvents.end(),
                                                     event);
@@ -145,14 +124,13 @@ private:
         {
             waitEvents.erase(i);
         }
+        pthread_mutex_unlock(&pmutex);
     }
 private:
     pthread_mutex_t pmutex;
     pthread_cond_t pcond;
     bool signaled;
-    int count;
     //multiple wait implementation
-    Mutex waitGuard;
     std::vector<Event*> waitEvents;
 };
 
@@ -163,31 +141,41 @@ inline int WaitForMultiple(std::vector<Event*>& events)
     std::vector<Event*>::iterator i = events.begin();
     std::vector<Event*>::iterator e = events.end();
 
-    int index = 0;
+    int index = -1;
     for (; i != e; ++i, ++index)
     {
         (*i)->AddWaitEvent(&commonEvent);
         if ((*i)->Check())
         {
-            return index;
+            ++index;
+            break;
         }
     }
 
-    commonEvent.Wait();
+    if (index == -1)
+    {
+        commonEvent.Wait();
+    }
 
     i = events.begin();
-    index = 0;
-    int rez = -1;
+    if (index == -1)
+    {
+        for (; i != e; ++i, ++index)
+        {
+            if ((*i)->Check())
+            {
+                ++index;
+                break;
+            }
+        }
+    }
+
     for (; i != e; ++i, ++index)
     {
         (*i)->DelWaitEvent(&commonEvent);
-        if ((*i)->Check())
-        {
-            rez = index;
-        }
     }
 
-    return rez;
+    return index;
 }
 
 
