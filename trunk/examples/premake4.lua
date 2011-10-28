@@ -22,7 +22,7 @@ solution "CppTaskTest"
 		files { "**.h", "**.cpp", "../include/**.h" } 
 		includedirs { "../include" }
 		if (_OPTIONS["os"] == "linux") then
-			links  { "pthread" }
+			links  { "pthread","rt" }
 		end
 
 		configuration "Debug"
