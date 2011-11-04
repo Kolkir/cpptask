@@ -209,5 +209,18 @@ std::cout << accumulator.res;
 }}}
 
 == Parallel-Invoke algorithm ==
+Algorithm simply execute two functions in parallel.
+{{{
+#include <parallelinvoke.h>
+...
+cpptask::ParallelInvoke(func1, func2, manager);
+}}}
 
 == Delivering exceptions from threads and tasks to caller ==
+If you want to get exceptions from threads or tasks you have to derive this exceptions from cpptask::Exception class. After throwing sucn exception you will be able to get them from GetLastException method of Thread and Task classes. If you will throw another exception they will be hidden, and there will be only one way to know Thread execution result call Thread::GetExitCode method. Also all cpptask algorithms will automatically rethrow cpptask::Exception after they finished.
+
+== Lambda expressions support ==
+New C++11 lambdas can be used in all algorithms of the library.
+{{{
+cpptask::ParallelInvoke([&](){//expensive work}, [&](){//expensive work}, manager);
+}}}
