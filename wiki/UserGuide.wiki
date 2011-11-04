@@ -120,6 +120,29 @@ case 1:
 }}}
 
 == Task class for faster job delivering to threads ==
+To schedule some job to the thread engine you can derive your class from the Task class and override Execute method. Then you have to create and initialize {{{TaskManager}}} object. After that you have to add task to the manager and ask manager to start new jobs. Also Task class have method Wait which will lock you thread until task will be processed, and have method GetLastException which you can call after wait to check if there were some exceptions.
+{{{
+#include "task.h"
+...
+class MyTask : public Task
+{
+public:
+    virtual void Execute()
+    {
+        ...
+    }
+};
+...
+#include "taskmanager.h"
+...
+cpptask::TaskThreadPool threadPool(THREADS_NUM);
+cpptask::TaskManager manager(threadPool);
+std::shared_ptr<MyTask> task(new MyTask);
+manager.AddTask(task.get());
+manager.StartTasks();
+...
+task->Wait();
+}}}
 
 == Parallel-For algorithm ==
 
