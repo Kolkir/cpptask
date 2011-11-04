@@ -120,7 +120,7 @@ case 1:
 }}}
 
 == Task class for faster job delivering to threads ==
-To schedule some job to the thread engine you can derive your class from the Task class and override Execute method. Then you have to create and initialize {{{TaskManager}}} object. After that you have to add task to the manager and ask manager to start new jobs. Also Task class have method Wait which will lock you thread until task will be processed, and have method GetLastException which you can call after wait to check if there were some exceptions.
+To schedule some job to the thread engine you can derive your class from the Task class and override Execute method. Then you have to create and initialize {{{TaskManager}}} object. After that you have to add task to the manager and ask manager to start new jobs. Also Task class have method Wait which will lock you thread until task will be processed, and have method {{{GetLastException}}} which you can call after wait to check if there were some exceptions.
 {{{
 #include "task.h"
 ...
@@ -145,11 +145,25 @@ task->Wait();
 }}}
 
 == Parallel-For algorithm ==
+Algorithm to execute in parallel some identical operations on container's elements.
+{{{
+#include <parallelfor.h>
+...
+cpptask::TaskThreadPool threadPool(THREADS_NUM);
+cpptask::TaskManager manager(threadPool);
+...
+void func()(double& x)
+{
+   //some operation
+}
+...
+std::vector<double> array;
+...
+cpptask::ParallelFor(array.begin(), array.end(), func, manager);
+}}}
 
 == Parallel-Reduce algorithm ==
 
 == Parallel-Invoke algorithm ==
 
 == Delivering exceptions from threads and tasks to caller ==
-
-== Support of lambda expressions  ==
