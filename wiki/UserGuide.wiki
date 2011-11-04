@@ -120,7 +120,7 @@ case 1:
 }}}
 
 == Task class for faster job delivering to threads ==
-To schedule some job to the thread engine you can derive your class from the Task class and override Execute method. Then you have to create and initialize {{{TaskManager}}} object. After that you have to add task to the manager and ask manager to start new jobs. Also Task class have method Wait which will lock you thread until task will be processed, and have method {{{GetLastException}}} which you can call after wait to check if there were some exceptions.
+To schedule some job to the thread engine you can derive your class from the Task class and override Execute method. Then you have to create and initialize {{{TaskManager}}} object. After that you have to add task to the manager and ask manager to start new jobs. Also Task class have method Wait which will lock you thread until task will be processed, and have method {{{GetLastException}}} which you can call after wait to check if there were some exceptions. 
 {{{
 #include "task.h"
 ...
@@ -143,6 +143,7 @@ manager.StartTasks();
 ...
 task->Wait();
 }}}
+If you start some child tasks inside other task and want to wait for them you have to call WaitChildTask function instead of Task::Wait.
 
 == Parallel-For algorithm ==
 Algorithm to execute in parallel some identical operations on container's elements.
@@ -163,6 +164,49 @@ cpptask::ParallelFor(array.begin(), array.end(), func, manager);
 }}}
 
 == Parallel-Reduce algorithm ==
+It is a some sort of parallel aggregation algorithm. The result of it will be the same as after std::accumulate. To use such algorithm you have to implement class with next three methods:
+
+1. Copy constructor which will take as second parameter {{{cpptask::SplitMark}}} type - will be called to separate initial range to smaller ranges and divide them between threads.
+
+2. Function operator which will take Range object to perform some operations on this range
+
+3. Join method which will be called to combine results from subranges processing.
+
+{{{
+#include <parallelreduce.h>
+...
+typedef std::vector<double> ArrayType;
+
+class Accumulator
+{
+public:
+    Accumulator(double init) : res(init){}
+    Accumulator(const Accumulator& accumulator, cpptask::SplitMark)
+        : res(accumulator.res){}
+
+    void operator()(const cpptask::Range<ArrayType::iterator>& range)
+    {
+        ArrayType::iterator i = range.start;
+        ArrayType::iterator e = range.end;
+        for(; i != e; ++i)
+        {
+            res += i;
+        };
+    }
+
+    void Join(const Accumulator& accumulator)
+    {
+        res += accumulator.res;
+    }
+
+    double res;
+};
+...
+Accumulator accumulator(0);
+cpptask::ParallelReduce(array.begin(), array.end(), accumulator, manager);
+std::cout << accumulator.res;
+...
+}}}
 
 == Parallel-Invoke algorithm ==
 
