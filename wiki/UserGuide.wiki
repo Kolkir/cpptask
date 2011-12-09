@@ -74,7 +74,7 @@ Standard Mutex synchronization primitive:
 cpptask::Mutex guard;
 ...
 {
-   cpptask::ScopedLock(&guard);
+   cpptask::ScopedLock lock(&guard);
    // synchronized work
    ...
 }
