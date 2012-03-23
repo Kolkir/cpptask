@@ -89,7 +89,7 @@ public:
     {
         if (task != 0)
         {
-           taskQueue.Push(task);       
+           taskQueue.Push(task);
         }
     }
 

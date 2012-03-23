@@ -25,9 +25,9 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <parallelfor.h>
+//#include <parallelfor.h>
 #include <parallelinvoke.h>
-#include <parallelreduce.h>
+//#include <parallelreduce.h>
 #include <timer.h>
 
 #include <cmath>
@@ -70,7 +70,7 @@ void SerialTest1()
 
     std::cout << "Serial time is : " << timer.End() << " ms\n";
 }
-
+/*
 void ParallelTest1()
 {
     cpptask::Timer timer;
@@ -86,7 +86,7 @@ void ParallelTest1()
 
     std::cout << "Parallel time is : " << timer.End() << " ms\n";
 }
-
+*/
 struct Test21
 {
     Test21(ArrayType* big_array) : big_array(big_array){}
@@ -117,6 +117,7 @@ struct Test22
     }
     ArrayType* big_array;
 };
+
 void ParallelTest2()
 {
     cpptask::Timer timer;
@@ -132,7 +133,7 @@ void ParallelTest2()
 
     std::cout << "Parallel time is : " << timer.End() << " ms\n";
 }
-
+/*
 struct Test3
 {
     double operator()(double& x, double& y)
@@ -240,25 +241,25 @@ void ThreadFunc2()
         cpptask::Sleep(10);
     }
 }
-
+*/
 int main(int /*argc*/, char* /*argv*/[])
 {
-    cpptask::ThreadFunction<ThreadFunc> t1(&ThreadFunc1);
-    cpptask::ThreadFunction<ThreadFunc> t2(&ThreadFunc2);
-    t1.Start();
-    t2.Start();
-    t1.Wait();
-    t2.Wait();
+    //cpptask::ThreadFunction<ThreadFunc> t1(&ThreadFunc1);
+    //cpptask::ThreadFunction<ThreadFunc> t2(&ThreadFunc2);
+    //t1.Start();
+    //t2.Start();
+    //t1.Wait();
+    //t2.Wait();
 
     std::cout << "------------------------\n";
     SerialTest1();
 
-    std::cout << "------------------------\n";
-    ParallelTest1();
+    //std::cout << "------------------------\n";
+    //ParallelTest1();
 
     std::cout << "------------------------\n";
     ParallelTest2();
-
+	/*
     std::cout << "------------------------\n";
     double r1 = SerialTest2();
 
@@ -272,5 +273,6 @@ int main(int /*argc*/, char* /*argv*/[])
     ExceptionTest();
 
     std::cout << "------------------------\n";
+	*/
     return 0;
 }
