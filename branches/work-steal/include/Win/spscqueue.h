@@ -47,7 +47,7 @@ public:
     { 
         Node* n = new Node; 
         n->next = 0; 
-        tail = head = first = tail_copy = n; 
+        head = tail = first = head_copy = n; 
     } 
 
     ~SPSCQueue() 
@@ -67,16 +67,16 @@ public:
         Node* n = AllocNode(); 
         n->next = 0; 
         n->value = v; 
-        StoreRelease(&head->next, n); 
-        head = n; 
+        StoreRelease(&tail->next, n); 
+        tail = n; 
     } 
 
     bool Pop(T& v) 
     { 
-        if (LoadConsume(&tail->next)) 
+        if (LoadConsume(&head->next)) 
         { 
-            v = tail->next->value; 
-            StoreRelease(&tail, tail->next); 
+            v = head->next->value; 
+            StoreRelease(&head, head->next); 
             return true; 
         } 
         else 
@@ -100,16 +100,16 @@ private:
         // first tries to allocate node from internal node cache, 
         // if attempt fails, allocates node via ::operator new() 
 
-        if (first != tail_copy) 
+        if (first != head_copy) 
         { 
             Node* n = first; 
             first = first->next; 
             return n; 
         } 
       
-        tail_copy = LoadConsume(&tail); 
+        head_copy = LoadConsume(&head); 
 
-        if (first != tail_copy) 
+        if (first != head_copy) 
         { 
             Node* n = first; 
             first = first->next; 
@@ -141,7 +141,7 @@ private:
 private: 
     // consumer part 
     // accessed mainly by consumer, infrequently be producer 
-    Node* tail; // tail of the queue 
+    Node* head; // head of the queue 
 
     // delimiter between consumer part and producer part, 
     // so that they situated on different cache lines 
@@ -149,9 +149,9 @@ private:
 
     // producer part 
     // accessed only by producer 
-    Node* head; // head of the queue 
-    Node* first; // last unused node (tail of node cache) 
-    Node* tail_copy; // helper (points somewhere between first and tail) 
+    Node* tail; // tail of the queue 
+    Node* first; // last unused node (head of node cache) 
+    Node* head_copy; // helper (points somewhere between first and head) 
     }; 
 }
 

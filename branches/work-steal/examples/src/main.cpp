@@ -117,7 +117,7 @@ struct Test22
     }
     ArrayType* big_array;
 };
-
+/*
 void ParallelTest2()
 {
     cpptask::Timer timer;
@@ -243,6 +243,12 @@ void ThreadFunc2()
 */
 int main(int /*argc*/, char* /*argv*/[])
 {
+    cpptask::SPSCQueue<int> q;
+    q.Push(1345);
+    q.Push(467);
+    int v(0);
+    bool ok = q.Pop(v);
+
     //cpptask::ThreadFunction<ThreadFunc> t1(&ThreadFunc1);
     //cpptask::ThreadFunction<ThreadFunc> t2(&ThreadFunc2);
     //t1.Start();
@@ -251,13 +257,13 @@ int main(int /*argc*/, char* /*argv*/[])
     //t2.Wait();
 
     std::cout << "------------------------\n";
-    SerialTest1();
+    //SerialTest1();
 
     //std::cout << "------------------------\n";
     //ParallelTest1();
 
     std::cout << "------------------------\n";
-    ParallelTest2();
+    //ParallelTest2();
 	/*
     std::cout << "------------------------\n";
     double r1 = SerialTest2();
