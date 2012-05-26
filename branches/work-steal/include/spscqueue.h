@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,64 +25,13 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _PARALLEL_INVOKE_H_
-#define _PARALLEL_INVOKE_H_
+#ifndef _SPSCQUEUE_SELECT_H_
+#define _SPSCQUEUE_SELECT_H_
 
-#include "taskmanager.h"
-
-namespace cpptask
-{
-
-template<class Functor>
-class InvokeTask : public Task
-{
-public:
-    InvokeTask(const Functor& functor)
-        : functor(functor)
-    {
-    }
-    ~InvokeTask()
-    {
-    }
-    virtual void Execute()
-    {
-        functor();
-    }
-
-private:
-    Functor functor;
-};
-
-template<class Functor1, class Functor2>
-inline void ParallelInvoke(Functor1 func1, Functor2 func2)
-{           
-    typedef InvokeTask<Functor1> TASK1;
-    typedef RefPtr<TASK1> TASKPtr1;
-
-	TaskManager* manager = GetCurrentTaskManager();
-
-    TASKPtr1 task1(new(manager.GetCacheLineSize()) TASK1(func1));
-    manager->AddTask(task1.Get());
-
-    typedef InvokeTask<Functor2> TASK2;
-    typedef RefPtr<TASK2> TASKPtr2;
-
-    TASKPtr2 task2(new(manager.GetCacheLineSize()) TASK2(func2));
-    manager->AddTask(task2.Get());
-
-    task1->Wait();
-    task2->Wait();
-
-    if (task1->GetLastException() != 0)
-    {
-        task1->GetLastException()->Throw();
-    }
-    if (task2->GetLastException() != 0)
-    {
-        task2->GetLastException()->Throw();
-    }
-}
-
-}
+#ifdef _WIN32
+#include "Win/spscqueue.h"
+#else
+#include "Unix/spscqueue.h"
+#endif
 
 #endif

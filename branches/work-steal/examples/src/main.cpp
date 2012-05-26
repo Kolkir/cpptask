@@ -123,13 +123,12 @@ void ParallelTest2()
     cpptask::Timer timer;
     ArrayType big_array = GetBigArray();
 
-    cpptask::TaskThreadPool threadPool(THREADS_NUM);
-    cpptask::TaskManager manager(threadPool);
+    cpptask::TaskThreadPool threadPool(THREADS_NUM); 
 
     big_array = GetBigArray();
 
     timer.Start();
-    cpptask::ParallelInvoke(Test21(&big_array), Test22(&big_array), manager);
+    cpptask::ParallelInvoke(Test21(&big_array), Test22(&big_array));
 
     std::cout << "Parallel time is : " << timer.End() << " ms\n";
 }

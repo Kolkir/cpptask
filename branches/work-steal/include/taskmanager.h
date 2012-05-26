@@ -32,7 +32,7 @@
 #include "task.h"
 #include "event.h"
 #include "atomic.h"
-#include "mpscqueue.h"
+#include "spscqueue.h"
 #include "alignedalloc.h"
 
 namespace cpptask
@@ -100,10 +100,10 @@ public:
 
     void ScheduleTasks()
     {
-        MPSCNode* node = taskQueue.Pop();
-        while(node != 0)
+        Task* task = 0;
+        bool ok = taskQueue.Pop(task);
+        while(!ok)
         {
-            Task* task = static_cast<Task*>(node);
 
             TaskThread* thread = threadPool.GetEmptyThread();
             if (thread == 0)
@@ -112,7 +112,7 @@ public:
             }
             thread->SetTask(task);
  
-            node = taskQueue.Pop();
+            ok = taskQueue.Pop(task);
         }
     }
 
@@ -123,7 +123,7 @@ public:
 
 private:
     TaskThreadPool& threadPool;
-    MPSCQueue taskQueue;
+    SPSCQueue<Task*> taskQueue;
     ManagerThread managerThread;
     size_t cacheLineSize;
 };
