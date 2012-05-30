@@ -123,7 +123,7 @@ void ParallelTest2()
     cpptask::Timer timer;
     ArrayType big_array = GetBigArray();
 
-    cpptask::TaskThreadPool threadPool(THREADS_NUM); 
+    cpptask::TaskThreadPool threadPool(THREADS_NUM);
 
     big_array = GetBigArray();
 
@@ -243,12 +243,6 @@ void ThreadFunc2()
 */
 int main(int /*argc*/, char* /*argv*/[])
 {
-    cpptask::SPSCQueue<int> q;
-    q.Push(1345);
-    q.Push(467);
-    int v(0);
-    bool ok = q.Pop(v);
-
     //cpptask::ThreadFunction<ThreadFunc> t1(&ThreadFunc1);
     //cpptask::ThreadFunction<ThreadFunc> t2(&ThreadFunc2);
     //t1.Start();

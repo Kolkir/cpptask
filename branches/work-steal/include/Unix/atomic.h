@@ -31,6 +31,9 @@
 namespace cpptask
 {
 
+#define MemoryFence() __asm__ __volatile__ ("" ::: "memory")
+
+
 inline long InterlockedExchange(volatile long* target, long newVal)
 {
 #if (defined(__GNUC__) || defined(__ICC)) && (defined(__i386__) || defined(__x86_64__))
