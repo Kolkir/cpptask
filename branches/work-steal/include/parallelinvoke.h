@@ -55,19 +55,19 @@ private:
 
 template<class Functor1, class Functor2>
 inline void ParallelInvoke(Functor1 func1, Functor2 func2)
-{           
+{
     typedef InvokeTask<Functor1> TASK1;
     typedef RefPtr<TASK1> TASKPtr1;
 
-	TaskManager* manager = GetCurrentTaskManager();
+    TaskManager* manager = TaskManager::GetCurrent();
 
-    TASKPtr1 task1(new(manager.GetCacheLineSize()) TASK1(func1));
+    TASKPtr1 task1(new(manager->GetCacheLineSize()) TASK1(func1));
     manager->AddTask(task1.Get());
 
     typedef InvokeTask<Functor2> TASK2;
     typedef RefPtr<TASK2> TASKPtr2;
 
-    TASKPtr2 task2(new(manager.GetCacheLineSize()) TASK2(func2));
+    TASKPtr2 task2(new(manager->GetCacheLineSize()) TASK2(func2));
     manager->AddTask(task2.Get());
 
     task1->Wait();

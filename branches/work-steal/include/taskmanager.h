@@ -30,38 +30,11 @@
 
 #include "thread.h"
 #include "task.h"
-#include "event.h"
-#include "atomic.h"
 #include "spscqueue.h"
-#include "alignedalloc.h"
+#include "tlskey.h"
 
 namespace cpptask
 {
-
-class TaskManager;
-class ManagerThread: public Thread
-{
-public:
-    ManagerThread():manager(0){}
-
-    virtual void Run();
-
-    void SetManager(TaskManager* manager){this->manager = manager;}
-    
-    void Finish()
-    {
-        done.Set();
-        taskProcessEvent.Signal();        
-    }
-    void NotifyScheduleTasks()
-    {
-        taskProcessEvent.Signal();
-    }
-private:
-    Event taskProcessEvent;
-    AtomicFlag done;
-    TaskManager* manager;
-};
 
 class TaskManager
 {
@@ -70,14 +43,10 @@ public:
         : threadPool(threadPool)
     {
         cacheLineSize = cpptask::GetCacheLineSize();
-        managerThread.SetManager(this);
-        managerThread.Start();
     }
 
     ~TaskManager()
     {
-        managerThread.Finish();
-        managerThread.Wait();
     }
 
     size_t GetThreadsNum() const
@@ -93,50 +62,28 @@ public:
         }
     }
 
-    void StartTasks()
-    {
-        managerThread.NotifyScheduleTasks();
-    }
-
-    void ScheduleTasks()
-    {
-        Task* task = 0;
-        bool ok = taskQueue.Pop(task);
-        while(!ok)
-        {
-
-            TaskThread* thread = threadPool.GetEmptyThread();
-            if (thread == 0)
-            {
-                thread = threadPool.GetEmptyThreadWait();
-            }
-            thread->SetTask(task);
- 
-            ok = taskQueue.Pop(task);
-        }
-    }
-
     size_t GetCacheLineSize() const
     {
         return cacheLineSize;
     }
 
+    static TaskManager* GetCurrent()
+    {
+        static TLSKey tlsKey;
+        void* pvalue = tlsKey.GetValue();
+        if (pvalue != nullptr)
+        {
+            return reinterpret_cast<TaskManager*>(pvalue);
+        }
+        return nullptr;
+    }
+
 private:
     TaskThreadPool& threadPool;
     SPSCQueue<Task*> taskQueue;
-    ManagerThread managerThread;
     size_t cacheLineSize;
 };
 
-inline void ManagerThread::Run()
-{
-    while(!done.IsSet())
-    {
-        taskProcessEvent.Wait();
-        manager->ScheduleTasks();
-        taskProcessEvent.Reset();
-    }
-}
 
 }
 #endif

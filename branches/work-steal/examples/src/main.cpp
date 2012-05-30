@@ -117,7 +117,7 @@ struct Test22
     }
     ArrayType* big_array;
 };
-/*
+
 void ParallelTest2()
 {
     cpptask::Timer timer;
@@ -257,7 +257,7 @@ int main(int /*argc*/, char* /*argv*/[])
     //ParallelTest1();
 
     std::cout << "------------------------\n";
-    //ParallelTest2();
+    ParallelTest2();
 	/*
     std::cout << "------------------------\n";
     double r1 = SerialTest2();

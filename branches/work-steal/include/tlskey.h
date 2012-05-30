@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,72 +25,13 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _ATOMIC_H_
-#define _ATOMIC_H_
+#ifndef _TLSKEY_SELECT_H_
+#define _TLSKEY_SELECT_H_
 
-#include <windows.h>
-
-namespace cpptask
-{
-
-#define MemoryFence() _ReadWriteBarrier()
-
-class AtomicFlag
-{
-public:
-    AtomicFlag():flag(0){}
-    void Set()
-    {
-        ::InterlockedExchange((volatile LONG*)&flag, 1);
-    }
-    bool IsSet()
-    {
-        LONG f = ::InterlockedCompareExchange((volatile LONG*)&flag, 1, 1);
-        if (f > 0)
-        {
-            return true;
-        }
-        return false;
-    }
-    void Reset()
-    {
-        ::InterlockedExchange((volatile LONG*)&flag, 0);
-    }
-private:
-    AtomicFlag(const AtomicFlag&);
-    const AtomicFlag& operator=(const AtomicFlag&);
-private:
-    LONG flag;
-};
-
-class AtomicNumber
-{
-public:
-    AtomicNumber():number(0){}
-    void Inc()
-    {
-        ::InterlockedIncrement((volatile LONG*)&number);
-    }
-    void Dec()
-    {
-        ::InterlockedDecrement((volatile LONG*)&number);
-    }
-    long GetValue()
-    {
-        LONG value = ::InterlockedCompareExchange((volatile LONG*)&number, number, number);
-        return value;
-    }
-    void SetValue(long value)
-    {
-        ::InterlockedExchange((volatile LONG*)&number, value);
-    }
-private:
-    AtomicNumber(const AtomicFlag&);
-    const AtomicNumber& operator=(const AtomicFlag&);
-private:
-    LONG number;
-};
-
-}
+#ifdef _WIN32
+#include "Win/tlskey.h"
+#else
+#include "Unix/tlskey.h"
+#endif
 
 #endif

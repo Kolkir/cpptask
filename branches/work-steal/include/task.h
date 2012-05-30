@@ -32,7 +32,6 @@
 #include "mutex.h"
 #include "event.h"
 #include "atomic.h"
-#include "mpscqueue.h"
 #include "alignedalloc.h"
 #include "refptr.h"
 
@@ -44,7 +43,7 @@ namespace cpptask
 {
 
 class TaskThread;
-class Task : public MPSCNode
+class Task
 {
 public:
     friend class TaskThread;
