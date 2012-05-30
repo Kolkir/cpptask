@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,73 +25,47 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _MUTEX_H_
-#define _MUTEX_H_
+#ifndef _TLSKEY_H_
+#define _TLSKEY_H_
 
-#include <sys/timeb.h>
 #include <pthread.h>
 #include <stdexcept>
-#include <cerrno>
 
 namespace cpptask
 {
 
-class Mutex
+class TLSKey
 {
 public:
-    Mutex()
+    TLSKey()
     {
-        if (::pthread_mutex_init(&pmutex, 0) != 0)
+        int err = pthread_key_create(&key, 0);
+        if (err != 0)
         {
-            throw std::runtime_error("Can't create a mutex");
+            throw std::runtime_error("Can't create a TLS key");
         }
     }
-    ~Mutex()
+
+    ~TLSKey()
     {
-        ::pthread_mutex_destroy(&pmutex);
-    }
-    void Lock()
-    {
-        ::pthread_mutex_lock(&pmutex);
+        pthread_key_delete(key);
     }
 
-    bool TryLock()
+    void* GetValue() const
     {
-        int err = pthread_mutex_trylock(&pmutex);
-        if (err == 0)
-        {
-            return true;
-        }
-        return false;
+        return pthread_getspecific(key);
     }
 
-    bool WaitLock(unsigned long time)
+    void SetValue(void* value)
     {
-        const unsigned long NANOSEC_PER_MILLISEC = 1000000;
-        timespec spec;
-        timeb currSysTime;
-        ftime(&currSysTime);
-
-        spec.tv_sec = static_cast<long>(currSysTime.time);
-        spec.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
-        spec.tv_nsec += time * NANOSEC_PER_MILLISEC;
-
-        if (::pthread_mutex_timedlock(&pmutex, &spec) == ETIMEDOUT)
-        {
-            return false;
-        }
-        return true;
+        pthread_setspecific(key, value);
     }
 
-    void UnLock()
-    {
-        ::pthread_mutex_unlock(&pmutex);
-    }
 private:
-    Mutex(const Mutex&);
-    const Mutex& operator=(const Mutex&);
+    TLSKey(const TLSKey&);
+    const TLSKey& operator=(const TLSKey&);
 private:
-    mutable pthread_mutex_t pmutex;
+    pthread_key_t key;
 };
 
 }

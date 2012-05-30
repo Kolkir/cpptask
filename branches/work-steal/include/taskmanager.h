@@ -32,6 +32,7 @@
 #include "task.h"
 #include "spscqueue.h"
 #include "tlskey.h"
+#include "mutex.h"
 
 namespace cpptask
 {
@@ -62,6 +63,38 @@ public:
         }
     }
 
+    Task* GetOwnTask()
+    {
+        Task* res = 0;
+        if (getGuard.TryLock())
+        {
+            taskQueue.Pop(res);
+            getGuard.UnLock();
+        }
+        return res;
+    }
+
+    Task* GetTask(const Thread* excludeThread)
+    {
+        Task* res = GetOwnTask();
+        if (res == 0)
+        {
+            for (int i = 0; i < threadPool.GetThreadsNum(); ++i)
+            {
+                Thread* thread = threadPool.GetThread(i);
+                if (thread != excludeThread)
+                {
+                    res = .GetTaskManager().GetOwnTask();
+                    if (res != 0)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        return res;
+    }
+
     size_t GetCacheLineSize() const
     {
         return cacheLineSize;
@@ -71,17 +104,18 @@ public:
     {
         static TLSKey tlsKey;
         void* pvalue = tlsKey.GetValue();
-        if (pvalue != nullptr)
+        if (pvalue != 0)
         {
             return reinterpret_cast<TaskManager*>(pvalue);
         }
-        return nullptr;
+        return 0;
     }
 
 private:
     TaskThreadPool& threadPool;
     SPSCQueue<Task*> taskQueue;
     size_t cacheLineSize;
+    Mutex getGuard;
 };
 
 
