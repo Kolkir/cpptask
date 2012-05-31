@@ -28,94 +28,45 @@
 #ifndef _TASKMANAGER_H_
 #define _TASKMANAGER_H_
 
-#include "thread.h"
-#include "task.h"
 #include "spscqueue.h"
 #include "tlskey.h"
 #include "mutex.h"
+#include "event.h"
+#include "alignedalloc.h"
 
 namespace cpptask
 {
 
+class Task;
+class TaskThreadPool;
+class Thread;
 class TaskManager
 {
 public:
-    TaskManager(TaskThreadPool& threadPool)
-        : threadPool(threadPool)
-    {
-        cacheLineSize = cpptask::GetCacheLineSize();
-    }
+    TaskManager(TaskThreadPool& threadPool, Event& newTaskEvent);
 
-    ~TaskManager()
-    {
-    }
+    ~TaskManager();
 
-    size_t GetThreadsNum() const
-    {
-        return threadPool.GetThreadsNum();
-    }
+    size_t GetThreadsNum() const;
+ 
+    void AddTask(Task* task);
 
-    void AddTask(Task* task)
-    {
-        if (task != 0)
-        {
-           taskQueue.Push(task);
-        }
-    }
+    Task* GetOwnTask();
 
-    Task* GetOwnTask()
-    {
-        Task* res = 0;
-        if (getGuard.TryLock())
-        {
-            taskQueue.Pop(res);
-            getGuard.UnLock();
-        }
-        return res;
-    }
+    Task* GetTask(const Thread* excludeThread);
 
-    Task* GetTask(const Thread* excludeThread)
-    {
-        Task* res = GetOwnTask();
-        if (res == 0)
-        {
-            for (int i = 0; i < threadPool.GetThreadsNum(); ++i)
-            {
-                Thread* thread = threadPool.GetThread(i);
-                if (thread != excludeThread)
-                {
-                    res = .GetTaskManager().GetOwnTask();
-                    if (res != 0)
-                    {
-                        break;
-                    }
-                }
-            }
-        }
-        return res;
-    }
+    size_t GetCacheLineSize() const;
 
-    size_t GetCacheLineSize() const
-    {
-        return cacheLineSize;
-    }
+    static TaskManager* GetCurrent(TaskThreadPool& threadPool);
 
-    static TaskManager* GetCurrent()
-    {
-        static TLSKey tlsKey;
-        void* pvalue = tlsKey.GetValue();
-        if (pvalue != 0)
-        {
-            return reinterpret_cast<TaskManager*>(pvalue);
-        }
-        return 0;
-    }
+    void RegisterInTLS();
 
 private:
     TaskThreadPool& threadPool;
     SPSCQueue<Task*> taskQueue;
     size_t cacheLineSize;
     Mutex getGuard;
+    Event& newTaskEvent;
 };
 
 

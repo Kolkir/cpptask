@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,69 +25,73 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _MUTEX_H_
-#define _MUTEX_H_
+#ifndef _THREADPOOL_H_
+#define _THREADPOOL_H_
 
-#include <Windows.h>
-#include <stdexcept>
+#include "refptr.h"
+#include "event.h"
+#include "taskthread.h"
+#include "taskmanager.h"
+#include "tlskey.h"
 
 namespace cpptask
 {
 
-class Mutex
+class TaskThreadPool
 {
 public:
-    Mutex()
+    TaskThreadPool(size_t threadsNum)
     {
-        hMutex = ::CreateMutex(NULL, FALSE, NULL);
-        if (hMutex == NULL)
+        manager.Reset(new TaskManager(*this, newTaskEvent));
+        for (size_t i = 0; i < threadsNum; ++i)
         {
-            throw std::runtime_error("Can't create a mutex");
+            TaskThreadPtr tptr(new TaskThread(*this, newTaskEvent));
+            threads.push_back(tptr);
+            tptr->Start();
         }
-    }
-    ~Mutex()
-    {
-        CloseHandle(hMutex);
-    }
-    void Lock()
-    {
-        DWORD rez = ::WaitForSingleObject(hMutex, INFINITE);
-        if (rez != WAIT_OBJECT_0)
-        {
-            //log error
-        }
+        manager->RegisterInTLS();
     }
 
-    bool TryLock()
+    ~TaskThreadPool()
+    {}
+
+    size_t GetThreadsNum() const
     {
-        return WaitLock(0);
+        return threads.size();
     }
 
-    bool WaitLock(long timeWait = INFINITE)
+    TaskThread* GetThread(size_t index)
     {
-        DWORD rez = ::WaitForSingleObject(hMutex, timeWait);
-        if (rez == WAIT_OBJECT_0)
+        if (index < threads.size())
         {
-            return true;
+            Threads::iterator i = threads.begin();
+            std::advance(i, index);
+            return i->Get();
         }
-        return false;
+        return 0;
     }
 
-    void UnLock()
+    TLSKey* GetManagerKey()
     {
-        BOOL rez = ::ReleaseMutex(hMutex);
-        if (rez == FALSE)
-        {
-            //log error
-        }
+        return &managerKey;
     }
+
+    TaskManager* GetTaskManager()
+    {
+        return manager.Get();
+    }
+
 private:
-    Mutex(const Mutex&);
-    const Mutex& operator=(const Mutex&);
+    TaskThreadPool(const TaskThreadPool&);
+    const TaskThreadPool& operator=(const TaskThreadPool&);
 private:
-    HANDLE hMutex;
+    typedef RefPtr<TaskThread> TaskThreadPtr;
+    typedef std::vector<TaskThreadPtr> Threads;
+    Threads threads;
+    Event newTaskEvent;
+    TLSKey managerKey;
+    RefPtr<TaskManager> manager;
 };
 
 }
-
 #endif

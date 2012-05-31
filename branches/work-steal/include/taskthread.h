@@ -25,69 +25,39 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _MUTEX_H_
-#define _MUTEX_H_
+#ifndef _TASKTHREAD_H_
+#define _TASKTHREAD_H_
 
-#include <Windows.h>
-#include <stdexcept>
+#include "thread.h"
+#include "event.h"
+#include "atomic.h"
+#include "refptr.h"
+#include "taskmanager.h"
 
 namespace cpptask
 {
 
-class Mutex
+class Task;
+class TaskThreadPool;
+class TaskThread: public Thread
 {
 public:
-    Mutex()
-    {
-        hMutex = ::CreateMutex(NULL, FALSE, NULL);
-        if (hMutex == NULL)
-        {
-            throw std::runtime_error("Can't create a mutex");
-        }
-    }
-    ~Mutex()
-    {
-        CloseHandle(hMutex);
-    }
-    void Lock()
-    {
-        DWORD rez = ::WaitForSingleObject(hMutex, INFINITE);
-        if (rez != WAIT_OBJECT_0)
-        {
-            //log error
-        }
-    }
+    TaskThread(TaskThreadPool& threadPool, Event& newTaskEvent);
+    ~TaskThread();
 
-    bool TryLock()
-    {
-        return WaitLock(0);
-    }
+    virtual void Run();
 
-    bool WaitLock(long timeWait = INFINITE)
-    {
-        DWORD rez = ::WaitForSingleObject(hMutex, timeWait);
-        if (rez == WAIT_OBJECT_0)
-        {
-            return true;
-        }
-        return false;
-    }
+    void Stop();
 
-    void UnLock()
-    {
-        BOOL rez = ::ReleaseMutex(hMutex);
-        if (rez == FALSE)
-        {
-            //log error
-        }
-    }
+    TaskManager* GetTaskManager();
+
+    void DoWaitingTasks(Task* waitTask);
+
 private:
-    Mutex(const Mutex&);
-    const Mutex& operator=(const Mutex&);
-private:
-    HANDLE hMutex;
+    Event& newTaskEvent;
+    RefPtr<TaskManager> manager;
+    AtomicFlag done;
 };
 
 }
-
 #endif

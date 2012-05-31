@@ -30,6 +30,8 @@
 #ifndef _SPSCQUEUE_H_
 #define _SPSCQUEUE_H_
 
+#include "atomic.h"
+
 namespace cpptask
 {
 

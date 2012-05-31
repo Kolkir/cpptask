@@ -25,10 +25,7 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-//#include <parallelfor.h>
-#include <parallelinvoke.h>
-//#include <parallelreduce.h>
-#include <timer.h>
+#include <cpptask.h>
 
 #include <cmath>
 #include <vector>
@@ -128,7 +125,7 @@ void ParallelTest2()
     big_array = GetBigArray();
 
     timer.Start();
-    cpptask::ParallelInvoke(Test21(&big_array), Test22(&big_array));
+    cpptask::ParallelInvoke(Test21(&big_array), Test22(&big_array), threadPool);
 
     std::cout << "Parallel time is : " << timer.End() << " ms\n";
 }

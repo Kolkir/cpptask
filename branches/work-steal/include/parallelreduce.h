@@ -75,9 +75,9 @@ public:
         
             typedef ReduceTask<Range, Functor> TASK;
             typedef RefPtr<TASK> TASKPtr;
-            TASKPtr tasks[splitCount];            
+            TASKPtr tasks[splitCount];
 
-            typedef Functor* FUNCPtr;            
+            typedef Functor* FUNCPtr;
             FUNCPtr functors[splitCount];
             AlignedPointer<Functor> mems[splitCount];
 
@@ -89,7 +89,7 @@ public:
                 TASK* ptr = new(manager->GetCacheLineSize()) TASK(ranges[i], 
                                      *functors[i], 
                                      myDepth, 
-                                     manager);          
+                                     manager);
 
                 tasks[i].Reset(ptr);
                 manager->AddTask(tasks[i].Get());
@@ -97,13 +97,13 @@ public:
             };
             manager->StartTasks();
 
-            for (size_t i = 0; i != splitCount; ++i)            
+            for (size_t i = 0; i != splitCount; ++i)
             {
-                WaitChildTask(tasks[i].Get());                
+                WaitChildTask(tasks[i].Get());
             };
 
             //check exceptions in child tasks
-            for (size_t i = 0; i != splitCount; ++i)            
+            for (size_t i = 0; i != splitCount; ++i)
             {
                 if (tasks[i]->GetLastException() != 0)
                 {
@@ -111,7 +111,7 @@ public:
                 }
             };
 
-            //Join                        
+            //Join
             for (size_t i = 1; i != splitCount; ++i)
             {
                 tasks[0]->Join(*tasks[i].Get());

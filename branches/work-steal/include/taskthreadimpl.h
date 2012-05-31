@@ -25,69 +25,78 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _MUTEX_H_
-#define _MUTEX_H_
+#ifndef _TASKTHREADIMPL_H_
+#define _TASKTHREADIMPL_H_
 
-#include <Windows.h>
-#include <stdexcept>
+#include "task.h"
+#include "taskmanager.h"
 
 namespace cpptask
 {
 
-class Mutex
+inline TaskThread::TaskThread(TaskThreadPool& threadPool, Event& newTaskEvent) 
+    : newTaskEvent(newTaskEvent)
 {
-public:
-    Mutex()
-    {
-        hMutex = ::CreateMutex(NULL, FALSE, NULL);
-        if (hMutex == NULL)
-        {
-            throw std::runtime_error("Can't create a mutex");
-        }
-    }
-    ~Mutex()
-    {
-        CloseHandle(hMutex);
-    }
-    void Lock()
-    {
-        DWORD rez = ::WaitForSingleObject(hMutex, INFINITE);
-        if (rez != WAIT_OBJECT_0)
-        {
-            //log error
-        }
-    }
-
-    bool TryLock()
-    {
-        return WaitLock(0);
-    }
-
-    bool WaitLock(long timeWait = INFINITE)
-    {
-        DWORD rez = ::WaitForSingleObject(hMutex, timeWait);
-        if (rez == WAIT_OBJECT_0)
-        {
-            return true;
-        }
-        return false;
-    }
-
-    void UnLock()
-    {
-        BOOL rez = ::ReleaseMutex(hMutex);
-        if (rez == FALSE)
-        {
-            //log error
-        }
-    }
-private:
-    Mutex(const Mutex&);
-    const Mutex& operator=(const Mutex&);
-private:
-    HANDLE hMutex;
-};
-
+    manager.Reset(new TaskManager(threadPool, newTaskEvent));
 }
 
+inline TaskThread::~TaskThread()
+{
+    Stop();
+    Wait();
+}
+
+inline void TaskThread::Run()
+{
+    manager->RegisterInTLS();
+
+    while (!done.IsSet())
+    {
+        Task* task = manager->GetTask(this);
+        while (task == 0)
+        {
+            newTaskEvent.Wait();
+            task = manager->GetTask(this);
+            newTaskEvent.Reset();
+        }
+        task->SetParentThread(this);
+        task->Run();
+        task->SignalDone();
+    }
+}
+
+inline void TaskThread::Stop()
+{
+    done.Set();
+}
+
+TaskManager* TaskThread::GetTaskManager()
+{
+    return manager.Get();
+}
+
+void TaskThread::DoWaitingTasks(Task* waitTask)
+{
+    //we are inside DoTask
+    while (!waitTask->CheckFinished())
+    {
+        Task* task = manager->GetTask(this);
+        while (task == 0)
+        {
+            std::vector<Event*> events(2);
+            events[0] = &newTaskEvent;
+            events[1] = &waitTask->waitEvent;
+            if (WaitForMultiple(events) == 1)
+            {
+                return;
+            }
+            task = manager->GetTask(this);
+        }
+        task->SetParentThread(this);
+        task->Run();
+        task->SignalDone();
+    }
+}
+
+}
 #endif

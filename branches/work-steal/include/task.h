@@ -28,7 +28,7 @@
 #ifndef _TASK_H_
 #define _TASK_H_
 
-#include "thread.h"
+#include "taskthread.h"
 #include "mutex.h"
 #include "event.h"
 #include "atomic.h"
@@ -42,7 +42,6 @@
 namespace cpptask
 {
 
-class TaskThread;
 class Task
 {
 public:
@@ -92,7 +91,17 @@ public:
         return lastException.Get();
     }
 
-    void WaitChildTask(Task* childTask);
+    void WaitChildTask(Task* childTask)
+    {
+        if (parentThread != 0)
+        {
+            parentThread->DoWaitingTasks(childTask);
+        }
+        else
+        {
+            childTask->Wait();
+        }
+    }
 
     bool CheckFinished()
     {
@@ -131,201 +140,6 @@ private:
     Mutex exceptionGuard;
     Event waitEvent;
     TaskThread* parentThread;
-};
-
-
-class TaskThread: public Thread
-{
-public:
-    TaskThread(Event* emptyThreadEvent):task(0),emptyThreadEvent(emptyThreadEvent){}
-    ~TaskThread()
-    {
-        Stop();
-        taskEvent.Signal();
-        Wait();
-    }
-    void SetTask(Task* t)
-    {
-        {
-            ScopedLock<Mutex> lock(&guard);
-            task = t;
-            task->SetParentThread(this);
-            hasTask.Set();
-        }
-        taskEvent.Signal();
-    }
-    void DoWaitingTasks(Task* waitTask)
-    {
-        //we are inside DoTask lock
-        Task* oldTask = task;
-        task = 0;
-        hasTask.Reset();
-
-        //clear lock to be able process another tasks
-        guard.UnLock();
-
-        taskEvent.Reset();
-        if (emptyThreadEvent != 0)
-        {
-            emptyThreadEvent->Signal();
-        }
-
-        while (!waitTask->CheckFinished())
-        {
-            DoTask(&waitTask->waitEvent);
-        }
-
-        //restore lock
-        guard.Lock();
-
-        DoTaskImpl();
-        task = oldTask;
-        task->SetParentThread(this);
-        hasTask.Set();
-    }
-    virtual void Run()
-    {
-        while (!done.IsSet())
-        {
-            DoTask();;
-        }
-    }
-    bool HasTask()
-    {
-        return hasTask.IsSet();
-    }
-    void Stop()
-    {
-        done.Set();
-    }
-private:
-    void DoTask(Event* secondEvent = 0)
-    {
-        if (secondEvent != 0)
-        {
-            std::vector<Event*> events(2);
-            events[0] = &taskEvent;
-            events[1] = secondEvent;
-            WaitForMultiple(events);
-        }
-        else
-        {
-            taskEvent.Wait();
-        }
-        ScopedLock<Mutex> lock(&guard);
-        DoTaskImpl();
-    }
-
-    void DoTaskImpl()
-    {
-        if (task != 0)
-        {
-            task->Run();
-            task->SetParentThread(0);
-            task->SignalDone();
-            task = 0;
-            hasTask.Reset();
-            taskEvent.Reset();
-            if (emptyThreadEvent != 0)
-            {
-                emptyThreadEvent->Signal();
-            }
-        }
-    }
-private:
-    Task* task;
-    Event* emptyThreadEvent;
-    Mutex guard;
-    AtomicFlag done;
-    Event taskEvent;
-    AtomicFlag hasTask;
-};
-
-inline void Task::WaitChildTask(Task* childTask)
-{
-    if (parentThread != 0)
-    {
-        parentThread->DoWaitingTasks(childTask);
-    }
-    else
-    {
-        childTask->Wait();
-    }
-}
-
-namespace
-{
-struct GetEmptyThreadOp : public std::unary_function<RefPtr<TaskThread>&, bool>
-{
-    bool operator()(RefPtr<TaskThread>& thread) const
-    {
-        if (!thread->HasTask())
-        {
-            return true;
-        }
-        return false;
-    }
-};
-}
-
-class TaskThreadPool
-{
-public:
-    TaskThreadPool(size_t threadsNum)
-    {
-        for (size_t i = 0; i < threadsNum; ++i)
-        {
-            TaskThreadPtr tptr(new TaskThread(&emptyThreadEvent));
-            threads.push_back(tptr);
-            tptr->Start();
-        }
-    }
-    ~TaskThreadPool()
-    {
-        Threads::iterator i = threads.begin();
-        Threads::iterator e = threads.end();
-        for (; i != e; ++i)
-        {
-            i->Reset(0);
-        }
-    }
-
-    size_t GetThreadsNum() const
-    {
-        return threads.size();
-    }
-
-    TaskThread* GetEmptyThread()
-    {
-        Threads::iterator i = std::find_if(threads.begin(), threads.end(), GetEmptyThreadOp());
-
-        if (i != threads.end())
-        {
-            return i->Get();
-        }
-        return 0;
-    }
-
-    TaskThread* GetEmptyThreadWait()
-    {
-        TaskThread* rez = 0;
-        while (rez == 0)
-        {
-            emptyThreadEvent.Wait();
-            rez = GetEmptyThread();
-            emptyThreadEvent.Reset();
-        }
-        return rez;
-    }
-
-private:
-    TaskThreadPool(const TaskThreadPool&);
-    const TaskThreadPool& operator=(const TaskThreadPool&);
-private:
-    typedef RefPtr<TaskThread> TaskThreadPtr;
-    typedef std::vector<TaskThreadPtr> Threads;
-    Threads threads;
-    Event emptyThreadEvent;
 };
 
 }

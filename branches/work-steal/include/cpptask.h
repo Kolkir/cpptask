@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,69 +25,15 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _MUTEX_H_
-#define _MUTEX_H_
+#ifndef _CPPTASK_H_
+#define _CPPTASK_H_
 
-#include <Windows.h>
-#include <stdexcept>
+#include "taskmanager.h"
+#include "taskthreadimpl.h"
+#include "taskmanagerlimpl.h"
+#include "threadpool.h"
+#include "timer.h"
 
-namespace cpptask
-{
-
-class Mutex
-{
-public:
-    Mutex()
-    {
-        hMutex = ::CreateMutex(NULL, FALSE, NULL);
-        if (hMutex == NULL)
-        {
-            throw std::runtime_error("Can't create a mutex");
-        }
-    }
-    ~Mutex()
-    {
-        CloseHandle(hMutex);
-    }
-    void Lock()
-    {
-        DWORD rez = ::WaitForSingleObject(hMutex, INFINITE);
-        if (rez != WAIT_OBJECT_0)
-        {
-            //log error
-        }
-    }
-
-    bool TryLock()
-    {
-        return WaitLock(0);
-    }
-
-    bool WaitLock(long timeWait = INFINITE)
-    {
-        DWORD rez = ::WaitForSingleObject(hMutex, timeWait);
-        if (rez == WAIT_OBJECT_0)
-        {
-            return true;
-        }
-        return false;
-    }
-
-    void UnLock()
-    {
-        BOOL rez = ::ReleaseMutex(hMutex);
-        if (rez == FALSE)
-        {
-            //log error
-        }
-    }
-private:
-    Mutex(const Mutex&);
-    const Mutex& operator=(const Mutex&);
-private:
-    HANDLE hMutex;
-};
-
-}
+#include "parallelinvoke.h"
 
 #endif
