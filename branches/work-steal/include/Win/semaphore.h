@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,40 +25,59 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _TASKTHREAD_H_
-#define _TASKTHREAD_H_
+#ifndef _SEMAPHORE_H_
+#define _SEMAPHORE_H_
 
-#include "thread.h"
-#include "event.h"
-#include "atomic.h"
-#include "refptr.h"
-#include "taskmanager.h"
+#include "multwait.h"
+
+#include <Windows.h>
+#include <stdexcept>
 
 namespace cpptask
 {
 
-class Task;
-class TaskThreadPool;
-class TaskThread: public Thread
+class Semaphore : public MultWaitBase
 {
 public:
-    TaskThread(TaskThreadPool& threadPool, Semaphore& newTaskEvent);
-    ~TaskThread();
+    Semaphore(long maxCount)
+    {
+        hSemaphore = ::CreateSemaphore(0, 0, maxCount, 0);
+        if (hSemaphore == NULL)
+        {
+            throw std::runtime_error("Can't create a semaphore");
+        }
+    }
+    ~Semaphore()
+    {
+        CloseHandle(hSemaphore);
+    }
 
-    virtual void Run();
+    void Wait()
+    {
+        DWORD rez = ::WaitForSingleObject(hSemaphore, INFINITE);
+        if (rez != WAIT_OBJECT_0)
+        {
+            //log error
+        }
+    }
 
-    void Stop();
-
-    TaskManager* GetTaskManager();
-
-    void DoWaitingTasks(Task* waitTask);
-
+    void Signal(long count)
+    {
+        long prevCount(0);
+        BOOL rez = ::ReleaseSemaphore(hSemaphore, count, &prevCount);
+        if (rez == FALSE)
+        {
+            //log error
+        }
+    }
 private:
-    Event stopEvent;
-    Semaphore& newTaskEvent;
-    RefPtr<TaskManager> manager;
-    AtomicFlag done;
+    Semaphore(const Semaphore&);
+    const Semaphore& operator=(const Semaphore&);
+    virtual HANDLE GetHandle() {return hSemaphore;}
+private:
+    HANDLE hSemaphore;
 };
 
 }
+
 #endif

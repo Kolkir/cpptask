@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,40 +25,13 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _TASKTHREAD_H_
-#define _TASKTHREAD_H_
+#ifndef _SEMAPHORE_SELECT_H_
+#define _SEMAPHORE_SELECT_H_
 
-#include "thread.h"
-#include "event.h"
-#include "atomic.h"
-#include "refptr.h"
-#include "taskmanager.h"
+#ifdef _WIN32
+#include "Win/semaphore.h"
+#else
+#include "Unix/semaphore.h"
+#endif
 
-namespace cpptask
-{
-
-class Task;
-class TaskThreadPool;
-class TaskThread: public Thread
-{
-public:
-    TaskThread(TaskThreadPool& threadPool, Semaphore& newTaskEvent);
-    ~TaskThread();
-
-    virtual void Run();
-
-    void Stop();
-
-    TaskManager* GetTaskManager();
-
-    void DoWaitingTasks(Task* waitTask);
-
-private:
-    Event stopEvent;
-    Semaphore& newTaskEvent;
-    RefPtr<TaskManager> manager;
-    AtomicFlag done;
-};
-
-}
 #endif

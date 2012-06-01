@@ -34,7 +34,7 @@
 namespace cpptask
 {
 
-inline TaskManager::TaskManager(TaskThreadPool& threadPool, Event& newTaskEvent)
+inline TaskManager::TaskManager(TaskThreadPool& threadPool, Semaphore& newTaskEvent)
     : threadPool(threadPool)
     , newTaskEvent(newTaskEvent)
 {
@@ -55,7 +55,7 @@ inline void TaskManager::AddTask(Task* task)
     if (task != 0)
     {
         taskQueue.Push(task);
-        newTaskEvent.Signal();
+        newTaskEvent.Signal(1);
     }
 }
 

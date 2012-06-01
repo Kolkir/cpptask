@@ -16,6 +16,9 @@ solution "CppTaskTest"
 	configuration { "Release" }
 		targetdir "bin/release"
       
+    configuration( "windows" )
+                defines({"NOMINMAX"})    
+      
 	project "CppTaskTest"  	    
 		kind "ConsoleApp"
 		language "C++"        

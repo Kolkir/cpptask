@@ -31,7 +31,7 @@
 #include "spscqueue.h"
 #include "tlskey.h"
 #include "mutex.h"
-#include "event.h"
+#include "semaphore.h"
 #include "alignedalloc.h"
 
 namespace cpptask
@@ -43,7 +43,7 @@ class Thread;
 class TaskManager
 {
 public:
-    TaskManager(TaskThreadPool& threadPool, Event& newTaskEvent);
+    TaskManager(TaskThreadPool& threadPool, Semaphore& newTaskEvent);
 
     ~TaskManager();
 
@@ -66,7 +66,7 @@ private:
     SPSCQueue<Task*> taskQueue;
     size_t cacheLineSize;
     Mutex getGuard;
-    Event& newTaskEvent;
+    Semaphore& newTaskEvent;
 };
 
 

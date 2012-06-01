@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,40 +25,46 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _TASKTHREAD_H_
-#define _TASKTHREAD_H_
+#ifndef _MULTWAIT_H_
+#define _MULTWAIT_H_
 
-#include "thread.h"
-#include "event.h"
-#include "atomic.h"
-#include "refptr.h"
-#include "taskmanager.h"
+#include <windows.h>
+
+#include <vector>
 
 namespace cpptask
 {
 
-class Task;
-class TaskThreadPool;
-class TaskThread: public Thread
+class MultWaitBase
 {
 public:
-    TaskThread(TaskThreadPool& threadPool, Semaphore& newTaskEvent);
-    ~TaskThread();
-
-    virtual void Run();
-
-    void Stop();
-
-    TaskManager* GetTaskManager();
-
-    void DoWaitingTasks(Task* waitTask);
-
+    virtual ~MultWaitBase(){}
+    friend int WaitForMultiple(std::vector<MultWaitBase*>& objects);
 private:
-    Event stopEvent;
-    Semaphore& newTaskEvent;
-    RefPtr<TaskManager> manager;
-    AtomicFlag done;
+   virtual HANDLE GetHandle() = 0;
 };
 
+inline int WaitForMultiple(std::vector<MultWaitBase*>& objects)
+{
+    if (!objects.empty())
+    {
+        std::vector<HANDLE> handles;
+        std::vector<MultWaitBase*>::iterator i = objects.begin();
+        std::vector<MultWaitBase*>::iterator e = objects.end();
+        for (; i != e; ++i)
+        {
+            handles.push_back((*i)->GetHandle());
+        }        
+        DWORD rez = ::WaitForMultipleObjects(static_cast<DWORD>(handles.size()), &handles[0], FALSE, INFINITE);
+        if (rez >= WAIT_OBJECT_0 && rez <= WAIT_OBJECT_0 + handles.size() - 1)
+        {
+            return rez - WAIT_OBJECT_0;
+        }        
+    }
+    return -1;
 }
+
+
+}
+
 #endif

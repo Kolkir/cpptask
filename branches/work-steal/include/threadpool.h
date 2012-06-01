@@ -29,7 +29,7 @@
 #define _THREADPOOL_H_
 
 #include "refptr.h"
-#include "event.h"
+#include "semaphore.h"
 #include "taskthread.h"
 #include "taskmanager.h"
 #include "tlskey.h"
@@ -41,6 +41,7 @@ class TaskThreadPool
 {
 public:
     TaskThreadPool(size_t threadsNum)
+        : newTaskEvent(std::numeric_limits<long>::max())
     {
         manager.Reset(new TaskManager(*this, newTaskEvent));
         manager->RegisterInTLS();
@@ -97,7 +98,7 @@ private:
     typedef RefPtr<TaskThread> TaskThreadPtr;
     typedef std::vector<TaskThreadPtr> Threads;
     Threads threads;
-    Event newTaskEvent;
+    Semaphore newTaskEvent;
     TLSKey managerKey;
     RefPtr<TaskManager> manager;
 };
