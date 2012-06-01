@@ -35,5 +35,7 @@
 #include "timer.h"
 
 #include "parallelinvoke.h"
+#include "parallelfor.h"
+#include "parallelreduce.h"
 
 #endif

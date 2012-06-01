@@ -95,7 +95,6 @@ public:
                 manager->AddTask(tasks[i].Get());
   
             };
-            manager->StartTasks();
 
             for (size_t i = 0; i != splitCount; ++i)
             {
@@ -133,14 +132,14 @@ private:
 };
 
 template<class Iterator, class Functor>
-inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, TaskManager& manager, size_t maxDepth = 5)
-{              
+inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, TaskThreadPool& threadPool, size_t maxDepth = 5)
+{
+    TaskManager* manager = TaskManager::GetCurrent(threadPool);
     typedef Range<Iterator> RANGE;
     typedef ReduceTask<RANGE, Functor> TASK;
     typedef RefPtr<TASK> TASKPtr;
-    TASKPtr task(new(manager.GetCacheLineSize()) TASK(RANGE(start, end), functor, maxDepth, &manager));
-    manager.AddTask(task.Get());
-    manager.StartTasks();
+    TASKPtr task(new(manager->GetCacheLineSize()) TASK(RANGE(start, end), functor, maxDepth, manager));
+    manager->AddTask(task.Get());
     task->Wait();
     if (task->GetLastException() != 0)
     {

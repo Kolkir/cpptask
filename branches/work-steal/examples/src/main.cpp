@@ -67,23 +67,22 @@ void SerialTest1()
 
     std::cout << "Serial time is : " << timer.End() << " ms\n";
 }
-/*
+
 void ParallelTest1()
 {
     cpptask::Timer timer;
     ArrayType big_array = GetBigArray();
 
     cpptask::TaskThreadPool threadPool(THREADS_NUM);
-    cpptask::TaskManager manager(threadPool);
 
     big_array = GetBigArray();
 
     timer.Start();
-    cpptask::ParallelFor(big_array.begin(), big_array.end(), Test1(), manager);
+    cpptask::ParallelFor(big_array.begin(), big_array.end(), Test1(), threadPool);
 
-    std::cout << "Parallel time is : " << timer.End() << " ms\n";
+    std::cout << "Parallel for time is : " << timer.End() << " ms\n";
 }
-*/
+
 struct Test21
 {
     Test21(ArrayType* big_array) : big_array(big_array){}
@@ -127,9 +126,9 @@ void ParallelTest2()
     timer.Start();
     cpptask::ParallelInvoke(Test21(&big_array), Test22(&big_array), threadPool);
 
-    std::cout << "Parallel time is : " << timer.End() << " ms\n";
+    std::cout << "Parallel invoke time is : " << timer.End() << " ms\n";
 }
-/*
+
 struct Test3
 {
     double operator()(double& x, double& y)
@@ -186,15 +185,14 @@ double ParallelTest3()
     ArrayType big_array = GetBigArray();
 
     cpptask::TaskThreadPool threadPool(THREADS_NUM);
-    cpptask::TaskManager manager(threadPool);
 
     big_array = GetBigArray();
 
     timer.Start();
     Accumulator accumulator(0);
-    cpptask::ParallelReduce(big_array.begin(), big_array.end(), accumulator, manager);
+    cpptask::ParallelReduce(big_array.begin(), big_array.end(), accumulator, threadPool);
 
-    std::cout << "Parallel time is : " << timer.End() << " ms\n";
+    std::cout << "Parallel reduce time is : " << timer.End() << " ms\n";
     return accumulator.res;
 }
 
@@ -208,9 +206,8 @@ void ExceptionTest()
     try
     {
         cpptask::TaskThreadPool threadPool(THREADS_NUM);
-        cpptask::TaskManager manager(threadPool);
 
-        cpptask::ParallelInvoke(&Test4, &Test4, manager);
+        cpptask::ParallelInvoke(&Test4, &Test4, threadPool);
     }
     catch(cpptask::Exception& err)
     {
@@ -237,25 +234,25 @@ void ThreadFunc2()
         cpptask::Sleep(10);
     }
 }
-*/
+
 int main(int /*argc*/, char* /*argv*/[])
 {
-    //cpptask::ThreadFunction<ThreadFunc> t1(&ThreadFunc1);
-    //cpptask::ThreadFunction<ThreadFunc> t2(&ThreadFunc2);
-    //t1.Start();
-    //t2.Start();
-    //t1.Wait();
-    //t2.Wait();
+    cpptask::ThreadFunction<ThreadFunc> t1(&ThreadFunc1);
+    cpptask::ThreadFunction<ThreadFunc> t2(&ThreadFunc2);
+    t1.Start();
+    t2.Start();
+    t1.Wait();
+    t2.Wait();
 
     std::cout << "------------------------\n";
-    //SerialTest1();
+    SerialTest1();
 
-    //std::cout << "------------------------\n";
-    //ParallelTest1();
+    std::cout << "------------------------\n";
+    ParallelTest1();
 
     std::cout << "------------------------\n";
     ParallelTest2();
-	/*
+
     std::cout << "------------------------\n";
     double r1 = SerialTest2();
 
@@ -263,12 +260,12 @@ int main(int /*argc*/, char* /*argv*/[])
     double r2 = ParallelTest3();
 
     std::cout << "------------------------\n";
-    std::cout << "Results are " << (r1 == r2)  << "\n";
+    std::cout << "Reduce results compare are " << (r1 == r2)  << "\n";
 
     std::cout << "------------------------\n";
     ExceptionTest();
 
     std::cout << "------------------------\n";
-	*/
+
     return 0;
 }

@@ -43,17 +43,26 @@ public:
     TaskThreadPool(size_t threadsNum)
     {
         manager.Reset(new TaskManager(*this, newTaskEvent));
+        manager->RegisterInTLS();
+
         for (size_t i = 0; i < threadsNum; ++i)
         {
             TaskThreadPtr tptr(new TaskThread(*this, newTaskEvent));
             threads.push_back(tptr);
             tptr->Start();
         }
-        manager->RegisterInTLS();
     }
 
     ~TaskThreadPool()
-    {}
+    {
+        Threads::iterator i = threads.begin();
+        Threads::iterator e = threads.end();
+        for (;i != e; ++i)
+        {
+            (*i)->Stop();
+            (*i)->Wait();
+        }
+    }
 
     size_t GetThreadsNum() const
     {

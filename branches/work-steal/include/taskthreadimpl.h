@@ -53,20 +53,27 @@ inline void TaskThread::Run()
     while (!done.IsSet())
     {
         Task* task = manager->GetTask(this);
-        while (task == 0)
+        if (task == 0)
         {
-            newTaskEvent.Wait();
+            std::vector<Event*> events(2);
+            events[0] = &newTaskEvent;
+            events[1] = &stopEvent;
+            WaitForMultiple(events);
             task = manager->GetTask(this);
             newTaskEvent.Reset();
         }
-        task->SetParentThread(this);
-        task->Run();
-        task->SignalDone();
+        if (task != 0)
+        {
+            task->SetParentThread(this);
+            task->Run();
+            task->SignalDone();
+        }
     }
 }
 
 inline void TaskThread::Stop()
 {
+    stopEvent.Signal();
     done.Set();
 }
 
@@ -81,20 +88,24 @@ void TaskThread::DoWaitingTasks(Task* waitTask)
     while (!waitTask->CheckFinished())
     {
         Task* task = manager->GetTask(this);
-        while (task == 0)
+        if (task == 0)
         {
-            std::vector<Event*> events(2);
+            std::vector<Event*> events(3);
             events[0] = &newTaskEvent;
             events[1] = &waitTask->waitEvent;
+            events[2] = &stopEvent;
             if (WaitForMultiple(events) == 1)
             {
                 return;
             }
             task = manager->GetTask(this);
         }
-        task->SetParentThread(this);
-        task->Run();
-        task->SignalDone();
+        if (task != 0)
+        {
+            task->SetParentThread(this);
+            task->Run();
+            task->SignalDone();
+        }
     }
 }
 

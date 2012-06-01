@@ -54,6 +54,7 @@ public:
     void DoWaitingTasks(Task* waitTask);
 
 private:
+    Event stopEvent;
     Event& newTaskEvent;
     RefPtr<TaskManager> manager;
     AtomicFlag done;
