@@ -40,10 +40,11 @@ namespace cpptask
 class Task;
 class TaskThreadPool;
 class Thread;
+class TaskThread;
 class TaskManager
 {
 public:
-    TaskManager(TaskThreadPool& threadPool, Semaphore& newTaskEvent);
+    TaskManager(TaskThreadPool& threadPool, Semaphore& newTaskEvent, TaskThread* parentThread);
 
     ~TaskManager();
 
@@ -53,7 +54,7 @@ public:
 
     Task* GetOwnTask();
 
-    Task* GetTask(const Thread* excludeThread);
+    Task* GetTask();
 
     size_t GetCacheLineSize() const;
 
@@ -61,7 +62,10 @@ public:
 
     void RegisterInTLS();
 
+    void WaitTask(Task* waitTask);
+
 private:
+    TaskThread* parentThread;
     TaskThreadPool& threadPool;
     SPSCQueue<Task*> taskQueue;
     size_t cacheLineSize;

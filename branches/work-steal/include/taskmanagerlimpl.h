@@ -34,9 +34,10 @@
 namespace cpptask
 {
 
-inline TaskManager::TaskManager(TaskThreadPool& threadPool, Semaphore& newTaskEvent)
+inline TaskManager::TaskManager(TaskThreadPool& threadPool, Semaphore& newTaskEvent, TaskThread* parentThread)
     : threadPool(threadPool)
     , newTaskEvent(newTaskEvent)
+	, parentThread(parentThread)
 {
     cacheLineSize = cpptask::GetCacheLineSize();
 }
@@ -70,7 +71,7 @@ inline Task* TaskManager::GetOwnTask()
     return res;
 }
 
-inline Task* TaskManager::GetTask(const Thread* excludeThread)
+inline Task* TaskManager::GetTask()
 {
     Task* res = GetOwnTask();
     if (res == 0)
@@ -81,7 +82,7 @@ inline Task* TaskManager::GetTask(const Thread* excludeThread)
                 for (size_t i = 0; i < threadPool.GetThreadsNum(); ++i)
             {
                 TaskThread* thread = threadPool.GetThread(i);
-                if (thread != excludeThread)
+                if (thread != parentThread)
                 {
                     res = thread->GetTaskManager()->GetOwnTask();
                     if (res != 0)
@@ -115,6 +116,30 @@ inline void TaskManager::RegisterInTLS()
 {
     TLSKey* tlsKey = threadPool.GetManagerKey();
     tlsKey->SetValue(this);
+}
+
+inline void TaskManager::WaitTask(Task* waitTask)
+{
+    while (!waitTask->CheckFinished())
+    {
+        Task* task = GetTask();
+        if (task == 0)
+        {
+            std::vector<MultWaitBase*> events(2);
+            events[0] = &newTaskEvent;
+            events[1] = waitTask->GetWaitEvent();
+            int res = WaitForMultiple(events);
+            if (res == 0)
+            {
+                task = GetTask();
+            }
+        }
+        if (task != 0)
+        {
+            task->Run();
+            task->SignalDone();
+        }
+    }
 }
 
 }

@@ -45,20 +45,12 @@ namespace cpptask
 class Task
 {
 public:
-    friend class TaskThread;
-
     Task()
-        : parentThread(0)
     {
         waitEvent.Reset();
     }
     virtual ~Task(){}
     virtual void Execute() = 0;
-
-    void SetParentThread(TaskThread* thread)
-    {
-        parentThread = thread;
-    }
 
     void SignalDone()
     {
@@ -91,18 +83,6 @@ public:
         return lastException.Get();
     }
 
-    void WaitChildTask(Task* childTask)
-    {
-        if (parentThread != 0)
-        {
-            parentThread->DoWaitingTasks(childTask);
-        }
-        else
-        {
-            childTask->Wait();
-        }
-    }
-
     bool CheckFinished()
     {
         if (waitEvent.Check())
@@ -115,6 +95,11 @@ public:
     void Wait()
     {
         waitEvent.Wait();
+    }
+
+    Event* GetWaitEvent()
+    {
+        return &waitEvent;
     }
 
     void* operator new(size_t size, size_t alignment)
@@ -139,7 +124,6 @@ private:
     RefPtr<Exception> lastException;
     Mutex exceptionGuard;
     Event waitEvent;
-    TaskThread* parentThread;
 };
 
 }

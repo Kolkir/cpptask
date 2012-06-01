@@ -91,7 +91,7 @@ inline void ParallelFor(Iterator start, Iterator end, Functor functor, TaskThrea
     typename TASKS::iterator et = tasks.end();
     for (; it != et; ++it)
     {
-        (*it)->Wait();
+        manager->WaitTask((*it).Get());
     }
     it = tasks.begin();
     for (; it != et; ++it)

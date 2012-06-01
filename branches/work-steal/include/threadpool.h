@@ -43,7 +43,7 @@ public:
     TaskThreadPool(size_t threadsNum)
         : newTaskEvent(std::numeric_limits<long>::max())
     {
-        manager.Reset(new TaskManager(*this, newTaskEvent));
+        manager.Reset(new TaskManager(*this, newTaskEvent, 0));
         manager->RegisterInTLS();
 
         for (size_t i = 0; i < threadsNum; ++i)

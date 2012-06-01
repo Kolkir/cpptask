@@ -37,7 +37,7 @@ namespace cpptask
 inline TaskThread::TaskThread(TaskThreadPool& threadPool, Semaphore& newTaskEvent) 
     : newTaskEvent(newTaskEvent)
 {
-    manager.Reset(new TaskManager(threadPool, newTaskEvent));
+    manager.Reset(new TaskManager(threadPool, newTaskEvent, this));
 }
 
 inline TaskThread::~TaskThread()
@@ -52,7 +52,7 @@ inline void TaskThread::Run()
 
     while (!done.IsSet())
     {
-        Task* task = manager->GetTask(this);
+        Task* task = manager->GetTask();
         if (task == 0)
         {
             std::vector<MultWaitBase*> events(2);
@@ -60,12 +60,11 @@ inline void TaskThread::Run()
             events[1] = &stopEvent;
             if (WaitForMultiple(events) == 0)
             {
-                task = manager->GetTask(this);
+                task = manager->GetTask();
             }
         }
         if (task != 0)
         {
-            task->SetParentThread(this);
             task->Run();
             task->SignalDone();
         }
@@ -81,37 +80,6 @@ inline void TaskThread::Stop()
 TaskManager* TaskThread::GetTaskManager()
 {
     return manager.Get();
-}
-
-void TaskThread::DoWaitingTasks(Task* waitTask)
-{
-    //we are inside DoTask
-    while (!waitTask->CheckFinished())
-    {
-        Task* task = manager->GetTask(this);
-        if (task == 0)
-        {
-            std::vector<MultWaitBase*> events(3);
-            events[0] = &newTaskEvent;
-            events[1] = &waitTask->waitEvent;
-            events[2] = &stopEvent;
-            int res = WaitForMultiple(events);
-            if (res == 0)
-            {
-                task = manager->GetTask(this);
-            }
-            else if (res == 2)
-            {
-                break;
-            }
-        }
-        if (task != 0)
-        {
-            task->SetParentThread(this);
-            task->Run();
-            task->SignalDone();
-        }
-    }
 }
 
 }

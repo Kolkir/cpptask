@@ -98,7 +98,7 @@ public:
 
             for (size_t i = 0; i != splitCount; ++i)
             {
-                WaitChildTask(tasks[i].Get());
+                manager->WaitTask(tasks[i].Get());
             };
 
             //check exceptions in child tasks
@@ -140,7 +140,7 @@ inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, TaskT
     typedef RefPtr<TASK> TASKPtr;
     TASKPtr task(new(manager->GetCacheLineSize()) TASK(RANGE(start, end), functor, maxDepth, manager));
     manager->AddTask(task.Get());
-    task->Wait();
+    manager->WaitTask(task.Get());
     if (task->GetLastException() != 0)
     {
         task->GetLastException()->Throw();

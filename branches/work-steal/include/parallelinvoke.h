@@ -68,8 +68,8 @@ inline void ParallelInvoke(Functor1 func1, Functor2 func2, TaskThreadPool& threa
     TASKPtr2 task2(new(manager->GetCacheLineSize()) TASK2(func2));
     manager->AddTask(task2.Get());
 
-    task1->Wait();
-    task2->Wait();
+    manager->WaitTask(task1.Get());
+    manager->WaitTask(task2.Get());
 
     if (task1->GetLastException() != 0)
     {
