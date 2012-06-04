@@ -106,17 +106,19 @@ int WaitForMultiple(std::vector<MultWaitBase<E,M>*>& events)
     typename std::vector<MultWaitBase<E,M>*>::iterator e = events.end();
 
     int index = -1;
+    bool needWait = true;
     for (; i != e; ++i, ++index)
     {
         (*i)->AddWaitEvent(&commonEvent);
         if ((*i)->MultCheck())
         {
             ++index;
+            needWait = false;
             break;
         }
     }
 
-    if (index == -1)
+    if (needWait)
     {
         commonEvent.Wait();
     }

@@ -40,9 +40,9 @@ namespace cpptask
 class Semaphore : public MultWaitBase<Event, Mutex>
 {
 public:
-    Semaphore(int maxCount)
+    Semaphore()
     {
-        int err = sem_init(&psem, 0, maxCount);
+        int err = sem_init(&psem, 0, 0);
         if (err != 0)
         {
             throw std::runtime_error("Can't create a semaphore");
@@ -55,13 +55,11 @@ public:
 
     void Wait()
     {
-        Lock();
         int err = sem_wait(&psem);
         if (err != 0)
         {
             //log error
         }
-        UnLock();
     }
 
     void Signal()
@@ -78,9 +76,7 @@ public:
 
     virtual bool MultCheck()
     {
-        Lock();
         int err = sem_trywait(&psem);
-        UnLock();
         if (err == 0)
         {
             return true;

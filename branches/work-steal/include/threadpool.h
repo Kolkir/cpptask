@@ -33,7 +33,6 @@
 #include "taskthread.h"
 #include "taskmanager.h"
 #include "tlskey.h"
-#include <limits>
 
 namespace cpptask
 {
@@ -42,7 +41,6 @@ class TaskThreadPool
 {
 public:
     TaskThreadPool(size_t threadsNum)
-        : newTaskEvent(std::numeric_limits<long>::max())
     {
         manager.Reset(new TaskManager(*this, newTaskEvent, 0));
         manager->RegisterInTLS();
