@@ -25,13 +25,78 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _SEMAPHORE_SELECT_H_
-#define _SEMAPHORE_SELECT_H_
+#ifndef _SEMAPHORE_H_
+#define _SEMAPHORE_H_
 
-#ifdef _WIN32
-#include "Win/semaphore.h"
-#else
-#include "Unix/semaphore.h"
+#include "event.h"
+#include "mutex.h"
+#include "multwait.h"
+#include <semaphore.h>
+#include <stdexcept>
+
+namespace cpptask
+{
+
+class Semaphore : public MultWaitBase<Event, Mutex>
+{
+public:
+    Semaphore(int maxCount)
+    {
+        int err = sem_init(&psem, 0, maxCount);
+        if (err != 0)
+        {
+            throw std::runtime_error("Can't create a semaphore");
+        }
+    }
+    ~Semaphore()
+    {
+        sem_destroy(&psem);
+    }
+
+    void Wait()
+    {
+        Lock();
+        int err = sem_wait(&psem);
+        if (err != 0)
+        {
+            //log error
+        }
+        UnLock();
+    }
+
+    void Signal()
+    {
+        Lock();
+        int err = sem_post(&psem);
+        if (err != 0)
+        {
+            //log error
+        }
+        MultSignal();
+        UnLock();
+    }
+
+    virtual bool MultCheck()
+    {
+        Lock();
+        int err = sem_trywait(&psem);
+        UnLock();
+        if (err == 0)
+        {
+            return true;
+        }
+        return false;
+    }
+
+private:
+    Semaphore(const Semaphore&);
+    const Semaphore& operator=(const Semaphore&);
+
+private:
+    sem_t psem;
+};
+
+}
+
 #endif
 
-#endif

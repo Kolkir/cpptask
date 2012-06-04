@@ -237,6 +237,7 @@ void ThreadFunc2()
 
 int main(int /*argc*/, char* /*argv*/[])
 {
+    std::cout << "Start parallel execution:";
     cpptask::ThreadFunction<ThreadFunc> t1(&ThreadFunc1);
     cpptask::ThreadFunction<ThreadFunc> t2(&ThreadFunc2);
     t1.Start();

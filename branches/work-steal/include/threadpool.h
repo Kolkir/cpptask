@@ -33,6 +33,7 @@
 #include "taskthread.h"
 #include "taskmanager.h"
 #include "tlskey.h"
+#include <limits>
 
 namespace cpptask
 {

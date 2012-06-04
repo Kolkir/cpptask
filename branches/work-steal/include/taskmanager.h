@@ -31,7 +31,7 @@
 #include "spscqueue.h"
 #include "tlskey.h"
 #include "mutex.h"
-#include "semaphore.h"
+#include "semaphor.h"
 #include "alignedalloc.h"
 
 namespace cpptask
@@ -49,7 +49,7 @@ public:
     ~TaskManager();
 
     size_t GetThreadsNum() const;
- 
+
     void AddTask(Task* task);
 
     Task* GetOwnTask();

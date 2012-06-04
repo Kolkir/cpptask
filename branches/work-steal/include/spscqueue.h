@@ -35,9 +35,6 @@
 namespace cpptask
 {
 
-// cache line size on modern x86 processors (in bytes)
-size_t const cache_line_size = 64;
-
 template<class T>
 class SPSCQueue
 {
@@ -144,7 +141,7 @@ private:
 
     // delimiter between consumer part and producer part,
     // so that they situated on different cache lines
-    char cache_line_pad [cache_line_size];
+    char cache_line_pad [64];
 
     // producer part
     // accessed only by producer

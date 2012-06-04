@@ -35,9 +35,9 @@ namespace cpptask
 {
 
 inline TaskManager::TaskManager(TaskThreadPool& threadPool, Semaphore& newTaskEvent, TaskThread* parentThread)
-    : threadPool(threadPool)
-    , newTaskEvent(newTaskEvent)
-	, parentThread(parentThread)
+    : parentThread(parentThread)
+	, threadPool(threadPool)
+	, newTaskEvent(newTaskEvent)
 {
     cacheLineSize = cpptask::GetCacheLineSize();
 }
@@ -56,7 +56,7 @@ inline void TaskManager::AddTask(Task* task)
     if (task != 0)
     {
         taskQueue.Push(task);
-        newTaskEvent.Signal(1);
+        newTaskEvent.Signal();
     }
 }
 
@@ -125,7 +125,7 @@ inline void TaskManager::WaitTask(Task* waitTask)
         Task* task = GetTask();
         if (task == 0)
         {
-            std::vector<MultWaitBase*> events(2);
+            std::vector<MultWaitBase<Event, Mutex>*> events(2);
             events[0] = &newTaskEvent;
             events[1] = waitTask->GetWaitEvent();
             int res = WaitForMultiple(events);

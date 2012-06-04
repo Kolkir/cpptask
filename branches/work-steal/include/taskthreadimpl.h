@@ -34,7 +34,7 @@
 namespace cpptask
 {
 
-inline TaskThread::TaskThread(TaskThreadPool& threadPool, Semaphore& newTaskEvent) 
+inline TaskThread::TaskThread(TaskThreadPool& threadPool, Semaphore& newTaskEvent)
     : newTaskEvent(newTaskEvent)
 {
     manager.Reset(new TaskManager(threadPool, newTaskEvent, this));
@@ -55,7 +55,7 @@ inline void TaskThread::Run()
         Task* task = manager->GetTask();
         if (task == 0)
         {
-            std::vector<MultWaitBase*> events(2);
+            std::vector<MultWaitBase<Event, Mutex>*> events(2);
             events[0] = &newTaskEvent;
             events[1] = &stopEvent;
             if (WaitForMultiple(events) == 0)
