@@ -3,7 +3,7 @@
 
 == Getting sources ==
 
-You need checkout source code from the trunk of the project repository, please find links at [http://code.google.com/p/cpptask/source/checkout Source] page or download archive from [http://code.google.com/p/cpptask/Downloads Downloads] page.
+You need checkout source code from the trunk of the project repository, please find links at [http://code.google.com/p/cpptask/source/checkout Source] page or download archive from [http://code.google.com/p/cpptask/downloads/list Downloads] page.
 
 == Compilation remarks ==
 
@@ -168,14 +168,15 @@ public:
 #include "taskmanager.h"
 ...
 cpptask::TaskThreadPool threadPool(THREADS_NUM);
-cpptask::TaskManager manager(threadPool);
+...
+cpptask::TaskManager* manager = cpptask::TaskManager::GetCurrent();
 std::shared_ptr<MyTask> task(new MyTask);
 manager.AddTask(task.get());
-manager.StartTasks();
 ...
-task->Wait();
+task->Wait(); //lock thread
+...
+manager.WaitTask(task.get()); //execute other tasks during waiting
 }}}
-If you start some child tasks inside other task and want to wait for them you have to call WaitChildTask function instead of Task::Wait.
 
 == Parallel-For algorithm ==
 Algorithm to execute in parallel some identical operations on container's elements.
