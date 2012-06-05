@@ -25,10 +25,7 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <parallelfor.h>
-#include <parallelinvoke.h>
-#include <parallelreduce.h>
-#include <timer.h>
+#include <cpptask.h>
 
 #include <cmath>
 #include <vector>
@@ -77,14 +74,13 @@ void ParallelTest1()
     ArrayType big_array = GetBigArray();
 
     cpptask::TaskThreadPool threadPool(THREADS_NUM);
-    cpptask::TaskManager manager(threadPool);
 
     big_array = GetBigArray();
 
     timer.Start();
-    cpptask::ParallelFor(big_array.begin(), big_array.end(), Test1(), manager);
+    cpptask::ParallelFor(big_array.begin(), big_array.end(), Test1(), threadPool);
 
-    std::cout << "Parallel time is : " << timer.End() << " ms\n";
+    std::cout << "Parallel for time is : " << timer.End() << " ms\n";
 }
 
 struct Test21
@@ -117,20 +113,20 @@ struct Test22
     }
     ArrayType* big_array;
 };
+
 void ParallelTest2()
 {
     cpptask::Timer timer;
     ArrayType big_array = GetBigArray();
 
     cpptask::TaskThreadPool threadPool(THREADS_NUM);
-    cpptask::TaskManager manager(threadPool);
 
     big_array = GetBigArray();
 
     timer.Start();
-    cpptask::ParallelInvoke(Test21(&big_array), Test22(&big_array), manager);
+    cpptask::ParallelInvoke(Test21(&big_array), Test22(&big_array), threadPool);
 
-    std::cout << "Parallel time is : " << timer.End() << " ms\n";
+    std::cout << "Parallel invoke time is : " << timer.End() << " ms\n";
 }
 
 struct Test3
@@ -189,15 +185,14 @@ double ParallelTest3()
     ArrayType big_array = GetBigArray();
 
     cpptask::TaskThreadPool threadPool(THREADS_NUM);
-    cpptask::TaskManager manager(threadPool);
 
     big_array = GetBigArray();
 
     timer.Start();
     Accumulator accumulator(0);
-    cpptask::ParallelReduce(big_array.begin(), big_array.end(), accumulator, manager);
+    cpptask::ParallelReduce(big_array.begin(), big_array.end(), accumulator, threadPool);
 
-    std::cout << "Parallel time is : " << timer.End() << " ms\n";
+    std::cout << "Parallel reduce time is : " << timer.End() << " ms\n";
     return accumulator.res;
 }
 
@@ -211,9 +206,8 @@ void ExceptionTest()
     try
     {
         cpptask::TaskThreadPool threadPool(THREADS_NUM);
-        cpptask::TaskManager manager(threadPool);
 
-        cpptask::ParallelInvoke(&Test4, &Test4, manager);
+        cpptask::ParallelInvoke(&Test4, &Test4, threadPool);
     }
     catch(cpptask::Exception& err)
     {
@@ -243,6 +237,7 @@ void ThreadFunc2()
 
 int main(int /*argc*/, char* /*argv*/[])
 {
+    std::cout << "Start parallel execution:";
     cpptask::ThreadFunction<ThreadFunc> t1(&ThreadFunc1);
     cpptask::ThreadFunction<ThreadFunc> t2(&ThreadFunc2);
     t1.Start();
@@ -266,11 +261,12 @@ int main(int /*argc*/, char* /*argv*/[])
     double r2 = ParallelTest3();
 
     std::cout << "------------------------\n";
-    std::cout << "Results are " << (r1 == r2)  << "\n";
+    std::cout << "Reduce results compare are " << (r1 == r2)  << "\n";
 
     std::cout << "------------------------\n";
     ExceptionTest();
 
     std::cout << "------------------------\n";
+
     return 0;
 }

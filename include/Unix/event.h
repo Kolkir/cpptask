@@ -28,156 +28,79 @@
 #ifndef _EVENT_H_
 #define _EVENT_H_
 
-#include "../mutex.h"
-
-#include <sys/timeb.h>
+#include "mutex.h"
+#include "multwait.h"
 #include <pthread.h>
-#include <cerrno>
-
-#include <vector>
-#include <algorithm>
-#include <time.h>
 
 namespace cpptask
 {
 
-class Event
+class Event : public MultWaitBase<Event, Mutex>
 {
 public:
     Event()
     {
-        pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
-        pthread_mutex_init(&pmutex, &attr);
-        pthread_mutexattr_destroy(&attr);
         pthread_cond_init(&pcond, NULL);
         signaled = false;
     }
     ~Event()
     {
         pthread_cond_destroy(&pcond);
-        pthread_mutex_destroy(&pmutex);
     }
     void Wait()
     {
         int rc = 0;
-        pthread_mutex_lock(&pmutex);
+        Lock();
         while (!signaled)
         {
-            rc = pthread_cond_wait(&pcond, &pmutex);
+            rc = pthread_cond_wait(&pcond, GetMutex());
             if (rc != 0)
             {
                 break;
             }
         }
-        pthread_mutex_unlock(&pmutex);
+        UnLock();
     }
     bool Check()
     {
         bool isSignaled = false;
-        pthread_mutex_lock(&pmutex);
+        Lock();
         isSignaled = signaled;
-        pthread_mutex_unlock(&pmutex);
+        UnLock();
         return isSignaled;
     }
     void Signal()
     {
-        pthread_mutex_lock(&pmutex);
+        Lock();
         if (!signaled)
         {
             signaled = true;
             pthread_cond_broadcast(&pcond);
 
-            std::vector<Event*>::iterator i = waitEvents.begin(),
-                                          e = waitEvents.end();
-            for (;i != e; ++i)
-            {
-                (*i)->Signal();
-            }
+            MultSignal();
         }
-        pthread_mutex_unlock(&pmutex);
+        UnLock();
     }
     void Reset()
     {
-        pthread_mutex_lock(&pmutex);
+        Lock();
         signaled = false;
-        pthread_mutex_unlock(&pmutex);
+        UnLock();
     }
-    friend inline int WaitForMultiple(std::vector<Event*>& events);
+
+    virtual bool MultCheck()
+    {
+        return Check();
+    }
+
 private:
     Event(const Event&);
     const Event& operator=(const Event&);
 
-    void AddWaitEvent(Event* event)
-    {
-        pthread_mutex_lock(&pmutex);
-        waitEvents.push_back(event);
-        pthread_mutex_unlock(&pmutex);
-    }
-    void DelWaitEvent(Event* event)
-    {
-        pthread_mutex_lock(&pmutex);
-        std::vector<Event*>::iterator i = std::find(waitEvents.begin(),
-                                                    waitEvents.end(),
-                                                    event);
-        if (i != waitEvents.end())
-        {
-            waitEvents.erase(i);
-        }
-        pthread_mutex_unlock(&pmutex);
-    }
 private:
-    pthread_mutex_t pmutex;
     pthread_cond_t pcond;
     bool signaled;
-    //multiple wait implementation
-    std::vector<Event*> waitEvents;
 };
-
-inline int WaitForMultiple(std::vector<Event*>& events)
-{
-    Event commonEvent;
-
-    std::vector<Event*>::iterator i = events.begin();
-    std::vector<Event*>::iterator e = events.end();
-
-    int index = -1;
-    for (; i != e; ++i, ++index)
-    {
-        (*i)->AddWaitEvent(&commonEvent);
-        if ((*i)->Check())
-        {
-            ++index;
-            break;
-        }
-    }
-
-    if (index == -1)
-    {
-        commonEvent.Wait();
-    }
-
-    i = events.begin();
-    if (index == -1)
-    {
-        for (; i != e; ++i, ++index)
-        {
-            if ((*i)->Check())
-            {
-                ++index;
-                break;
-            }
-        }
-    }
-
-    for (; i != e; ++i, ++index)
-    {
-        (*i)->DelWaitEvent(&commonEvent);
-    }
-
-    return index;
-}
-
 
 }
 

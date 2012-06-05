@@ -25,90 +25,40 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _MPSCQUEUE_H_
-#define _MPSCQUEUE_H_
+#ifndef _TASKTHREAD_H_
+#define _TASKTHREAD_H_
 
+#include "thread.h"
+#include "event.h"
 #include "atomic.h"
-#include "mutex.h"
+#include "refptr.h"
+#include "taskmanager.h"
 
 namespace cpptask
 {
 
-class MPSCNode
+class Task;
+class TaskThreadPool;
+class TaskThread: public Thread
 {
 public:
-    virtual ~MPSCNode(){}
-    MPSCNode():next(0){}
-    void SetNext(MPSCNode* n)
-    {
-        next = n;
-    }
-    MPSCNode* GetNext()
-    {
-        return next;
-    }
-private:
-    MPSCNode* next;
-};
+    TaskThread(TaskThreadPool& threadPool, Semaphore& newTaskEvent);
+    ~TaskThread();
 
-class MPSCQueue
-{
-public:
+    virtual void Run();
 
-    MPSCQueue()
-    {
-        head = &stub;
-        tail = &stub;
-    }
+    void Stop();
 
-    void Push(MPSCNode* n)
-    {
-        n->SetNext(0);
-        MPSCNode* prev = static_cast<MPSCNode*>(InterlockedExchangePointer((volatile void**)&head, n));
-        prev->SetNext(n);
-    }
+    TaskManager* GetTaskManager();
 
-    MPSCNode* Pop()
-    {
-        MPSCNode* newTail = tail;
-        MPSCNode* next = newTail->GetNext();
-        if (newTail == &stub)
-        {
-            if (next == 0)
-            {
-                return 0;
-            }
-            tail = next;
-            newTail = next;
-            next = next->GetNext();
-        }
-        if (next != 0)
-        {
-            tail = next;
-            return const_cast<MPSCNode*>(newTail);
-        }
-        volatile MPSCNode* newHead = head;
-        if (newTail != newHead)
-        {
-            return 0;
-        }
-        Push(&stub);
-        next = newTail->GetNext();
-        if (next)
-        {
-            tail = next;
-            return const_cast<MPSCNode*>(newTail);
-        }
-        return 0;
-    }
+    void DoWaitingTasks(Task* waitTask);
 
 private:
-
-    MPSCNode* head;
-    MPSCNode* tail;
-    MPSCNode stub;
+    Event stopEvent;
+    Semaphore& newTaskEvent;
+    RefPtr<TaskManager> manager;
+    AtomicFlag done;
 };
 
 }
-
 #endif

@@ -15,7 +15,12 @@ solution "CppTaskTest"
  
 	configuration { "Release" }
 		targetdir "bin/release"
-      
+
+	configuration( "windows" )
+		defines({"NOMINMAX"})    
+	configuration "linux"
+		links { "pthread" }
+
 	project "CppTaskTest"  	    
 		kind "ConsoleApp"
 		language "C++"        

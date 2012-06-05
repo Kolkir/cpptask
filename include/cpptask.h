@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,34 +25,17 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _THREAD_SELECT_H_
-#define _THREAD_SELECT_H_
+#ifndef _CPPTASK_H_
+#define _CPPTASK_H_
 
-#ifdef _WIN32
-#include "Win/thread.h"
-#else
-#include "Unix/thread.h"
-#endif
+#include "taskmanager.h"
+#include "taskthreadimpl.h"
+#include "taskmanagerlimpl.h"
+#include "threadpool.h"
+#include "timer.h"
 
-namespace cpptask
-{
-
-template<class F>
-class ThreadFunction : public Thread
-{
-public:
-    ThreadFunction(F f)
-        : func(f)
-    {
-    }
-    virtual void Run()
-    {
-        func();
-    }
-private:
-    F func;
-};
-
-}
+#include "parallelinvoke.h"
+#include "parallelfor.h"
+#include "parallelreduce.h"
 
 #endif

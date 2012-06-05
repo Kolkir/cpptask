@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,105 +25,81 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _TASK_H_
-#define _TASK_H_
+#ifndef _THREADPOOL_H_
+#define _THREADPOOL_H_
 
-#include "taskthread.h"
-#include "mutex.h"
-#include "event.h"
-#include "atomic.h"
-#include "alignedalloc.h"
 #include "refptr.h"
-
-#include <algorithm>
-#include <functional>
-#include <vector>
+#include "semaphor.h"
+#include "taskthread.h"
+#include "taskmanager.h"
+#include "tlskey.h"
 
 namespace cpptask
 {
 
-class Task
+class TaskThreadPool
 {
 public:
-    Task()
+    TaskThreadPool(size_t threadsNum)
     {
-        waitEvent.Reset();
-    }
-    virtual ~Task(){}
-    virtual void Execute() = 0;
+        manager.Reset(new TaskManager(*this, newTaskEvent, 0));
+        manager->RegisterInTLS();
 
-    void SignalDone()
-    {
-        waitEvent.Signal();
-    }
-
-    void Run()
-    {
-        try
+        for (size_t i = 0; i < threadsNum; ++i)
         {
-            Execute();
-        }
-        catch(Exception& err)
-        {
-            ScopedLock<Mutex> lock(&exceptionGuard);
-            lastException.Reset(err.Clone());
-        }
-        catch(...)
-        {
-            lastException.Reset(new Exception("Unknown exception"));
+            TaskThreadPtr tptr(new TaskThread(*this, newTaskEvent));
+            threads.push_back(tptr);
+            tptr->Start();
         }
     }
 
-    const Exception* GetLastException() const
+    ~TaskThreadPool()
     {
-        if (lastException.IsNull())
+        Threads::iterator i = threads.begin();
+        Threads::iterator e = threads.end();
+        for (;i != e; ++i)
         {
-            return 0;
+            (*i)->Stop();
+            (*i)->Wait();
         }
-        return lastException.Get();
     }
 
-    bool CheckFinished()
+    size_t GetThreadsNum() const
     {
-        if (waitEvent.Check())
+        return threads.size();
+    }
+
+    TaskThread* GetThread(size_t index)
+    {
+        if (index < threads.size())
         {
-            return true;
+            Threads::iterator i = threads.begin();
+            std::advance(i, index);
+            return i->Get();
         }
-        return false;
+        return 0;
     }
 
-    void Wait()
+    TLSKey* GetManagerKey()
     {
-        waitEvent.Wait();
+        return &managerKey;
     }
 
-    Event* GetWaitEvent()
+    TaskManager* GetTaskManager()
     {
-        return &waitEvent;
-    }
-
-    void* operator new(size_t size, size_t alignment)
-    {
-        return AlignedAlloc(size, alignment);
-    }
-
-    void operator delete(void* ptr)
-    {
-        AlignedFree(ptr);
-    }
-
-    void operator delete(void* ptr, size_t)
-    {
-        AlignedFree(ptr);
+        return manager.Get();
     }
 
 private:
-    Task(const Task&);
-    const Task& operator=(const Task&);
+    TaskThreadPool(const TaskThreadPool&);
+    const TaskThreadPool& operator=(const TaskThreadPool&);
 private:
-    RefPtr<Exception> lastException;
-    Mutex exceptionGuard;
-    Event waitEvent;
+    typedef RefPtr<TaskThread> TaskThreadPtr;
+    typedef std::vector<TaskThreadPtr> Threads;
+    Threads threads;
+    Semaphore newTaskEvent;
+    TLSKey managerKey;
+    RefPtr<TaskManager> manager;
 };
 
 }

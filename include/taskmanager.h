@@ -28,115 +28,51 @@
 #ifndef _TASKMANAGER_H_
 #define _TASKMANAGER_H_
 
-#include "thread.h"
-#include "task.h"
-#include "event.h"
-#include "atomic.h"
-#include "mpscqueue.h"
+#include "spscqueue.h"
+#include "tlskey.h"
+#include "mutex.h"
+#include "semaphor.h"
 #include "alignedalloc.h"
 
 namespace cpptask
 {
 
-class TaskManager;
-class ManagerThread: public Thread
-{
-public:
-    ManagerThread():manager(0){}
-
-    virtual void Run();
-
-    void SetManager(TaskManager* manager){this->manager = manager;}
-    
-    void Finish()
-    {
-        done.Set();
-        taskProcessEvent.Signal();        
-    }
-    void NotifyScheduleTasks()
-    {
-        taskProcessEvent.Signal();
-    }
-private:
-    Event taskProcessEvent;
-    AtomicFlag done;
-    TaskManager* manager;
-};
-
+class Task;
+class TaskThreadPool;
+class Thread;
+class TaskThread;
 class TaskManager
 {
 public:
-    TaskManager(TaskThreadPool& threadPool)
-        : threadPool(threadPool)
-    {
-        cacheLineSize = cpptask::GetCacheLineSize();
-        managerThread.SetManager(this);
-        managerThread.Start();
-    }
+    TaskManager(TaskThreadPool& threadPool, Semaphore& newTaskEvent, TaskThread* parentThread);
 
-    ~TaskManager()
-    {
-        managerThread.Finish();
-        managerThread.Wait();
-    }
+    ~TaskManager();
 
-    size_t GetThreadsNum() const
-    {
-        return threadPool.GetThreadsNum();
-    }
+    size_t GetThreadsNum() const;
 
-    void AddTask(Task* task)
-    {
-        if (task != 0)
-        {
-           taskQueue.Push(task);       
-        }
-    }
+    void AddTask(Task* task);
 
-    void StartTasks()
-    {
-        managerThread.NotifyScheduleTasks();
-    }
+    Task* GetOwnTask();
 
-    void ScheduleTasks()
-    {
-        MPSCNode* node = taskQueue.Pop();
-        while(node != 0)
-        {
-            Task* task = static_cast<Task*>(node);
+    Task* GetTask();
 
-            TaskThread* thread = threadPool.GetEmptyThread();
-            if (thread == 0)
-            {
-                thread = threadPool.GetEmptyThreadWait();
-            }
-            thread->SetTask(task);
- 
-            node = taskQueue.Pop();
-        }
-    }
+    size_t GetCacheLineSize() const;
 
-    size_t GetCacheLineSize() const
-    {
-        return cacheLineSize;
-    }
+    static TaskManager* GetCurrent(TaskThreadPool& threadPool);
+
+    void RegisterInTLS();
+
+    void WaitTask(Task* waitTask);
 
 private:
+    TaskThread* parentThread;
     TaskThreadPool& threadPool;
-    MPSCQueue taskQueue;
-    ManagerThread managerThread;
+    SPSCQueue<Task*> taskQueue;
     size_t cacheLineSize;
+    Mutex getGuard;
+    Semaphore& newTaskEvent;
 };
 
-inline void ManagerThread::Run()
-{
-    while(!done.IsSet())
-    {
-        taskProcessEvent.Wait();
-        manager->ScheduleTasks();
-        taskProcessEvent.Reset();
-    }
-}
 
 }
 #endif

@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,33 +25,45 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _THREAD_SELECT_H_
-#define _THREAD_SELECT_H_
+#ifndef _MULTWAIT_H_
+#define _MULTWAIT_H_
 
-#ifdef _WIN32
-#include "Win/thread.h"
-#else
-#include "Unix/thread.h"
-#endif
+#include <windows.h>
+
+#include <vector>
 
 namespace cpptask
 {
 
-template<class F>
-class ThreadFunction : public Thread
+template<class E, class M>
+class MultWaitBase
 {
 public:
-    ThreadFunction(F f)
-        : func(f)
-    {
-    }
-    virtual void Run()
-    {
-        func();
-    }
-private:
-    F func;
+    virtual ~MultWaitBase(){}
+    virtual HANDLE GetHandle() = 0;
 };
+
+template<class E, class M>
+int WaitForMultiple(std::vector<MultWaitBase<E, M>*>& objects)
+{
+    if (!objects.empty())
+    {
+        std::vector<HANDLE> handles;
+        std::vector<MultWaitBase<E,M>*>::iterator i = objects.begin();
+        std::vector<MultWaitBase<E,M>*>::iterator e = objects.end();
+        for (; i != e; ++i)
+        {
+            handles.push_back((*i)->GetHandle());
+        }        
+        DWORD rez = ::WaitForMultipleObjects(static_cast<DWORD>(handles.size()), &handles[0], FALSE, INFINITE);
+        if (rez >= WAIT_OBJECT_0 && rez <= WAIT_OBJECT_0 + handles.size() - 1)
+        {
+            return rez - WAIT_OBJECT_0;
+        }        
+    }
+    return -1;
+}
+
 
 }
 

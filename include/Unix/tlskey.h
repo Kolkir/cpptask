@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,32 +25,47 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _THREAD_SELECT_H_
-#define _THREAD_SELECT_H_
+#ifndef _TLSKEY_H_
+#define _TLSKEY_H_
 
-#ifdef _WIN32
-#include "Win/thread.h"
-#else
-#include "Unix/thread.h"
-#endif
+#include <pthread.h>
+#include <stdexcept>
 
 namespace cpptask
 {
 
-template<class F>
-class ThreadFunction : public Thread
+class TLSKey
 {
 public:
-    ThreadFunction(F f)
-        : func(f)
+    TLSKey()
     {
+        int err = pthread_key_create(&key, 0);
+        if (err != 0)
+        {
+            throw std::runtime_error("Can't create a TLS key");
+        }
     }
-    virtual void Run()
+
+    ~TLSKey()
     {
-        func();
+        pthread_key_delete(key);
     }
+
+    void* GetValue() const
+    {
+        return pthread_getspecific(key);
+    }
+
+    void SetValue(void* value)
+    {
+        pthread_setspecific(key, value);
+    }
+
 private:
-    F func;
+    TLSKey(const TLSKey&);
+    const TLSKey& operator=(const TLSKey&);
+private:
+    pthread_key_t key;
 };
 
 }
