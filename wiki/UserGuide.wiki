@@ -3,7 +3,7 @@
 
 == Getting sources ==
 
-You need checkout source code from the trunk of the project repository, please find links at [http://code.google.com/p/cpptask/source/checkout Source] page.
+You need checkout source code from the trunk of the project repository, please find links at [http://code.google.com/p/cpptask/source/checkout Source] page or download archive from [http://code.google.com/p/cpptask/Downloads Downloads] page.
 
 == Compilation remarks ==
 
