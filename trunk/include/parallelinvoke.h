@@ -28,8 +28,6 @@
 #ifndef _PARALLEL_INVOKE_H_
 #define _PARALLEL_INVOKE_H_
 
-#include "taskmanager.h"
-
 namespace cpptask
 {
 
@@ -54,24 +52,24 @@ private:
 };
 
 template<class Functor1, class Functor2>
-inline void ParallelInvoke(Functor1 func1, Functor2 func2, TaskManager& manager)
-{           
+inline void ParallelInvoke(Functor1 func1, Functor2 func2, TaskThreadPool& threadPool)
+{
     typedef InvokeTask<Functor1> TASK1;
     typedef RefPtr<TASK1> TASKPtr1;
 
-    TASKPtr1 task1(new(manager.GetCacheLineSize()) TASK1(func1));
-    manager.AddTask(task1.Get());
+    TaskManager* manager = TaskManager::GetCurrent(threadPool);
+
+    TASKPtr1 task1(new(manager->GetCacheLineSize()) TASK1(func1));
+    manager->AddTask(task1.Get());
 
     typedef InvokeTask<Functor2> TASK2;
     typedef RefPtr<TASK2> TASKPtr2;
 
-    TASKPtr2 task2(new(manager.GetCacheLineSize()) TASK2(func2));
-    manager.AddTask(task2.Get());
+    TASKPtr2 task2(new(manager->GetCacheLineSize()) TASK2(func2));
+    manager->AddTask(task2.Get());
 
-    manager.StartTasks();
-
-    task1->Wait();
-    task2->Wait();
+    manager->WaitTask(task1.Get());
+    manager->WaitTask(task2.Get());
 
     if (task1->GetLastException() != 0)
     {

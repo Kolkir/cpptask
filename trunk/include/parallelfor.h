@@ -64,10 +64,12 @@ private:
 };
 
 template<class Iterator, class Functor>
-inline void ParallelFor(Iterator start, Iterator end, Functor functor, TaskManager& manager)
+inline void ParallelFor(Iterator start, Iterator end, Functor functor, TaskThreadPool& threadPool)
 {
+    TaskManager* manager = TaskManager::GetCurrent(threadPool);
+
     typedef std::vector<Range<Iterator> > RANGES;
-    RANGES ranges = SplitRange(start, end, manager.GetThreadsNum());
+    RANGES ranges = SplitRange(start, end, manager->GetThreadsNum());
 
     typedef Range<Iterator> RANGE;
     typedef ForTask<RANGE, Functor> TASK;
@@ -79,19 +81,17 @@ inline void ParallelFor(Iterator start, Iterator end, Functor functor, TaskManag
     typename RANGES::iterator e = ranges.end();
     for (; i != e; ++i)
     {
-        TASK* ptr = new(manager.GetCacheLineSize()) TASK(*i, functor);
+        TASK* ptr = new(manager->GetCacheLineSize()) TASK(*i, functor);
         TASKPtr task(ptr);
         tasks.push_back(task);
-        manager.AddTask(task.Get());
+        manager->AddTask(task.Get());
     }
-
-    manager.StartTasks();
 
     typename TASKS::iterator it = tasks.begin();
     typename TASKS::iterator et = tasks.end();
     for (; it != et; ++it)
     {
-        (*it)->Wait();
+        manager->WaitTask((*it).Get());
     }
     it = tasks.begin();
     for (; it != et; ++it)

@@ -25,34 +25,62 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _THREAD_SELECT_H_
-#define _THREAD_SELECT_H_
+#ifndef _TASKTHREADIMPL_H_
+#define _TASKTHREADIMPL_H_
 
-#ifdef _WIN32
-#include "Win/thread.h"
-#else
-#include "Unix/thread.h"
-#endif
+#include "task.h"
+#include "taskmanager.h"
 
 namespace cpptask
 {
 
-template<class F>
-class ThreadFunction : public Thread
+inline TaskThread::TaskThread(TaskThreadPool& threadPool, Semaphore& newTaskEvent)
+    : newTaskEvent(newTaskEvent)
 {
-public:
-    ThreadFunction(F f)
-        : func(f)
-    {
-    }
-    virtual void Run()
-    {
-        func();
-    }
-private:
-    F func;
-};
-
+    manager.Reset(new TaskManager(threadPool, newTaskEvent, this));
 }
 
+inline TaskThread::~TaskThread()
+{
+    Stop();
+    Wait();
+}
+
+inline void TaskThread::Run()
+{
+    manager->RegisterInTLS();
+
+    while (!done.IsSet())
+    {
+        Task* task = manager->GetTask();
+        if (task == 0)
+        {
+            std::vector<MultWaitBase<Event, Mutex>*> events(2);
+            events[0] = &newTaskEvent;
+            events[1] = &stopEvent;
+            if (WaitForMultiple(events) == 0)
+            {
+                task = manager->GetTask();
+            }
+        }
+        if (task != 0)
+        {
+            task->Run();
+            task->SignalDone();
+        }
+    }
+}
+
+inline void TaskThread::Stop()
+{
+    stopEvent.Signal();
+    done.Set();
+}
+
+TaskManager* TaskThread::GetTaskManager()
+{
+    return manager.Get();
+}
+
+}
 #endif

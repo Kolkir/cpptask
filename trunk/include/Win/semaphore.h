@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,13 +25,62 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _MPSCQUEUE_SELECT_H_
-#define _MPSCQUEUE_SELECT_H_
+#ifndef _SEMAPHORE_H_
+#define _SEMAPHORE_H_
 
-#ifdef _WIN32
-#include "Win/mpscqueue.h"
-#else
-#include "Unix/mpscqueue.h"
-#endif
+#include "event.h"
+#include "mutex.h"
+#include "multwait.h"
+
+#include <Windows.h>
+#include <stdexcept>
+#include <limits>
+
+namespace cpptask
+{
+
+class Semaphore : public MultWaitBase<Event, Mutex>
+{
+public:
+    Semaphore()
+    {
+        hSemaphore = ::CreateSemaphore(0, 0, std::numeric_limits<long>::max(), 0);
+        if (hSemaphore == NULL)
+        {
+            throw std::runtime_error("Can't create a semaphore");
+        }
+    }
+    ~Semaphore()
+    {
+        CloseHandle(hSemaphore);
+    }
+
+    void Wait()
+    {
+        DWORD rez = ::WaitForSingleObject(hSemaphore, INFINITE);
+        if (rez != WAIT_OBJECT_0)
+        {
+            //log error
+        }
+    }
+
+    void Signal()
+    {
+        long prevCount(0);
+        BOOL rez = ::ReleaseSemaphore(hSemaphore, 1, &prevCount);
+        if (rez == FALSE)
+        {
+            //log error
+        }
+    }
+private:
+    Semaphore(const Semaphore&);
+    const Semaphore& operator=(const Semaphore&);
+    virtual HANDLE GetHandle() {return hSemaphore;}
+private:
+    HANDLE hSemaphore;
+};
+
+}
 
 #endif

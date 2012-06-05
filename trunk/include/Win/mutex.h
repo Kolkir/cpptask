@@ -58,6 +58,11 @@ public:
         }
     }
 
+    bool TryLock()
+    {
+        return WaitLock(0);
+    }
+
     bool WaitLock(long timeWait = INFINITE)
     {
         DWORD rez = ::WaitForSingleObject(hMutex, timeWait);

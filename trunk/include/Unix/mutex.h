@@ -41,10 +41,14 @@ class Mutex
 public:
     Mutex()
     {
-        if (::pthread_mutex_init(&pmutex, 0) != 0)
+        pthread_mutexattr_t attr;
+        pthread_mutexattr_init(&attr);
+        if (::pthread_mutex_init(&pmutex, &attr) != 0)
         {
+            pthread_mutexattr_destroy(&attr);
             throw std::runtime_error("Can't create a mutex");
         }
+        pthread_mutexattr_destroy(&attr);
     }
     ~Mutex()
     {
@@ -53,6 +57,16 @@ public:
     void Lock()
     {
         ::pthread_mutex_lock(&pmutex);
+    }
+
+    bool TryLock()
+    {
+        int err = pthread_mutex_trylock(&pmutex);
+        if (err == 0)
+        {
+            return true;
+        }
+        return false;
     }
 
     bool WaitLock(unsigned long time)
@@ -76,6 +90,11 @@ public:
     void UnLock()
     {
         ::pthread_mutex_unlock(&pmutex);
+    }
+
+    pthread_mutex_t* GetNative()
+    {
+        return &pmutex;
     }
 private:
     Mutex(const Mutex&);

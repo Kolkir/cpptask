@@ -28,14 +28,15 @@
 #ifndef _EVENT_H_
 #define _EVENT_H_
 
-#include <windows.h>
+#include "mutex.h"
+#include "multwait.h"
 
-#include <vector>
+#include <windows.h>
 
 namespace cpptask
 {
 
-class Event
+class Event : public MultWaitBase<Event, Mutex>
 {
 public:
     Event()
@@ -66,40 +67,19 @@ public:
     }
     void Signal()
     {
-        ::SetEvent(hEvent);    
+        ::SetEvent(hEvent);
     }
     void Reset()
     {
         ::ResetEvent(hEvent);
     }
-    friend int WaitForMultiple(std::vector<Event*>& events);
 private:
     Event(const Event&);
     const Event& operator=(const Event&);
+    virtual HANDLE GetHandle() {return hEvent;}
 private:
    HANDLE hEvent;
 };
-
-inline int WaitForMultiple(std::vector<Event*>& events)
-{
-    if (!events.empty())
-    {
-        std::vector<HANDLE> handles;
-        std::vector<Event*>::iterator i = events.begin();
-        std::vector<Event*>::iterator e = events.end();
-        for (; i != e; ++i)
-        {
-            handles.push_back((*i)->hEvent);
-        }        
-        DWORD rez = ::WaitForMultipleObjects(static_cast<DWORD>(handles.size()), &handles[0], FALSE, INFINITE);
-        if (rez >= WAIT_OBJECT_0 && rez <= WAIT_OBJECT_0 + handles.size() - 1)
-        {
-            return rez - WAIT_OBJECT_0;
-        }        
-    }
-    return -1;
-}
-
 
 }
 

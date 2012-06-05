@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,34 +25,13 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _THREAD_SELECT_H_
-#define _THREAD_SELECT_H_
+#ifndef _SEMAPHORE_SELECT_H_
+#define _SEMAPHORE_SELECT_H_
 
 #ifdef _WIN32
-#include "Win/thread.h"
+#include "Win/semaphore.h"
 #else
-#include "Unix/thread.h"
+#include "Unix/semaphor.h"
 #endif
-
-namespace cpptask
-{
-
-template<class F>
-class ThreadFunction : public Thread
-{
-public:
-    ThreadFunction(F f)
-        : func(f)
-    {
-    }
-    virtual void Run()
-    {
-        func();
-    }
-private:
-    F func;
-};
-
-}
 
 #endif

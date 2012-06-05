@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,88 +25,47 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _MPSCQUEUE_H_
-#define _MPSCQUEUE_H_
+#ifndef _TLSKEY_H_
+#define _TLSKEY_H_
 
 #include <Windows.h>
-#include "mutex.h"
+#include <stdexcept>
 
 namespace cpptask
 {
 
-class MPSCNode
+class TLSKey
 {
 public:
-    virtual ~MPSCNode(){}
-    MPSCNode():next(0){}
-    void SetNext(MPSCNode* n)
+    TLSKey()
     {
-        next = n;
+        tlsIndex = ::TlsAlloc();
+        if (tlsIndex == TLS_OUT_OF_INDEXES)
+        {
+            throw std::runtime_error("Can't create a TLS key");
+        }
     }
-    MPSCNode* GetNext()
+
+    ~TLSKey()
     {
-        return next;
+        TlsFree(tlsIndex);;
     }
-private:
-    MPSCNode* next;
-};
-
-class MPSCQueue 
-{
-public:
-
-    MPSCQueue()
+   
+    void* GetValue() const
     {
-        head = &stub;
-        tail = &stub;
+        return TlsGetValue(tlsIndex);
     }
 
-    void Push(MPSCNode* n)
-    {   
-        n->SetNext(0);
-        MPSCNode* prev = static_cast<MPSCNode*>(InterlockedExchangePointer((volatile PVOID*)&head, n));
-        prev->SetNext(n); 
-    }
-
-    MPSCNode* Pop()
-    {       
-        MPSCNode* newTail = tail;
-        MPSCNode* next = newTail->GetNext();
-        if (newTail == &stub)
-        {
-            if (next == 0)
-            {
-                return 0;
-            }
-            tail = next;
-            newTail = next;
-            next = next->GetNext();
-        }
-        if (next != 0)
-        {
-            tail = next;
-            return const_cast<MPSCNode*>(newTail);
-        }
-        volatile MPSCNode* newHead = head;
-        if (newTail != newHead)
-        {
-            return 0;
-        }
-        Push(&stub);
-        next = newTail->GetNext();
-        if (next)
-        {
-            tail = next;
-            return const_cast<MPSCNode*>(newTail);
-        }
-        return 0;       
+    void SetValue(void* value)
+    {
+        ::TlsSetValue(tlsIndex, value);
     }
 
 private:
-
-    MPSCNode* head;
-    MPSCNode* tail;
-    MPSCNode stub;
+    TLSKey(const TLSKey&);
+    const TLSKey& operator=(const TLSKey&);
+private:
+    DWORD tlsIndex;
 };
 
 }
