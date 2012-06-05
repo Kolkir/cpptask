@@ -103,8 +103,40 @@ event.Wait();
 // do work work
 event.Reset();
 ...
-std::vector<Events*> events;
+std::vector<MultWaitBase*> events;
 int signaled = WaitForMultiple(events);
+switch (signaled)
+{
+case -1: 
+    // error
+    break;
+case 0:
+    // first event is in signaled state
+    break;
+case 1:
+    // second event is in signaled state
+    break;
+}
+}}}
+
+== Semaphore primitive ==
+
+Semaphore synchronization primitive. Multiple threads can signal and wait for semaphore. Each signal call will increase semaphore counter. Wait call will return if counter is non zero, and decrement it. If counter is zero Wait call will lock thread.
+ 
+{{{
+#include <semaphor.h>
+...
+cpptask::Semaphore sem;
+...
+sem.Signal();
+...
+event.Wait();
+// do work work
+
+...
+std::vector<MultWaitBase*> events;
+events.push_back(&sem);
+int signaled = WaitForMultiple(sem);
 switch (signaled)
 {
 case -1: 
