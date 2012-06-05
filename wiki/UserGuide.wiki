@@ -17,7 +17,7 @@ Root directory of the project contain sub directory named "examples" where you c
 
 If you need only simple thread implementation, you could use {{{cpptask::Thread}}} class, where you will need override Run method of the class. Or you can use {{{cpptask::ThreadFunction}}} class, which take functor as constructor parameter.
 {{{
-#include <thread.h>
+#include <cpptask.h>
 ...
 typedef void (*ThreadFunc)(void);
 void ThreadFunc1()
@@ -36,7 +36,7 @@ mythread.Wait();
 Library provide only two types of atomics values:
  * {{{cpptask::AtomicFlag}}} - class represents boolean values you can Set flag and Reset it.
 {{{
-#include <atomic.h>
+#include <cpptask.h>
 ...
 cpptask::AtomicFlag someFlag;
 someFlag.Set();
@@ -49,7 +49,7 @@ if (someFlag.IsSet())
 }}}
  * {{{cpptask::AtomicNumber}}} - class represents c++ long value type you can atomicaly {{{Inc/Dec}}} and {{{SetValue/GetValue}}} from it.
 {{{
-#include <atomic.h>
+#include <cpptask.h>
 ...
 cpptask::AtomicNumber counter;
 counter.SetValue(10);
@@ -69,7 +69,7 @@ if (counter.GetValue() == 10)
 
 Standard Mutex synchronization primitive:
 {{{
-#include <mutex.h>
+#include <cpptask.h>
 ...
 cpptask::Mutex guard;
 ...
@@ -93,7 +93,7 @@ if (quard.WaitLock(timeInMiliseconds))
 
 Windows API like Event synchronization primitive. One thread can wait for an event which can be signaled from many other threads.
 {{{
-#include <event.h>
+#include <cpptask.h>
 ...
 cpptask::Event event;
 ...
@@ -124,7 +124,7 @@ case 1:
 Semaphore synchronization primitive. Multiple threads can signal and wait for semaphore. Each signal call will increase semaphore counter. Wait call will return if counter is non zero, and decrement it. If counter is zero Wait call will lock thread.
  
 {{{
-#include <semaphor.h>
+#include <cpptask.h>
 ...
 cpptask::Semaphore sem;
 ...
@@ -154,7 +154,7 @@ case 1:
 == Task class for faster job delivering to threads ==
 To schedule some job to the thread engine you can derive your class from the Task class and override Execute method. Then you have to create and initialize {{{TaskManager}}} object. After that you have to add task to the manager and ask manager to start new jobs. Also Task class have method Wait which will lock you thread until task will be processed, and have method {{{GetLastException}}} which you can call after wait to check if there were some exceptions. 
 {{{
-#include "task.h"
+#include "cpptask.h"
 ...
 class MyTask : public Task
 {
@@ -165,11 +165,11 @@ public:
     }
 };
 ...
-#include "taskmanager.h"
+#include "cpptask.h"
 ...
 cpptask::TaskThreadPool threadPool(THREADS_NUM);
 ...
-cpptask::TaskManager* manager = cpptask::TaskManager::GetCurrent();
+cpptask::TaskManager* manager = cpptask::TaskManager::GetCurrent(threadPool);
 std::shared_ptr<MyTask> task(new MyTask);
 manager.AddTask(task.get());
 ...
@@ -181,10 +181,9 @@ manager.WaitTask(task.get()); //execute other tasks during waiting
 == Parallel-For algorithm ==
 Algorithm to execute in parallel some identical operations on container's elements.
 {{{
-#include <parallelfor.h>
+#include <cpptask.h>
 ...
 cpptask::TaskThreadPool threadPool(THREADS_NUM);
-cpptask::TaskManager manager(threadPool);
 ...
 void func()(double& x)
 {
@@ -193,7 +192,7 @@ void func()(double& x)
 ...
 std::vector<double> array;
 ...
-cpptask::ParallelFor(array.begin(), array.end(), func, manager);
+cpptask::ParallelFor(array.begin(), array.end(), func, threadPool);
 }}}
 
 == Parallel-Reduce algorithm ==
@@ -206,7 +205,7 @@ It is a some sort of parallel aggregation algorithm. The result of it will be th
 3. Join method which will be called to combine results from subranges processing.
 
 {{{
-#include <parallelreduce.h>
+#include <cpptask.h>
 ...
 typedef std::vector<double> ArrayType;
 
@@ -236,7 +235,7 @@ public:
 };
 ...
 Accumulator accumulator(0);
-cpptask::ParallelReduce(array.begin(), array.end(), accumulator, manager);
+cpptask::ParallelReduce(array.begin(), array.end(), accumulator, threadPool);
 std::cout << accumulator.res;
 ...
 }}}
@@ -244,9 +243,9 @@ std::cout << accumulator.res;
 == Parallel-Invoke algorithm ==
 Algorithm simply execute two functions in parallel.
 {{{
-#include <parallelinvoke.h>
+#include <cpptask.h>
 ...
-cpptask::ParallelInvoke(func1, func2, manager);
+cpptask::ParallelInvoke(func1, func2, threadPool);
 }}}
 
 == Delivering exceptions from threads and tasks to caller ==
@@ -255,5 +254,5 @@ If you want to get exceptions from threads or tasks you have to derive this exce
 == Lambda expressions support ==
 New C++11 lambdas can be used in all algorithms of the library.
 {{{
-cpptask::ParallelInvoke([&](){//expensive work}, [&](){//expensive work}, manager);
+cpptask::ParallelInvoke([&](){//expensive work}, [&](){//expensive work}, threadPool);
 }}}
