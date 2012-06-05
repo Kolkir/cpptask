@@ -35,22 +35,22 @@
 namespace cpptask
 {
 
+template<class E, class M>
 class MultWaitBase
 {
 public:
     virtual ~MultWaitBase(){}
-    friend int WaitForMultiple(std::vector<MultWaitBase*>& objects);
-private:
-   virtual HANDLE GetHandle() = 0;
+    virtual HANDLE GetHandle() = 0;
 };
 
-inline int WaitForMultiple(std::vector<MultWaitBase*>& objects)
+template<class E, class M>
+int WaitForMultiple(std::vector<MultWaitBase<E, M>*>& objects)
 {
     if (!objects.empty())
     {
         std::vector<HANDLE> handles;
-        std::vector<MultWaitBase*>::iterator i = objects.begin();
-        std::vector<MultWaitBase*>::iterator e = objects.end();
+        std::vector<MultWaitBase<E,M>*>::iterator i = objects.begin();
+        std::vector<MultWaitBase<E,M>*>::iterator e = objects.end();
         for (; i != e; ++i)
         {
             handles.push_back((*i)->GetHandle());

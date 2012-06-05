@@ -28,20 +28,23 @@
 #ifndef _SEMAPHORE_H_
 #define _SEMAPHORE_H_
 
+#include "event.h"
+#include "mutex.h"
 #include "multwait.h"
 
 #include <Windows.h>
 #include <stdexcept>
+#include <limits>
 
 namespace cpptask
 {
 
-class Semaphore : public MultWaitBase
+class Semaphore : public MultWaitBase<Event, Mutex>
 {
 public:
-    Semaphore(long maxCount)
+    Semaphore()
     {
-        hSemaphore = ::CreateSemaphore(0, 0, maxCount, 0);
+        hSemaphore = ::CreateSemaphore(0, 0, std::numeric_limits<long>::max(), 0);
         if (hSemaphore == NULL)
         {
             throw std::runtime_error("Can't create a semaphore");
@@ -61,10 +64,10 @@ public:
         }
     }
 
-    void Signal(long count)
+    void Signal()
     {
         long prevCount(0);
-        BOOL rez = ::ReleaseSemaphore(hSemaphore, count, &prevCount);
+        BOOL rez = ::ReleaseSemaphore(hSemaphore, 1, &prevCount);
         if (rez == FALSE)
         {
             //log error

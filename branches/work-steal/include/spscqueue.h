@@ -121,7 +121,7 @@ private:
     {
         // hardware fence is implicit on x86
         TT v = *const_cast<TT const volatile*>(addr);
-        MemoryFence(); // compiler fence
+        CppTaskMemoryFence(); // compiler fence
         return v;
     }
 
@@ -130,7 +130,7 @@ private:
     static void StoreRelease(TT* addr, TT v)
     {
         // hardware fence is implicit on x86
-        MemoryFence(); // compiler fence
+        CppTaskMemoryFence(); // compiler fence
         *const_cast<TT volatile*>(addr) = v;
     }
 

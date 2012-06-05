@@ -33,7 +33,7 @@
 namespace cpptask
 {
 
-#define MemoryFence() _ReadWriteBarrier()
+#define CppTaskMemoryFence() _ReadWriteBarrier()
 
 class AtomicFlag
 {

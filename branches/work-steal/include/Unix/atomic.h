@@ -31,7 +31,7 @@
 namespace cpptask
 {
 
-#define MemoryFence() __asm__ __volatile__ ("" ::: "memory")
+#define CppTaskMemoryFence() __asm__ __volatile__ ("" ::: "memory")
 
 
 inline long InterlockedExchange(volatile long* target, long newVal)

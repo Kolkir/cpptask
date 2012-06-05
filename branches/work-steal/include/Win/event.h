@@ -28,6 +28,7 @@
 #ifndef _EVENT_H_
 #define _EVENT_H_
 
+#include "mutex.h"
 #include "multwait.h"
 
 #include <windows.h>
@@ -35,7 +36,7 @@
 namespace cpptask
 {
 
-class Event : public MultWaitBase
+class Event : public MultWaitBase<Event, Mutex>
 {
 public:
     Event()

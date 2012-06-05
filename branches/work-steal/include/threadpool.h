@@ -29,7 +29,7 @@
 #define _THREADPOOL_H_
 
 #include "refptr.h"
-#include "semaphore.h"
+#include "semaphor.h"
 #include "taskthread.h"
 #include "taskmanager.h"
 #include "tlskey.h"
