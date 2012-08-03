@@ -103,6 +103,11 @@ private:
             lastException = err;
             return 1;
         }
+        catch(std::exception& err)
+        {
+            lastException = Exception(err.what());
+            return 1;
+        }
         catch(...)
         {
             return 1;

@@ -132,9 +132,9 @@ private:
 };
 
 template<class Iterator, class Functor>
-inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, TaskThreadPool& threadPool, size_t maxDepth = 5)
+inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, size_t maxDepth = 5)
 {
-    TaskManager* manager = TaskManager::GetCurrent(threadPool);
+    TaskManager* manager = TaskManager::GetCurrent();
     typedef Range<Iterator> RANGE;
     typedef ReduceTask<RANGE, Functor> TASK;
     typedef RefPtr<TASK> TASKPtr;

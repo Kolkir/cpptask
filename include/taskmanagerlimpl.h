@@ -79,7 +79,7 @@ inline Task* TaskManager::GetTask()
         res = threadPool.GetTaskManager()->GetOwnTask();
         if (res == 0)
         {
-                for (size_t i = 0; i < threadPool.GetThreadsNum(); ++i)
+            for (size_t i = 0; i < threadPool.GetThreadsNum(); ++i)
             {
                 TaskThread* thread = threadPool.GetThread(i);
                 if (thread != parentThread)
@@ -101,10 +101,9 @@ inline size_t TaskManager::GetCacheLineSize() const
     return cacheLineSize;
 }
 
-inline TaskManager* TaskManager::GetCurrent(TaskThreadPool& threadPool)
+inline TaskManager* TaskManager::GetCurrent()
 {
-    TLSKey* tlsKey = threadPool.GetManagerKey();
-    void* pvalue = tlsKey->GetValue();
+    void* pvalue = GetManagerKey().GetValue();
     if (pvalue != 0)
     {
         return reinterpret_cast<TaskManager*>(pvalue);
@@ -114,8 +113,7 @@ inline TaskManager* TaskManager::GetCurrent(TaskThreadPool& threadPool)
 
 inline void TaskManager::RegisterInTLS()
 {
-    TLSKey* tlsKey = threadPool.GetManagerKey();
-    tlsKey->SetValue(this);
+    GetManagerKey().SetValue(this);
 }
 
 inline void TaskManager::WaitTask(Task* waitTask)

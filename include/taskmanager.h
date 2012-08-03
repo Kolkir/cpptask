@@ -41,6 +41,13 @@ class Task;
 class TaskThreadPool;
 class Thread;
 class TaskThread;
+
+inline TLSKey& GetManagerKey()
+{
+    static TLSKey managerKey;
+    return managerKey;
+}
+
 class TaskManager
 {
 public:
@@ -58,7 +65,7 @@ public:
 
     size_t GetCacheLineSize() const;
 
-    static TaskManager* GetCurrent(TaskThreadPool& threadPool);
+    static TaskManager* GetCurrent();
 
     void RegisterInTLS();
 

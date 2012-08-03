@@ -78,7 +78,7 @@ void ParallelTest1()
     big_array = GetBigArray();
 
     timer.Start();
-    cpptask::ParallelFor(big_array.begin(), big_array.end(), Test1(), threadPool);
+    cpptask::ParallelFor(big_array.begin(), big_array.end(), Test1());
 
     std::cout << "Parallel for time is : " << timer.End() << " ms\n";
 }
@@ -124,7 +124,7 @@ void ParallelTest2()
     big_array = GetBigArray();
 
     timer.Start();
-    cpptask::ParallelInvoke(Test21(&big_array), Test22(&big_array), threadPool);
+    cpptask::ParallelInvoke(Test21(&big_array), Test22(&big_array));
 
     std::cout << "Parallel invoke time is : " << timer.End() << " ms\n";
 }
@@ -190,7 +190,7 @@ double ParallelTest3()
 
     timer.Start();
     Accumulator accumulator(0);
-    cpptask::ParallelReduce(big_array.begin(), big_array.end(), accumulator, threadPool);
+    cpptask::ParallelReduce(big_array.begin(), big_array.end(), accumulator);
 
     std::cout << "Parallel reduce time is : " << timer.End() << " ms\n";
     return accumulator.res;
@@ -207,7 +207,7 @@ void ExceptionTest()
     {
         cpptask::TaskThreadPool threadPool(THREADS_NUM);
 
-        cpptask::ParallelInvoke(&Test4, &Test4, threadPool);
+        cpptask::ParallelInvoke(&Test4, &Test4);
     }
     catch(cpptask::Exception& err)
     {
