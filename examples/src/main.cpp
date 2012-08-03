@@ -33,7 +33,7 @@
 #include <numeric>
 #include <iostream>
 
-const size_t THREADS_NUM = 4;
+const size_t THREADS_NUM = 0;
 
 typedef std::vector<double> ArrayType;
 
@@ -237,6 +237,13 @@ void ThreadFunc2()
 
 int main(int /*argc*/, char* /*argv*/[])
 {
+
+    while (true)
+    {
+        Sleep(100);
+        std::cout << "-";
+    }
+   /*
     std::cout << "Start parallel execution:";
     cpptask::ThreadFunction<ThreadFunc> t1(&ThreadFunc1);
     cpptask::ThreadFunction<ThreadFunc> t2(&ThreadFunc2);
@@ -253,20 +260,22 @@ int main(int /*argc*/, char* /*argv*/[])
 
     std::cout << "------------------------\n";
     ParallelTest2();
+   */
+    for (int i = 0; i < 1000; ++i)
+    {
+       // std::cout << "------------------------\n";
+       // double r1 = SerialTest2();
+
+        std::cout << "------------------------\n";
+        double r2 = ParallelTest3();
+
+       // std::cout << "------------------------\n";
+       // std::cout << "Reduce results compare are " << (r1 == r2)  << "\n";
+    }
 
     std::cout << "------------------------\n";
-    double r1 = SerialTest2();
+    //ExceptionTest();
 
     std::cout << "------------------------\n";
-    double r2 = ParallelTest3();
-
-    std::cout << "------------------------\n";
-    std::cout << "Reduce results compare are " << (r1 == r2)  << "\n";
-
-    std::cout << "------------------------\n";
-    ExceptionTest();
-
-    std::cout << "------------------------\n";
-
     return 0;
 }

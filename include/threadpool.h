@@ -49,7 +49,11 @@ public:
         {
             TaskThreadPtr tptr(new TaskThread(*this, newTaskEvent));
             threads.push_back(tptr);
-            tptr->Start();
+        }
+
+        for (size_t i = 0; i < threadsNum; ++i)
+        {
+            threads[i]->Start();
         }
     }
 
@@ -60,10 +64,7 @@ public:
         for (;i != e; ++i)
         {
             (*i)->Stop();
-            if (!(*i)->Wait())
-            {
-                throw std::logic_error("Thread was not closed correctly");
-            }
+            (*i)->Wait();
         }
     }
 
@@ -76,9 +77,7 @@ public:
     {
         if (index < threads.size())
         {
-            Threads::iterator i = threads.begin();
-            std::advance(i, index);
-            return i->Get();
+            return threads[index].Get();
         }
         return 0;
     }

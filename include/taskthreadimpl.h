@@ -31,6 +31,8 @@
 #include "task.h"
 #include "taskmanager.h"
 
+#include <assert.h>
+
 namespace cpptask
 {
 
@@ -58,7 +60,8 @@ inline void TaskThread::Run()
             std::vector<MultWaitBase<Event, Mutex>*> events(2);
             events[0] = &newTaskEvent;
             events[1] = &stopEvent;
-            if (WaitForMultiple(events) == 0)
+            int res = WaitForMultiple(events);
+            if (res == 0)
             {
                 task = manager->GetTask();
             }

@@ -35,6 +35,7 @@
 #include <Windows.h>
 #include <stdexcept>
 #include <limits>
+#include <assert.h>
 
 namespace cpptask
 {
@@ -60,7 +61,7 @@ public:
         DWORD rez = ::WaitForSingleObject(hSemaphore, INFINITE);
         if (rez != WAIT_OBJECT_0)
         {
-            //log error
+            assert(false);
         }
     }
 
@@ -70,7 +71,7 @@ public:
         BOOL rez = ::ReleaseSemaphore(hSemaphore, 1, &prevCount);
         if (rez == FALSE)
         {
-            //log error
+            assert(false);
         }
     }
 private:

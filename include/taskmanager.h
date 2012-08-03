@@ -34,6 +34,8 @@
 #include "semaphor.h"
 #include "alignedalloc.h"
 
+#include <queue>
+
 namespace cpptask
 {
 
@@ -78,6 +80,8 @@ private:
     size_t cacheLineSize;
     Mutex getGuard;
     Semaphore& newTaskEvent;
+
+    std::queue<Task*> test;
 };
 
 
