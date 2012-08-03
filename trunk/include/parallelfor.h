@@ -64,9 +64,9 @@ private:
 };
 
 template<class Iterator, class Functor>
-inline void ParallelFor(Iterator start, Iterator end, Functor functor, TaskThreadPool& threadPool)
+inline void ParallelFor(Iterator start, Iterator end, Functor functor)
 {
-    TaskManager* manager = TaskManager::GetCurrent(threadPool);
+    TaskManager* manager = TaskManager::GetCurrent();
 
     typedef std::vector<Range<Iterator> > RANGES;
     RANGES ranges = SplitRange(start, end, manager->GetThreadsNum());

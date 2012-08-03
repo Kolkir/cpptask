@@ -60,7 +60,10 @@ public:
         for (;i != e; ++i)
         {
             (*i)->Stop();
-            (*i)->Wait();
+            if (!(*i)->Wait())
+            {
+                throw std::logic_error("Thread was not closed correctly");
+            }
         }
     }
 
@@ -80,11 +83,6 @@ public:
         return 0;
     }
 
-    TLSKey* GetManagerKey()
-    {
-        return &managerKey;
-    }
-
     TaskManager* GetTaskManager()
     {
         return manager.Get();
@@ -98,7 +96,6 @@ private:
     typedef std::vector<TaskThreadPtr> Threads;
     Threads threads;
     Semaphore newTaskEvent;
-    TLSKey managerKey;
     RefPtr<TaskManager> manager;
 };
 
