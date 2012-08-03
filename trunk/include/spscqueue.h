@@ -32,8 +32,60 @@
 
 #include "atomic.h"
 
+#include <intrin.h>
+
+#pragma intrinsic(_ReadWriteBarrier)
+
+/*
+#include "mutex.h"
+#include <queue>
+*/
+
 namespace cpptask
 {
+/*
+template<class T>
+class SPSCQueue
+{
+public:
+    SPSCQueue()
+    {
+    }
+
+    ~SPSCQueue()
+    {
+    }
+
+    void Push(T v)
+    {
+        ScopedLock<Mutex> lock(&guard);
+        queue.push(v);
+    }
+
+    bool Pop(T& v)
+    {
+        bool res = false;
+        if (guard.TryLock())
+        {
+            if (!queue.empty())
+            {
+                v = queue.front();
+                queue.pop();
+                res = true;
+            }
+            guard.UnLock();
+        }
+        return res;
+    }
+private:
+    SPSCQueue(SPSCQueue const&);
+    SPSCQueue& operator = (SPSCQueue const&);
+
+private:
+    std::queue<T> queue;
+    Mutex guard;
+};
+*/
 
 template<class T>
 class SPSCQueue
@@ -43,19 +95,19 @@ public:
     {
         Node* n = new Node;
         n->next = 0;
-        head = tail = first = head_copy = n;
+        head = tail = cache_start = cache_end = n;
     }
 
     ~SPSCQueue()
     {
-        Node* n = first;
+        Node* n = cache_start;
         do
         {
             Node* next = n->next;
             delete n;
             n = next;
         }
-        while (n);
+        while (n != nullptr);
     }
 
     void Push(T v)
@@ -69,9 +121,13 @@ public:
 
     bool Pop(T& v)
     {
-        if (LoadConsume(&head->next))
+        if (LoadConsume(&head->next) != nullptr)
         {
             v = head->next->value;
+            if (v == 0)
+            {
+                DebugBreak();
+            }
             StoreRelease(&head, head->next);
             return true;
         }
@@ -93,22 +149,22 @@ private:
 
     Node* AllocNode()
     {
-        // first tries to allocate node from internal node cache,
+        // cache_start tries to allocate node from internal node cache,
         // if attempt fails, allocates node via ::operator new()
 
-        if (first != head_copy)
+        if (cache_start != cache_end)
         {
-            Node* n = first;
-            first = first->next;
+            Node* n = cache_start;
+            cache_start = cache_start->next;
             return n;
         }
 
-        head_copy = LoadConsume(&head);
+        cache_end = LoadConsume(&head);
 
-        if (first != head_copy)
+        if (cache_start != cache_end)
         {
-            Node* n = first;
-            first = first->next;
+            Node* n = cache_start;
+            cache_start = cache_start->next;
             return n;
         }
         Node* n = new Node;
@@ -121,7 +177,8 @@ private:
     {
         // hardware fence is implicit on x86
         TT v = *const_cast<TT const volatile*>(addr);
-        CppTaskMemoryFence(); // compiler fence
+        _ReadWriteBarrier();
+        //CppTaskMemoryFence(); // compiler fence
         return v;
     }
 
@@ -130,11 +187,13 @@ private:
     static void StoreRelease(TT* addr, TT v)
     {
         // hardware fence is implicit on x86
-        CppTaskMemoryFence(); // compiler fence
+        _ReadWriteBarrier();
+        //CppTaskMemoryFence(); // compiler fence
         *const_cast<TT volatile*>(addr) = v;
     }
 
-private:
+//private:
+    public:
     // consumer part
     // accessed mainly by consumer, infrequently be producer
     Node* head; // head of the queue
@@ -146,9 +205,10 @@ private:
     // producer part
     // accessed only by producer
     Node* tail; // tail of the queue
-    Node* first; // last unused node (head of node cache)
-    Node* head_copy; // helper (points somewhere between first and head)
-    };
+    Node* cache_start; // first unused node (head of node cache)
+    Node* cache_end; // helper (points somewhere between cache_start and head)
+};
+
 }
 
 #endif

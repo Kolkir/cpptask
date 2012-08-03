@@ -46,34 +46,46 @@ public:
                                                           this, 
                                               CREATE_SUSPENDED, 
                                                      &threadID));
+        if (hThread == 0)
+        {
+            throw std::runtime_error("Can't create a thread");
+        }
     }
 
     virtual ~Thread()
     {
-        CloseHandle(hThread);
+        if (!::CloseHandle(hThread))
+        {
+            assert(false);
+        }
     }
 
     virtual void Run() = 0;
     
     void Start()
     {
-        ::ResumeThread(hThread);
+        if (::ResumeThread(hThread) == -1)
+        {
+            assert(false);
+        }
     }
 
-    bool Wait() const
+    void Wait() const
     {
         DWORD rez = ::WaitForSingleObject(hThread, INFINITE);
         if (rez != WAIT_OBJECT_0)
         {
-            return false;
+            assert(false);
         }
-        return true;
     }
     
     unsigned long GetExitCode() const
     {
         DWORD code;
-        ::GetExitCodeThread(hThread, &code);
+        if (!::GetExitCodeThread(hThread, &code))
+        {
+            assert(false);
+        }
         return static_cast<unsigned long>(code);
     }
 
@@ -110,6 +122,7 @@ private:
         }
         catch(...)
         {
+            assert(false);
             return 1;
         }
         return 0;

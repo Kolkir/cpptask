@@ -30,6 +30,7 @@
 
 #include <Windows.h>
 #include <stdexcept>
+#include <assert.h>
 
 namespace cpptask
 {
@@ -47,14 +48,17 @@ public:
     }
     ~Mutex()
     {
-        CloseHandle(hMutex);
+        if (!::CloseHandle(hMutex))
+        {
+            assert(false);
+        }
     }
     void Lock()
     {
         DWORD rez = ::WaitForSingleObject(hMutex, INFINITE);
         if (rez != WAIT_OBJECT_0)
         {
-            //log error
+            assert(false);
         }
     }
 
@@ -70,6 +74,10 @@ public:
         {
             return true;
         }
+        else if (rez != WAIT_TIMEOUT)
+        {
+            assert(false);
+        }
         return false;
     }
 
@@ -78,7 +86,7 @@ public:
         BOOL rez = ::ReleaseMutex(hMutex);
         if (rez == FALSE)
         {
-            //log error
+            assert(false);
         }
     }
 private:

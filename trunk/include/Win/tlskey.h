@@ -30,6 +30,7 @@
 
 #include <Windows.h>
 #include <stdexcept>
+#include <assert.h>
 
 namespace cpptask
 {
@@ -48,7 +49,10 @@ public:
 
     ~TLSKey()
     {
-        TlsFree(tlsIndex);;
+        if (!::TlsFree(tlsIndex))
+        {
+            assert(false);
+        }
     }
    
     void* GetValue() const
@@ -58,7 +62,10 @@ public:
 
     void SetValue(void* value)
     {
-        ::TlsSetValue(tlsIndex, value);
+        if (!::TlsSetValue(tlsIndex, value))
+        {
+            assert(false);
+        }
     }
 
 private:

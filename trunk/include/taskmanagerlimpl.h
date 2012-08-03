@@ -31,13 +31,15 @@
 #include "taskmanager.h"
 #include "threadpool.h"
 
+#include <assert.h>
+
 namespace cpptask
 {
 
 inline TaskManager::TaskManager(TaskThreadPool& threadPool, Semaphore& newTaskEvent, TaskThread* parentThread)
     : parentThread(parentThread)
-	, threadPool(threadPool)
-	, newTaskEvent(newTaskEvent)
+    , threadPool(threadPool)
+    , newTaskEvent(newTaskEvent)
 {
     cacheLineSize = cpptask::GetCacheLineSize();
 }
@@ -55,6 +57,7 @@ inline void TaskManager::AddTask(Task* task)
 {
     if (task != 0)
     {
+        test.push(task);
         taskQueue.Push(task);
         newTaskEvent.Signal();
     }
@@ -65,7 +68,10 @@ inline Task* TaskManager::GetOwnTask()
     Task* res = 0;
     if (getGuard.TryLock())
     {
-        taskQueue.Pop(res);
+        if (!taskQueue.Pop(res))
+        {
+            res = 0;
+        }
         getGuard.UnLock();
     }
     return res;

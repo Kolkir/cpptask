@@ -32,6 +32,7 @@
 #include "multwait.h"
 
 #include <windows.h>
+#include <assert.h>
 
 namespace cpptask
 {
@@ -50,11 +51,18 @@ public:
     }
     ~Event()
     {  
-        ::CloseHandle(hEvent);
+        if (!::CloseHandle(hEvent))
+        {
+            assert(false);
+        }
     }
     void Wait()
     {
-        ::WaitForSingleObject(hEvent, INFINITE);
+        DWORD res = ::WaitForSingleObject(hEvent, INFINITE);
+        if(res != WAIT_OBJECT_0)
+        {
+            assert(false);
+        }
     }   
     bool Check()
     {
@@ -63,15 +71,25 @@ public:
         {
             return true;
         }
+        else if(rez != WAIT_TIMEOUT)
+        {
+            assert(false);
+        }
         return false;
     }
     void Signal()
     {
-        ::SetEvent(hEvent);
+        if (!::SetEvent(hEvent))
+        {
+            assert(false);
+        }
     }
     void Reset()
     {
-        ::ResetEvent(hEvent);
+        if (!::ResetEvent(hEvent))
+        {
+            assert(false);
+        }
     }
 private:
     Event(const Event&);

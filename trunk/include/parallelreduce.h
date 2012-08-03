@@ -49,14 +49,13 @@ public:
                Functor& functor, 
                size_t maxDepth,
                TaskManager* manager)
-        : maxDepth(maxDepth)
-        , myDepth(maxDepth)
+        : myDepth(maxDepth)
         , range(range)
         , functor(functor)
         , manager(manager)
     {
     }
-    ~ReduceTask()    
+    ~ReduceTask()
     {
     }
 
@@ -70,7 +69,7 @@ public:
         if (myDepth > 0)
         {
             const size_t splitCount = 2;
-            --myDepth;            
+            --myDepth;
             std::vector<Range> ranges = SplitRange(range.start, range.end, splitCount);
         
             typedef ReduceTask<Range, Functor> TASK;
@@ -93,7 +92,6 @@ public:
 
                 tasks[i].Reset(ptr);
                 manager->AddTask(tasks[i].Get());
-  
             };
 
             for (size_t i = 0; i != splitCount; ++i)
@@ -124,7 +122,6 @@ public:
     }
 
 private:
-    size_t maxDepth;
     size_t myDepth;
     Range range;
     Functor& functor;

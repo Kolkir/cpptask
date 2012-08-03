@@ -31,6 +31,7 @@
 #include <windows.h>
 
 #include <vector>
+#include <assert.h>
 
 namespace cpptask
 {
@@ -59,7 +60,11 @@ int WaitForMultiple(std::vector<MultWaitBase<E, M>*>& objects)
         if (rez >= WAIT_OBJECT_0 && rez <= WAIT_OBJECT_0 + handles.size() - 1)
         {
             return rez - WAIT_OBJECT_0;
-        }        
+        }
+        else
+        {
+            assert(false);
+        }
     }
     return -1;
 }
