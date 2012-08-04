@@ -32,60 +32,8 @@
 
 #include "atomic.h"
 
-#include <intrin.h>
-
-#pragma intrinsic(_ReadWriteBarrier)
-
-/*
-#include "mutex.h"
-#include <queue>
-*/
-
 namespace cpptask
 {
-/*
-template<class T>
-class SPSCQueue
-{
-public:
-    SPSCQueue()
-    {
-    }
-
-    ~SPSCQueue()
-    {
-    }
-
-    void Push(T v)
-    {
-        ScopedLock<Mutex> lock(&guard);
-        queue.push(v);
-    }
-
-    bool Pop(T& v)
-    {
-        bool res = false;
-        if (guard.TryLock())
-        {
-            if (!queue.empty())
-            {
-                v = queue.front();
-                queue.pop();
-                res = true;
-            }
-            guard.UnLock();
-        }
-        return res;
-    }
-private:
-    SPSCQueue(SPSCQueue const&);
-    SPSCQueue& operator = (SPSCQueue const&);
-
-private:
-    std::queue<T> queue;
-    Mutex guard;
-};
-*/
 
 template<class T>
 class SPSCQueue
@@ -177,8 +125,7 @@ private:
     {
         // hardware fence is implicit on x86
         TT v = *const_cast<TT const volatile*>(addr);
-        _ReadWriteBarrier();
-        //CppTaskMemoryFence(); // compiler fence
+        CppTaskMemoryFence(); // compiler fence
         return v;
     }
 
@@ -187,8 +134,7 @@ private:
     static void StoreRelease(TT* addr, TT v)
     {
         // hardware fence is implicit on x86
-        _ReadWriteBarrier();
-        //CppTaskMemoryFence(); // compiler fence
+        CppTaskMemoryFence(); // compiler fence
         *const_cast<TT volatile*>(addr) = v;
     }
 

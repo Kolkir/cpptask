@@ -29,14 +29,14 @@
 #define _ATOMIC_H_
 
 #include <windows.h>
-//#include <intrin.h>
+#include <intrin.h>
 
-//#pragma intrinsic(_ReadWriteBarrier)
+#pragma intrinsic(_ReadWriteBarrier)
 
 namespace cpptask
 {
 
-//#define CppTaskMemoryFence() _ReadWriteBarrier()
+#define CppTaskMemoryFence() _ReadWriteBarrier()
 
 class AtomicFlag
 {
