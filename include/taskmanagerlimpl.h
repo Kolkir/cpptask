@@ -57,7 +57,6 @@ inline void TaskManager::AddTask(Task* task)
 {
     if (task != 0)
     {
-        test.push(task);
         taskQueue.Push(task);
         newTaskEvent.Signal();
     }

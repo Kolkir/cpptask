@@ -47,12 +47,10 @@ class ReduceTask : public Task
 public:
     ReduceTask(const Range& range, 
                Functor& functor, 
-               size_t maxDepth,
-               TaskManager* manager)
+               size_t maxDepth)
         : myDepth(maxDepth)
         , range(range)
         , functor(functor)
-        , manager(manager)
     {
     }
     ~ReduceTask()
@@ -69,7 +67,6 @@ public:
         if (myDepth > 0)
         {
             const size_t splitCount = 2;
-            --myDepth;
             std::vector<Range> ranges = SplitRange(range.start, range.end, splitCount);
         
             typedef ReduceTask<Range, Functor> TASK;
@@ -80,6 +77,8 @@ public:
             FUNCPtr functors[splitCount];
             AlignedPointer<Functor> mems[splitCount];
 
+            TaskManager* manager = TaskManager::GetCurrent();
+
             for (size_t i = 0; i != splitCount; ++i)
             {
                 mems[i].SetMemory(AlignedAlloc(sizeof(Functor), manager->GetCacheLineSize()));
@@ -87,8 +86,7 @@ public:
                 
                 TASK* ptr = new(manager->GetCacheLineSize()) TASK(ranges[i], 
                                      *functors[i], 
-                                     myDepth, 
-                                     manager);
+                                     myDepth - 1);
 
                 tasks[i].Reset(ptr);
                 manager->AddTask(tasks[i].Get());
@@ -125,7 +123,6 @@ private:
     size_t myDepth;
     Range range;
     Functor& functor;
-    TaskManager* manager;
 };
 
 template<class Iterator, class Functor>
@@ -135,7 +132,7 @@ inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, size_
     typedef Range<Iterator> RANGE;
     typedef ReduceTask<RANGE, Functor> TASK;
     typedef RefPtr<TASK> TASKPtr;
-    TASKPtr task(new(manager->GetCacheLineSize()) TASK(RANGE(start, end), functor, maxDepth, manager));
+    TASKPtr task(new(manager->GetCacheLineSize()) TASK(RANGE(start, end), functor, maxDepth));
     manager->AddTask(task.Get());
     manager->WaitTask(task.Get());
     if (task->GetLastException() != 0)
