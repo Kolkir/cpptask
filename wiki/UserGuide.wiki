@@ -169,7 +169,7 @@ public:
 ...
 cpptask::TaskThreadPool threadPool(THREADS_NUM);
 ...
-cpptask::TaskManager* manager = cpptask::TaskManager::GetCurrent(threadPool);
+cpptask::TaskManager* manager = cpptask::TaskManager::GetCurrent();
 std::shared_ptr<MyTask> task(new MyTask);
 manager.AddTask(task.get());
 ...
@@ -192,7 +192,7 @@ void func()(double& x)
 ...
 std::vector<double> array;
 ...
-cpptask::ParallelFor(array.begin(), array.end(), func, threadPool);
+cpptask::ParallelFor(array.begin(), array.end(), func);
 }}}
 
 == Parallel-Reduce algorithm ==
@@ -235,7 +235,7 @@ public:
 };
 ...
 Accumulator accumulator(0);
-cpptask::ParallelReduce(array.begin(), array.end(), accumulator, threadPool);
+cpptask::ParallelReduce(array.begin(), array.end(), accumulator);
 std::cout << accumulator.res;
 ...
 }}}
@@ -245,7 +245,7 @@ Algorithm simply execute two functions in parallel.
 {{{
 #include <cpptask.h>
 ...
-cpptask::ParallelInvoke(func1, func2, threadPool);
+cpptask::ParallelInvoke(func1, func2);
 }}}
 
 == Delivering exceptions from threads and tasks to caller ==
@@ -254,5 +254,5 @@ If you want to get exceptions from threads or tasks you have to derive this exce
 == Lambda expressions support ==
 New C++11 lambdas can be used in all algorithms of the library.
 {{{
-cpptask::ParallelInvoke([&](){//expensive work}, [&](){//expensive work}, threadPool);
+cpptask::ParallelInvoke([&](){//expensive work}, [&](){//expensive work});
 }}}
