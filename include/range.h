@@ -54,12 +54,11 @@ public:
     Iterator end;
 };
 
-template<class Iterator>
-std::vector<Range<Iterator> > SplitRange(Iterator start, Iterator end, size_t rangesNum)
+
+template<class Iterator, class Diff>
+std::vector<Range<Iterator> > SplitRangeBase(Iterator start, Iterator end, Diff rangeLen, size_t rangesNum)
 {
     typedef Range<Iterator> RANGE;
-    size_t dist = std::distance(start, end);
-    size_t rangeLen = dist;
     if (rangesNum != 0)
     {
         rangeLen /= rangesNum;
@@ -80,6 +79,19 @@ std::vector<Range<Iterator> > SplitRange(Iterator start, Iterator end, size_t ra
         ranges.push_back(RANGE(start, end));
     }
     return ranges;
+}
+
+
+template<class Iterator>
+std::vector<Range<Iterator> > SplitRange(Iterator start, Iterator end, size_t rangesNum)
+{
+    return SplitRangeBase(start, end, std::distance(start, end), rangesNum);
+}
+
+template<class Iterator>
+std::vector<Range<Iterator> > SplitNumRange(Iterator start, Iterator end, size_t rangesNum)
+{
+    return SplitRangeBase(start, end, end - start, rangesNum);
 }
 
 }

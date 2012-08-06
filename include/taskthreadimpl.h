@@ -80,7 +80,7 @@ inline void TaskThread::Stop()
     done.Set();
 }
 
-TaskManager* TaskThread::GetTaskManager()
+inline TaskManager* TaskThread::GetTaskManager()
 {
     return manager.Get();
 }
