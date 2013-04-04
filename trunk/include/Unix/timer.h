@@ -29,6 +29,7 @@
 #define _TIMER_H_
 
 #include <sys/time.h>
+#include "./exception.h"
 
 namespace cpptask
 {
@@ -42,16 +43,22 @@ public:
     }
     void Start()
     {
-        gettimeofday(&startTime, 0);
+        if (gettimeofday(&startTime, 0) != 0)
+        {
+            throw Exception("Can't get a time");
+        }
     }
     double End()
     {
         struct timeval currentTime;
-        gettimeofday(&currentTime, 0);
-	
+        if (gettimeofday(&currentTime, 0) != 0)
+        {
+            throw Exception("Can't get a time");
+        }
+
         double const secs = currentTime.tv_sec - startTime.tv_sec;
         double const us = currentTime.tv_usec - startTime.tv_usec;
- 	
+
         return (secs * 1000.0) + (us / 1000.0);
     }
 private:

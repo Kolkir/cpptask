@@ -41,20 +41,21 @@ template <class T>
 class ScopedLock
 {
 public:
-    ScopedLock(T* guard)
+    ScopedLock(T& guard)
         : guard(guard)
     {
-        guard->Lock();
+
+        guard.Lock();
     }
     ~ScopedLock()
     {
-        guard->UnLock();
+        guard.UnLock();
     }
 private:
     ScopedLock(const ScopedLock&);
     const ScopedLock& operator=(const ScopedLock&);
 private:
-    T* guard;
+    T& guard;
 };
 
 }

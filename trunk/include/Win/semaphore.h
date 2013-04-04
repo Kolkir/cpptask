@@ -31,9 +31,10 @@
 #include "event.h"
 #include "mutex.h"
 #include "multwait.h"
+#include "./exception.h"
+#include "winerrmsg.h"
 
 #include <Windows.h>
-#include <stdexcept>
 #include <limits>
 #include <assert.h>
 
@@ -48,12 +49,15 @@ public:
         hSemaphore = ::CreateSemaphore(0, 0, std::numeric_limits<long>::max(), 0);
         if (hSemaphore == NULL)
         {
-            throw std::runtime_error("Can't create a semaphore");
+            throw Exception("Can't create a semaphore - " + GetLastWinErrMsg());
         }
     }
     ~Semaphore()
     {
-        CloseHandle(hSemaphore);
+        if (!::CloseHandle(hSemaphore))
+        {
+            assert(false);
+        }
     }
 
     void Wait()
@@ -61,7 +65,7 @@ public:
         DWORD rez = ::WaitForSingleObject(hSemaphore, INFINITE);
         if (rez != WAIT_OBJECT_0)
         {
-            assert(false);
+            throw Exception("Semaphore wait failed - " + GetLastWinErrMsg());
         }
     }
 
@@ -71,7 +75,7 @@ public:
         BOOL rez = ::ReleaseSemaphore(hSemaphore, 1, &prevCount);
         if (rez == FALSE)
         {
-            assert(false);
+            throw Exception("Semaphore signal failed - " + GetLastWinErrMsg());
         }
     }
 private:

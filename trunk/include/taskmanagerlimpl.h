@@ -53,13 +53,10 @@ inline size_t TaskManager::GetThreadsNum() const
     return threadPool.GetThreadsNum();
 }
 
-inline void TaskManager::AddTask(Task* task)
+inline void TaskManager::AddTask(Task& task)
 {
-    if (task != 0)
-    {
-        taskQueue.Push(task);
-        newTaskEvent.Signal();
-    }
+    taskQueue.Push(&task);
+    newTaskEvent.Signal();
 }
 
 inline Task* TaskManager::GetOwnTask()
@@ -81,15 +78,16 @@ inline Task* TaskManager::GetTask()
     Task* res = GetOwnTask();
     if (res == 0)
     {
-        res = threadPool.GetTaskManager()->GetOwnTask();
+        res = threadPool.GetTaskManager().GetOwnTask();
         if (res == 0)
         {
             for (size_t i = 0; i < threadPool.GetThreadsNum(); ++i)
             {
                 TaskThread* thread = threadPool.GetThread(i);
+                assert(thread != 0);
                 if (thread != parentThread)
                 {
-                    res = thread->GetTaskManager()->GetOwnTask();
+                    res = thread->GetTaskManager().GetOwnTask();
                     if (res != 0)
                     {
                         break;
@@ -121,16 +119,16 @@ inline void TaskManager::RegisterInTLS()
     GetManagerKey().SetValue(this);
 }
 
-inline void TaskManager::WaitTask(Task* waitTask)
+inline void TaskManager::WaitTask(Task& waitTask)
 {
-    while (!waitTask->CheckFinished())
+    while (!waitTask.CheckFinished())
     {
         Task* task = GetTask();
         if (task == 0)
         {
             std::vector<MultWaitBase<Event, Mutex>*> events(2);
             events[0] = &newTaskEvent;
-            events[1] = waitTask->GetWaitEvent();
+            events[1] = waitTask.GetWaitEvent();
             int res = WaitForMultiple(events);
             if (res == 0)
             {

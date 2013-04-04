@@ -28,8 +28,10 @@
 #ifndef _MUTEX_H_
 #define _MUTEX_H_
 
+#include "./exception.h"
+#include "winerrmsg.h"
+
 #include <Windows.h>
-#include <stdexcept>
 #include <assert.h>
 
 namespace cpptask
@@ -43,7 +45,7 @@ public:
         hMutex = ::CreateMutex(NULL, FALSE, NULL);
         if (hMutex == NULL)
         {
-            throw std::runtime_error("Can't create a mutex");
+            throw Exception("Can't create a mutex - " + GetLastWinErrMsg());
         }
     }
     ~Mutex()
@@ -58,7 +60,7 @@ public:
         DWORD rez = ::WaitForSingleObject(hMutex, INFINITE);
         if (rez != WAIT_OBJECT_0)
         {
-            assert(false);
+            throw Exception("Mutex lock failed -" + GetLastWinErrMsg());
         }
     }
 
@@ -76,7 +78,7 @@ public:
         }
         else if (rez != WAIT_TIMEOUT)
         {
-            assert(false);
+            throw Exception("Mutex wait failed -" + GetLastWinErrMsg());
         }
         return false;
     }
@@ -86,7 +88,7 @@ public:
         BOOL rez = ::ReleaseMutex(hMutex);
         if (rez == FALSE)
         {
-            assert(false);
+            throw Exception("Mutex unlock failed -" + GetLastWinErrMsg());
         }
     }
 private:

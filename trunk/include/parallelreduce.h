@@ -78,40 +78,46 @@ public:
             AlignedPointer<Functor> mems[splitCount];
 
             TaskManager* manager = TaskManager::GetCurrent();
-
-            for (size_t i = 0; i != splitCount; ++i)
+            if (manager != 0)
             {
-                mems[i].SetMemory(AlignedAlloc(sizeof(Functor), manager->GetCacheLineSize()));
-                functors[i] = new(mems[i].GetMemory()) Functor(functor, SplitMark());
-                
-                TASK* ptr = new(manager->GetCacheLineSize()) TASK(ranges[i], 
-                                     *functors[i], 
-                                     myDepth - 1);
-
-                tasks[i].Reset(ptr);
-                manager->AddTask(tasks[i].Get());
-            };
-
-            for (size_t i = 0; i != splitCount; ++i)
-            {
-                manager->WaitTask(tasks[i].Get());
-            };
-
-            //check exceptions in child tasks
-            for (size_t i = 0; i != splitCount; ++i)
-            {
-                if (tasks[i]->GetLastException() != 0)
+                for (size_t i = 0; i != splitCount; ++i)
                 {
-                    tasks[i]->GetLastException()->Throw();
-                }
-            };
+                    mems[i].SetMemory(AlignedAlloc(sizeof(Functor), manager->GetCacheLineSize()));
+                    functors[i] = new(mems[i].GetMemory()) Functor(functor, SplitMark());
+                
+                    TASK* ptr = new(manager->GetCacheLineSize()) TASK(ranges[i], 
+                                         *functors[i], 
+                                         myDepth - 1);
 
-            //Join
-            for (size_t i = 1; i != splitCount; ++i)
-            {
-                tasks[0]->Join(*tasks[i].Get());
+                    tasks[i].Reset(ptr);
+                    manager->AddTask(*tasks[i].Get());
+                };
+
+                for (size_t i = 0; i != splitCount; ++i)
+                {
+                    manager->WaitTask(*tasks[i].Get());
+                };
+
+                //check exceptions in child tasks
+                for (size_t i = 0; i != splitCount; ++i)
+                {
+                    if (tasks[i]->GetLastException() != 0)
+                    {
+                        tasks[i]->GetLastException()->Throw();
+                    }
+                };
+
+                //Join
+                for (size_t i = 1; i != splitCount; ++i)
+                {
+                    tasks[0]->Join(*tasks[i].Get());
+                }
+                Join(*tasks[0].Get());
             }
-            Join(*tasks[0].Get());
+            else
+            {
+                throw Exception("Can't acquire current task manager");
+            }
         }
         else
         {
@@ -129,15 +135,22 @@ template<class Iterator, class Functor>
 inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, size_t maxDepth = 5)
 {
     TaskManager* manager = TaskManager::GetCurrent();
-    typedef Range<Iterator> RANGE;
-    typedef ReduceTask<RANGE, Functor> TASK;
-    typedef RefPtr<TASK> TASKPtr;
-    TASKPtr task(new(manager->GetCacheLineSize()) TASK(RANGE(start, end), functor, maxDepth));
-    manager->AddTask(task.Get());
-    manager->WaitTask(task.Get());
-    if (task->GetLastException() != 0)
+    if (manager != 0)
     {
-        task->GetLastException()->Throw();
+        typedef Range<Iterator> RANGE;
+        typedef ReduceTask<RANGE, Functor> TASK;
+        typedef RefPtr<TASK> TASKPtr;
+        TASKPtr task(new(manager->GetCacheLineSize()) TASK(RANGE(start, end), functor, maxDepth));
+        manager->AddTask(*task.Get());
+        manager->WaitTask(*task.Get());
+        if (task->GetLastException() != 0)
+        {
+            task->GetLastException()->Throw();
+        }
+    }
+    else
+    {
+        throw Exception("Can't acquire current task manager");
     }
 }
 

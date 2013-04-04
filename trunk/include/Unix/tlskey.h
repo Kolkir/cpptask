@@ -29,7 +29,7 @@
 #define _TLSKEY_H_
 
 #include <pthread.h>
-#include <stdexcept>
+#include "./exception.h"
 
 namespace cpptask
 {
@@ -42,13 +42,16 @@ public:
         int err = pthread_key_create(&key, 0);
         if (err != 0)
         {
-            throw std::runtime_error("Can't create a TLS key");
+            throw Exception("Can't create a TLS key");
         }
     }
 
     ~TLSKey()
     {
-        pthread_key_delete(key);
+        if (pthread_key_delete(key) != 0)
+        {
+            assert(false);
+        }
     }
 
     void* GetValue() const
@@ -58,7 +61,10 @@ public:
 
     void SetValue(void* value)
     {
-        pthread_setspecific(key, value);
+        if (pthread_setspecific(key, value) != 0)
+        {
+            throw Exception("Can't set a TLS key");
+        }
     }
 
 private:

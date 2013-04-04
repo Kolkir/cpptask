@@ -29,8 +29,9 @@
 #define _TLSKEY_H_
 
 #include <Windows.h>
-#include <stdexcept>
 #include <assert.h>
+#include "./exception.h"
+#include "winerrmsg.h"
 
 namespace cpptask
 {
@@ -43,7 +44,7 @@ public:
         tlsIndex = ::TlsAlloc();
         if (tlsIndex == TLS_OUT_OF_INDEXES)
         {
-            throw std::runtime_error("Can't create a TLS key");
+            throw Exception("Can't create a TLS key - " + GetLastWinErrMsg());
         }
     }
 
@@ -57,14 +58,19 @@ public:
    
     void* GetValue() const
     {
-        return TlsGetValue(tlsIndex);
+        void* rez = TlsGetValue(tlsIndex);
+        if (rez == 0)
+        {
+            throw Exception("Can't get a TLS value - " + GetLastWinErrMsg());
+        }
+        return rez;
     }
 
     void SetValue(void* value)
     {
         if (!::TlsSetValue(tlsIndex, value))
         {
-            assert(false);
+            throw Exception("Can't set a TLS value - " + GetLastWinErrMsg());
         }
     }
 

@@ -58,6 +58,7 @@ inline void* AlignedAlloc(size_t size, size_t alignment)
     if (posix_memalign(&ret, alignment, size) != 0)
     {
         ret = 0;
+        throw std::bad_alloc();
     }
     return ret;
 }

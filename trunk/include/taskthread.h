@@ -49,10 +49,11 @@ public:
 
     void Stop();
 
-    TaskManager* GetTaskManager();
+    TaskManager& GetTaskManager();
 
-    void DoWaitingTasks(Task* waitTask);
-
+private:
+    TaskThread(const TaskThread&);
+    TaskThread& operator=(const TaskThread&);
 private:
     Event stopEvent;
     Semaphore& newTaskEvent;

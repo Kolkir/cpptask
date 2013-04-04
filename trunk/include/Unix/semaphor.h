@@ -32,7 +32,7 @@
 #include "mutex.h"
 #include "multwait.h"
 #include <semaphore.h>
-#include <stdexcept>
+#include "./exception.h"
 
 namespace cpptask
 {
@@ -45,12 +45,15 @@ public:
         int err = sem_init(&psem, 0, 0);
         if (err != 0)
         {
-            throw std::runtime_error("Can't create a semaphore");
+            throw Exception("Can't create a semaphore");
         }
     }
     ~Semaphore()
     {
-        sem_destroy(&psem);
+        if (sem_destroy(&psem) != 0)
+        {
+            assert(false);
+        }
     }
 
     void Wait()
@@ -58,7 +61,7 @@ public:
         int err = sem_wait(&psem);
         if (err != 0)
         {
-            //log error
+            throw Exception("Semaphore wait error");
         }
     }
 
@@ -68,7 +71,7 @@ public:
         int err = sem_post(&psem);
         if (err != 0)
         {
-            //log error
+            throw Exception("Semaphore signal error");
         }
         MultSignal();
         UnLock();
@@ -80,6 +83,10 @@ public:
         if (err == 0)
         {
             return true;
+        }
+        else if (errno != EAGAIN)
+        {
+            throw Exception("Semaphore wait error");
         }
         return false;
     }
