@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2013, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,56 +25,42 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _ALIGNED_ALLOC_SELECT_H_
-#define _ALIGNED_ALLOC_SELECT_H_
+#ifndef _WINERRMSG_H_
+#define _WINERRMSG_H_
 
-#ifdef _WIN32
-#include "Win/alignedalloc.h"
-#else
-#include "Unix/alignedalloc.h"
-#endif
+#include <string>
+#include <Windows.h>
 
 namespace cpptask
 {
 
-template<class T>
-class AlignedPointer
+inline std::string GetLastWinErrMsg()
 {
-public:
-     AlignedPointer()
-        : p(0)
-        , memory(0)
+    DWORD err = ::GetLastError();
+    void* cstr = 0;
+    FormatMessage(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+        NULL,
+        err,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPTSTR) &cstr,
+        0,
+        NULL
+    );
+    std::string res;
+    try
     {
+        res = reinterpret_cast<char*>(cstr);
     }
-    ~AlignedPointer()
+    catch(...)
     {
-        if (p != 0)
-        {
-            p->~T();
-        }
-        if (memory != 0)
-        {
-            AlignedFree(memory);
-        }
+        LocalFree(cstr);
+        throw;
     }
-    void SetPointer(T* p)
-    {
-        this->p = p;
-    }
-    void SetMemory(void* memory)
-    {
-        this->memory = memory;
-    }
-    void* GetMemory()
-    {
-        return memory;
-    }
-private:
-    AlignedPointer(const AlignedPointer&);
-    AlignedPointer& operator=(const AlignedPointer&);
-private:
-    T* p;
-    void* memory;
-};
+    LocalFree(cstr);
+    return res;
 }
+
+}
+
 #endif

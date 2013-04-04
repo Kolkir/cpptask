@@ -28,9 +28,13 @@
 #ifndef _ALIGNED_ALLOC_H_
 #define _ALIGNED_ALLOC_H_
 
+#include "./exception.h"
+
 #include <stdlib.h>
 #include <malloc.h>
 #include <windows.h>
+#include "winerrmsg.h"
+
 
 namespace cpptask
 {
@@ -108,7 +112,7 @@ inline size_t GetCacheLineSize()
                             "GetLogicalProcessorInformation");
     if (0 == glpi)
     {
-        throw std::logic_error("Can't get address of GetLogicalProcessorInformation function");
+        throw Exception("Can't get address of GetLogicalProcessorInformation function - " + GetLastWinErrMsg());
     }
 
     glpi(0, &buffer_size);

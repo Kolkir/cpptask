@@ -58,26 +58,32 @@ inline void ParallelInvoke(Functor1 func1, Functor2 func2)
     typedef RefPtr<TASK1> TASKPtr1;
 
     TaskManager* manager = TaskManager::GetCurrent();
-
-    TASKPtr1 task1(new(manager->GetCacheLineSize()) TASK1(func1));
-    manager->AddTask(task1.Get());
-
-    typedef InvokeTask<Functor2> TASK2;
-    typedef RefPtr<TASK2> TASKPtr2;
-
-    TASKPtr2 task2(new(manager->GetCacheLineSize()) TASK2(func2));
-    manager->AddTask(task2.Get());
-
-    manager->WaitTask(task1.Get());
-    manager->WaitTask(task2.Get());
-
-    if (task1->GetLastException() != 0)
+    if (manager != 0)
     {
-        task1->GetLastException()->Throw();
+        TASKPtr1 task1(new(manager->GetCacheLineSize()) TASK1(func1));
+        manager->AddTask(*task1.Get());
+
+        typedef InvokeTask<Functor2> TASK2;
+        typedef RefPtr<TASK2> TASKPtr2;
+
+        TASKPtr2 task2(new(manager->GetCacheLineSize()) TASK2(func2));
+        manager->AddTask(*task2.Get());
+
+        manager->WaitTask(*task1.Get());
+        manager->WaitTask(*task2.Get());
+
+        if (task1->GetLastException() != 0)
+        {
+            task1->GetLastException()->Throw();
+        }
+        if (task2->GetLastException() != 0)
+        {
+            task2->GetLastException()->Throw();
+        }
     }
-    if (task2->GetLastException() != 0)
+    else
     {
-        task2->GetLastException()->Throw();
+        throw Exception("Can't acquire current task manager");
     }
 }
 

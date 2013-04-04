@@ -52,6 +52,17 @@ public:
     {
     }
 
+    explicit Exception(const Exception& ex)
+    : message(ex.message)
+    {
+    }
+
+    Exception& operator = (const Exception& ex)
+    {
+        this->message = ex.message;
+        return *this;
+    }
+
     virtual Exception* Clone() const
     {
         return new Exception(*this);

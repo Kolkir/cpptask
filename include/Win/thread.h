@@ -30,7 +30,8 @@
 
 #include <Windows.h>
 #include <process.h>
-#include "exception.h"
+#include "./exception.h"
+#include "winerrmsg.h"
 
 namespace cpptask
 {
@@ -48,7 +49,7 @@ public:
                                                      &threadID));
         if (hThread == 0)
         {
-            throw std::runtime_error("Can't create a thread");
+            throw Exception("Can't create a thread - " + GetLastWinErrMsg());
         }
     }
 
@@ -66,7 +67,7 @@ public:
     {
         if (::ResumeThread(hThread) == -1)
         {
-            assert(false);
+            throw Exception("Can't resume thread - " + GetLastWinErrMsg());
         }
     }
 
@@ -75,7 +76,7 @@ public:
         DWORD rez = ::WaitForSingleObject(hThread, INFINITE);
         if (rez != WAIT_OBJECT_0)
         {
-            assert(false);
+            throw Exception("Can't wait thread - " + GetLastWinErrMsg());
         }
     }
     
@@ -84,7 +85,7 @@ public:
         DWORD code;
         if (!::GetExitCodeThread(hThread, &code))
         {
-            assert(false);
+            throw Exception("Can't get exit code for thread - " + GetLastWinErrMsg());
         }
         return static_cast<unsigned long>(code);
     }

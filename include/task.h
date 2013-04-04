@@ -65,7 +65,7 @@ public:
         }
         catch(Exception& err)
         {
-            ScopedLock<Mutex> lock(&exceptionGuard);
+            ScopedLock<Mutex> lock(exceptionGuard);
             lastException.Reset(err.Clone());
         }
         catch(...)

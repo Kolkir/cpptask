@@ -42,6 +42,7 @@ class TaskThreadPool
 public:
     TaskThreadPool(size_t threadsNum)
     {
+        assert(threadsNum != 0);
         manager.Reset(new TaskManager(*this, newTaskEvent, 0));
         manager->RegisterInTLS();
 
@@ -82,9 +83,9 @@ public:
         return 0;
     }
 
-    TaskManager* GetTaskManager()
+    TaskManager& GetTaskManager()
     {
-        return manager.Get();
+        return *manager.Get();
     }
 
 private:

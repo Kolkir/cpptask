@@ -28,7 +28,12 @@
 #ifndef _TIMER_H_
 #define _TIMER_H_
 
+#include "./exception.h"
+
 #include <windows.h>
+#include "winerrmsg.h"
+
+#include <assert.h>
 
 namespace cpptask
 {
@@ -37,23 +42,67 @@ class Timer
 public:
     Timer()
     {
-         threadHandle = ::GetCurrentThread();
-        ::GetProcessAffinityMask(GetCurrentProcess(), &processAffinityMask, &systemMask);
-        ::SetThreadAffinityMask(threadHandle, 1);
-        ::QueryPerformanceFrequency(&frequency);
-        ::SetThreadAffinityMask(threadHandle, processAffinityMask);
+        threadHandle = ::GetCurrentThread();
+        assert(threadHandle);
+        if (!::GetProcessAffinityMask(GetCurrentProcess(), &processAffinityMask, &systemMask))
+        {
+            throw Exception("Timer create error - " + GetLastWinErrMsg());
+        }
+
+        DWORD err = ::SetThreadAffinityMask(threadHandle, 1);
+        if (err  == ERROR_INVALID_PARAMETER && err == 0)
+        {
+            throw Exception("Timer create error - " + GetLastWinErrMsg());
+        }
+
+        if (!::QueryPerformanceFrequency(&frequency))
+        {
+            throw Exception("Timer create error - " + GetLastWinErrMsg());
+        }
+
+        err= ::SetThreadAffinityMask(threadHandle, processAffinityMask);
+        if (err  == ERROR_INVALID_PARAMETER && err == 0)
+        {
+            throw Exception("Timer create error - " + GetLastWinErrMsg());
+        }
     }
     void Start()
     {
-        ::SetThreadAffinityMask(threadHandle, 1);
-        ::QueryPerformanceCounter(&startTime);
-        ::SetThreadAffinityMask(threadHandle, processAffinityMask);
+        DWORD err = ::SetThreadAffinityMask(threadHandle, 1);
+        if (err  == ERROR_INVALID_PARAMETER && err == 0)
+        {
+            throw Exception("Timer start error - " + GetLastWinErrMsg());
+        }
+        
+        if (!::QueryPerformanceCounter(&startTime))
+        {
+            throw Exception("Timer start error - " + GetLastWinErrMsg());
+        }
+        
+        err = ::SetThreadAffinityMask(threadHandle, processAffinityMask);
+        if (err  == ERROR_INVALID_PARAMETER && err == 0)
+        {
+            throw Exception("Timer start error - " + GetLastWinErrMsg());
+        }
     }
     double End()
     {
-        ::SetThreadAffinityMask(threadHandle, 1);
-        ::QueryPerformanceCounter(&endTime);
-        ::SetThreadAffinityMask(threadHandle, processAffinityMask);
+        DWORD err = ::SetThreadAffinityMask(threadHandle, 1);
+        if (err  == ERROR_INVALID_PARAMETER && err == 0)
+        {
+            throw Exception("Timer end error - " + GetLastWinErrMsg());
+        }
+
+        if (!::QueryPerformanceCounter(&endTime))
+        {
+            throw Exception("Timer end error - " + GetLastWinErrMsg());
+        }
+
+        err = ::SetThreadAffinityMask(threadHandle, processAffinityMask);
+        if (err  == ERROR_INVALID_PARAMETER && err == 0)
+        {
+            throw Exception("Timer end error - " + GetLastWinErrMsg());
+        }
 
          __int64 elapsedTime = endTime.QuadPart - startTime.QuadPart;
         double const mseconds = double(elapsedTime) / (double(frequency.QuadPart) / 1000.0);

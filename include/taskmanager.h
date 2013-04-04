@@ -57,7 +57,7 @@ public:
 
     size_t GetThreadsNum() const;
 
-    void AddTask(Task* task);
+    void AddTask(Task& task);
 
     Task* GetOwnTask();
 
@@ -69,7 +69,11 @@ public:
 
     void RegisterInTLS();
 
-    void WaitTask(Task* waitTask);
+    void WaitTask(Task& waitTask);
+
+private:
+    TaskManager(const TaskManager&);
+    TaskManager& operator=(const TaskManager&);
 
 private:
     TaskThread* parentThread;

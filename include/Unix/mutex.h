@@ -30,8 +30,8 @@
 
 #include <sys/timeb.h>
 #include <pthread.h>
-#include <stdexcept>
 #include <cerrno>
+#include "./exception.h"
 
 namespace cpptask
 {
@@ -42,21 +42,34 @@ public:
     Mutex()
     {
         pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
+        if (pthread_mutexattr_init(&attr) != 0)
+        {
+            throw Exception("Can't create a mutex");
+        }
         if (::pthread_mutex_init(&pmutex, &attr) != 0)
         {
             pthread_mutexattr_destroy(&attr);
-            throw std::runtime_error("Can't create a mutex");
+            throw Exception("Can't create a mutex");
         }
-        pthread_mutexattr_destroy(&attr);
+        if (pthread_mutexattr_destroy(&attr) != 0)
+        {
+            ::pthread_mutex_destroy(&pmutex);
+            throw Exception("Can't create a mutex");
+        }
     }
     ~Mutex()
     {
-        ::pthread_mutex_destroy(&pmutex);
+        if (::pthread_mutex_destroy(&pmutex) != 0)
+        {
+            assert(false);
+        }
     }
     void Lock()
     {
-        ::pthread_mutex_lock(&pmutex);
+        if (::pthread_mutex_lock(&pmutex) != 0)
+        {
+            throw Exception("Can't lock a mutex");
+        }
     }
 
     bool TryLock()
@@ -66,6 +79,11 @@ public:
         {
             return true;
         }
+        else if (err != EBUSY)
+        {
+            throw Exception("Can't trylock a mutex");
+        }
+
         return false;
     }
 
@@ -80,16 +98,24 @@ public:
         spec.tv_nsec = NANOSEC_PER_MILLISEC * currSysTime.millitm;
         spec.tv_nsec += time * NANOSEC_PER_MILLISEC;
 
-        if (::pthread_mutex_timedlock(&pmutex, &spec) == ETIMEDOUT)
+        int err = ::pthread_mutex_timedlock(&pmutex, &spec);
+        if (err == ETIMEDOUT)
         {
             return false;
+        }
+        else if (err != 0)
+        {
+            throw Exception("Mutex waitlock failed");
         }
         return true;
     }
 
     void UnLock()
     {
-        ::pthread_mutex_unlock(&pmutex);
+        if (::pthread_mutex_unlock(&pmutex) != 0)
+        {
+             throw Exception("Can't unlock a mutex");
+        }
     }
 
     pthread_mutex_t* GetNative()

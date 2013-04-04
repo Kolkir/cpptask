@@ -90,7 +90,7 @@ private:
 };
 
 template<class Functor, class RANGES, class TaskType>
-void ParallelForBase(RANGES ranges, Functor functor, TaskManager* manager)
+void ParallelForBase(RANGES ranges, Functor functor, TaskManager& manager)
 {
     typedef RefPtr<TaskType> TASKPtr;
     typedef std::vector<TASKPtr> TASKS;
@@ -100,17 +100,17 @@ void ParallelForBase(RANGES ranges, Functor functor, TaskManager* manager)
     typename RANGES::iterator e = ranges.end();
     for (; i != e; ++i)
     {
-        TaskType* ptr = new(manager->GetCacheLineSize()) TaskType(*i, functor);
+        TaskType* ptr = new(manager.GetCacheLineSize()) TaskType(*i, functor);
         TASKPtr task(ptr);
         tasks.push_back(task);
-        manager->AddTask(task.Get());
+        manager.AddTask(*task.Get());
     }
 
     typename TASKS::iterator it = tasks.begin();
     typename TASKS::iterator et = tasks.end();
     for (; it != et; ++it)
     {
-        manager->WaitTask((*it).Get());
+        manager.WaitTask(*(*it).Get());
     }
     it = tasks.begin();
     for (; it != et; ++it)
@@ -126,19 +126,33 @@ template<class Iterator, class Functor>
 void ParallelForEach(Iterator start, Iterator end, Functor functor)
 {
     TaskManager* manager = TaskManager::GetCurrent();
-    typedef std::vector<Range<Iterator> > RANGES;
-    RANGES ranges = SplitRange(start, end, manager->GetThreadsNum());
-    ParallelForBase<Functor, RANGES, ForEachTask<Range<Iterator>,Functor> >(ranges, functor, manager);
+    if(manager != 0)
+    {
+        typedef std::vector<Range<Iterator> > RANGES;
+        RANGES ranges = SplitRange(start, end, manager->GetThreadsNum());
+        ParallelForBase<Functor, RANGES, ForEachTask<Range<Iterator>,Functor> >(ranges, functor, *manager);
+    }
+    else
+    {
+        throw Exception("Can't acquire current task manager");
+    }
 }
 
-template<class Iterator, class Functor>
-void ParallelFor(Iterator start, Iterator end, Functor functor)
+template<class Num, class Functor>
+void ParallelFor(Num start, Num end, Functor functor)
 {
     assert(end >= start);
     TaskManager* manager = TaskManager::GetCurrent();
-    typedef std::vector<Range<Iterator> > RANGES;
-    RANGES ranges = SplitNumRange(start, end, manager->GetThreadsNum());
-    ParallelForBase<Functor, RANGES, ForTask<Range<Iterator>,Functor> >(ranges, functor, manager);
+    if(manager != 0)
+    {
+        typedef std::vector<Range<Iterator> > RANGES;
+        RANGES ranges = SplitNumRange(start, end, manager->GetThreadsNum());
+        ParallelForBase<Functor, RANGES, ForTask<Range<Iterator>,Functor> >(ranges, functor, *manager);
+    }
+    else
+    {
+        throw Exception("Can't acquire current task manager");
+    }
 }
 
 

@@ -56,10 +56,10 @@ public:
         this->mutex.UnLock();
     }
 
-    void AddWaitEvent(E* event)
+    void AddWaitEvent(E& event)
     {
         Lock();
-        waitEvents.push_back(event);
+        waitEvents.push_back(&event);
         UnLock();
     }
 
@@ -93,6 +93,9 @@ public:
         return mutex.GetNative();
     }
 private:
+    MultWaitBase(const MultWaitBase&);
+    MultWaitBase& operator=(const MultWaitBase&);
+private:
     M mutex;
     std::vector<E*> waitEvents;
 };
@@ -109,12 +112,16 @@ int WaitForMultiple(std::vector<MultWaitBase<E,M>*>& events)
     bool needWait = true;
     for (; i != e; ++i, ++index)
     {
-        (*i)->AddWaitEvent(&commonEvent);
-        if ((*i)->MultCheck())
+        assert((*i) != 0);
+        if ((*i) != 0)
         {
-            ++index;
-            needWait = false;
-            break;
+            (*i)->AddWaitEvent(commonEvent);
+            if ((*i)->MultCheck())
+            {
+                ++index;
+                needWait = false;
+                break;
+            }
         }
     }
 
@@ -128,17 +135,25 @@ int WaitForMultiple(std::vector<MultWaitBase<E,M>*>& events)
     {
         for (; i != e; ++i, ++index)
         {
-            if ((*i)->MultCheck())
+            assert((*i) != 0);
+            if ((*i) != 0)
             {
-                ++index;
-                break;
+                if ((*i)->MultCheck())
+                {
+                    ++index;
+                    break;
+                }
             }
         }
     }
 
     for (; i != e; ++i, ++index)
     {
-        (*i)->DelWaitEvent(&commonEvent);
+        assert((*i) != 0);
+        if ((*i) != 0)
+        {
+            (*i)->DelWaitEvent(&commonEvent);
+        }
     }
 
     return index;

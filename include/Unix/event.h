@@ -30,6 +30,8 @@
 
 #include "mutex.h"
 #include "multwait.h"
+#include "./exception.h"
+
 #include <pthread.h>
 
 namespace cpptask
@@ -40,12 +42,18 @@ class Event : public MultWaitBase<Event, Mutex>
 public:
     Event()
     {
-        pthread_cond_init(&pcond, NULL);
+        if (pthread_cond_init(&pcond, NULL) != 0)
+        {
+            throw Exception("Can't create an event");
+        }
         signaled = false;
     }
     ~Event()
     {
-        pthread_cond_destroy(&pcond);
+        if (pthread_cond_destroy(&pcond) != 0)
+        {
+            assert(false);
+        }
     }
     void Wait()
     {
@@ -56,7 +64,7 @@ public:
             rc = pthread_cond_wait(&pcond, GetMutex());
             if (rc != 0)
             {
-                break;
+                throw Exception("Event wait failed");
             }
         }
         UnLock();
@@ -75,7 +83,10 @@ public:
         if (!signaled)
         {
             signaled = true;
-            pthread_cond_broadcast(&pcond);
+            if (pthread_cond_broadcast(&pcond) != 0)
+            {
+                throw Exception("Event signal failed");
+            }
 
             MultSignal();
         }

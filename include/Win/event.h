@@ -30,6 +30,8 @@
 
 #include "mutex.h"
 #include "multwait.h"
+#include "./exception.h"
+#include "winerrmsg.h"
 
 #include <windows.h>
 #include <assert.h>
@@ -46,7 +48,7 @@ public:
         hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
         if(hEvent == NULL)
         {
-            throw std::runtime_error("Can't create event.");
+            throw Exception("Can't create event -" + GetLastWinErrMsg());
         }
     }
     ~Event()
@@ -61,7 +63,7 @@ public:
         DWORD res = ::WaitForSingleObject(hEvent, INFINITE);
         if(res != WAIT_OBJECT_0)
         {
-            assert(false);
+            throw Exception("Event wait failed - " + GetLastWinErrMsg());
         }
     }   
     bool Check()
@@ -73,7 +75,7 @@ public:
         }
         else if(rez != WAIT_TIMEOUT)
         {
-            assert(false);
+            throw Exception("Event wait failed - " + GetLastWinErrMsg());
         }
         return false;
     }
@@ -81,14 +83,14 @@ public:
     {
         if (!::SetEvent(hEvent))
         {
-            assert(false);
+            throw Exception("Event set failed - " + GetLastWinErrMsg());
         }
     }
     void Reset()
     {
         if (!::ResetEvent(hEvent))
         {
-            assert(false);
+            throw Exception("Event reset failed - " + GetLastWinErrMsg());
         }
     }
 private:

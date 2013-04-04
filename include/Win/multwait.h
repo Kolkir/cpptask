@@ -30,6 +30,9 @@
 
 #include <windows.h>
 
+#include "./exception.h"
+#include "winerrmsg.h"
+
 #include <vector>
 #include <assert.h>
 
@@ -63,7 +66,7 @@ int WaitForMultiple(std::vector<MultWaitBase<E, M>*>& objects)
         }
         else
         {
-            assert(false);
+            throw Exception("WaitForMultiple failed - " + GetLastWinErrMsg());
         }
     }
     return -1;

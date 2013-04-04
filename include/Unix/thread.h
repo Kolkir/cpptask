@@ -31,7 +31,7 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#include "exception.h"
+#include "./exception.h"
 #include "event.h"
 
 namespace cpptask
@@ -51,7 +51,7 @@ public:
         pthread_attr_destroy(&attr);
         if(created != 0)
         {
-            throw std::logic_error("Can't create pthread.");
+            throw Exception("Can't create pthread.");
         }
     }
 
@@ -66,13 +66,12 @@ public:
         startEvent.Signal();
     }
 
-    bool Wait() const
+    void Wait() const
     {
         if (pthread_join(pthread, 0) != 0)
         {
-            return false;
+            throw Exception("Thread wait failed.");
         }
-        return true;
     }
 
     unsigned long GetExitCode() const
@@ -109,6 +108,7 @@ private:
         }
         catch(...)
         {
+            assert(false);
             return 1;
         }
         return 0;
