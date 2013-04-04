@@ -145,9 +145,9 @@ void ParallelFor(Num start, Num end, Functor functor)
     TaskManager* manager = TaskManager::GetCurrent();
     if(manager != 0)
     {
-        typedef std::vector<Range<Iterator> > RANGES;
+        typedef std::vector<Range<Num> > RANGES;
         RANGES ranges = SplitNumRange(start, end, manager->GetThreadsNum());
-        ParallelForBase<Functor, RANGES, ForTask<Range<Iterator>,Functor> >(ranges, functor, *manager);
+        ParallelForBase<Functor, RANGES, ForTask<Range<Num>,Functor> >(ranges, functor, *manager);
     }
     else
     {

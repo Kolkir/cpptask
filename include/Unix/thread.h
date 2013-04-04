@@ -68,7 +68,9 @@ public:
 
     void Wait() const
     {
-        if (pthread_join(pthread, 0) != 0)
+	int err = pthread_join(pthread, 0);
+
+        if (err != 0 && err != ESRCH)
         {
             throw Exception("Thread wait failed.");
         }
