@@ -78,7 +78,7 @@ void ParallelTest1()
     big_array = GetBigArray();
 
     timer.Start();
-    cpptask::ParallelFor(big_array.begin(), big_array.end(), Test1());
+    cpptask::ParallelForEach(big_array.begin(), big_array.end(), Test1());
 
     std::cout << "Parallel for time is : " << timer.End() << " ms\n";
 }
