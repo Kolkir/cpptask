@@ -31,6 +31,7 @@
 #define _SPSCQUEUE_H_
 
 #include "atomic.h"
+#include <assert.h>
 
 namespace cpptask
 {
@@ -55,7 +56,7 @@ public:
             delete n;
             n = next;
         }
-        while (n != nullptr);
+        while (n != 0);
     }
 
     void Push(T v)
@@ -69,13 +70,10 @@ public:
 
     bool Pop(T& v)
     {
-        if (LoadConsume(&head->next) != nullptr)
+        if (LoadConsume(&head->next) != 0)
         {
             v = head->next->value;
-            if (v == 0)
-            {
-                DebugBreak();
-            }
+            assert(v != 0);
             StoreRelease(&head, head->next);
             return true;
         }

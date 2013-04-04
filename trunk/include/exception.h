@@ -52,7 +52,7 @@ public:
     {
     }
 
-    explicit Exception(const Exception& ex)
+    Exception(const Exception& ex)
     : message(ex.message)
     {
     }
