@@ -59,7 +59,7 @@ public:
     void* GetValue() const
     {
         void* rez = TlsGetValue(tlsIndex);
-        if (rez == 0)
+        if (rez == 0 && ::GetLastError() != ERROR_SUCCESS)
         {
             throw Exception("Can't get a TLS value - " + GetLastWinErrMsg());
         }
