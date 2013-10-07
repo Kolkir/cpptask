@@ -91,7 +91,7 @@ std::vector<Range<Iterator> > SplitRange(Iterator start, Iterator end, size_t ra
 template<class Iterator>
 std::vector<Range<Iterator> > SplitNumRange(Iterator start, Iterator end, size_t rangesNum)
 {
-    assert(start >= end);
+    assert(start <= end);
     return SplitRangeBase(start, end, end - start, rangesNum);
 }
 
