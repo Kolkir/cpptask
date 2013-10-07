@@ -46,7 +46,7 @@ class Semaphore : public MultWaitBase<Event, Mutex>
 public:
     Semaphore()
     {
-        hSemaphore = ::CreateSemaphore(0, 0, std::numeric_limits<long>::max(), 0);
+        hSemaphore = ::CreateSemaphore(0, 0, (std::numeric_limits<long>::max)(), 0);
         if (hSemaphore == NULL)
         {
             throw Exception("Can't create a semaphore - " + GetLastWinErrMsg());
