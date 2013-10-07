@@ -126,5 +126,21 @@ private:
     Event waitEvent;
 };
 
+template<class F>
+class TaskFunction : public Task
+{
+public:
+    TaskFunction(F f)
+        : func(f)
+    {
+    }
+    virtual void Execute()
+    {
+        func();
+    }
+private:
+    F func;
+};
+
 }
 #endif
