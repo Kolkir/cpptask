@@ -15,7 +15,7 @@ It is implemented as headers only library for simple integration to projects.
   * mingw(gcc-4.5.2) (32bits and 64bits)
  * Linux (Debian)
   * gcc 4.6.1 (32bits)
-  * 
+
 **Features**
 
  * Thread class
@@ -32,4 +32,4 @@ It is implemented as headers only library for simple integration to projects.
  * Support of lambda expressions
 
 You can learn more on the UserGuide page.
-Also you can visit [http://c-vision.com.ua] to learn more news about project.
+Also you can visit [c-vision.com.ua](http://c-vision.com.ua) to learn more news about project.
