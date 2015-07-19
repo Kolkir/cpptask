@@ -31,5 +31,5 @@ It is implemented as headers only library for simple integration to projects.
  * Delivering exceptions from threads and tasks to caller
  * Support of lambda expressions
 
-You can learn more on the UserGuide page.
+You can learn more on the [UserGuide](https://github.com/Kolkir/cpptask/wiki/UserGuide) page.
 Also you can visit [c-vision.com.ua](http://c-vision.com.ua) to learn more news about project.
