@@ -31,7 +31,7 @@
 #include <sys/timeb.h>
 #include <pthread.h>
 #include <cerrno>
-#include "./exception.h"
+#include "../exception.h"
 
 namespace cpptask
 {

@@ -25,94 +25,48 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _EVENT_H_
-#define _EVENT_H_
+#ifndef _TIMER_H_
+#define _TIMER_H_
 
-#include "mutex.h"
-#include "multwait.h"
-#include "./exception.h"
-
-#include <pthread.h>
+#include <sys/time.h>
+#include "../exception.h"
 
 namespace cpptask
 {
-
-class Event : public MultWaitBase<Event, Mutex>
+class Timer
 {
 public:
-    Event()
+    Timer()
     {
-        if (pthread_cond_init(&pcond, NULL) != 0)
-        {
-            throw Exception("Can't create an event");
-        }
-        signaled = false;
+        startTime.tv_sec = 0;
+        startTime.tv_usec = 0;
     }
-    ~Event()
+    void Start()
     {
-        if (pthread_cond_destroy(&pcond) != 0)
+        if (gettimeofday(&startTime, 0) != 0)
         {
-            assert(false);
+            throw Exception("Can't get a time");
         }
     }
-    void Wait()
+    double End()
     {
-        int rc = 0;
-        Lock();
-        while (!signaled)
+        struct timeval currentTime;
+        if (gettimeofday(&currentTime, 0) != 0)
         {
-            rc = pthread_cond_wait(&pcond, GetMutex());
-            if (rc != 0)
-            {
-                throw Exception("Event wait failed");
-            }
+            throw Exception("Can't get a time");
         }
-        UnLock();
-    }
-    bool Check()
-    {
-        bool isSignaled = false;
-        Lock();
-        isSignaled = signaled;
-        UnLock();
-        return isSignaled;
-    }
-    void Signal()
-    {
-        Lock();
-        if (!signaled)
-        {
-            signaled = true;
-            if (pthread_cond_broadcast(&pcond) != 0)
-            {
-                throw Exception("Event signal failed");
-            }
 
-            MultSignal();
-        }
-        UnLock();
-    }
-    void Reset()
-    {
-        Lock();
-        signaled = false;
-        UnLock();
-    }
+        double const secs = currentTime.tv_sec - startTime.tv_sec;
+        double const us = currentTime.tv_usec - startTime.tv_usec;
 
-    virtual bool MultCheck()
-    {
-        return Check();
+        return (secs * 1000.0) + (us / 1000.0);
     }
-
 private:
-    Event(const Event&);
-    const Event& operator=(const Event&);
-
+    Timer(const Timer&);
+    const Timer& operator=(const Timer&);
 private:
-    pthread_cond_t pcond;
-    bool signaled;
+    struct timeval startTime; 
 };
-
 }
 
 #endif

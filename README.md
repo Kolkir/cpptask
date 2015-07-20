@@ -8,19 +8,11 @@ It is implemented as headers only library for simple integration to projects.
 
 **Supported Platforms (was tested on)**
 
- * Windows
-  * MSVS2008 (32bits and 64bits)
-  * MSVS2010 (32bits and 64bits)
-  * MSVS2010 Express (32bits)
-  * mingw(gcc-4.5.2) (32bits and 64bits)
- * Linux (Debian)
-  * gcc 4.6.1 (32bits)
+ * Linux (Arch)
+  * gcc 5.1.0 (64bits)
 
 **Features**
 
- * Thread class
- * Atomic variables
- * Mutex primitive
  * Event primitive
  * Semaphore primitive
  * Task class for faster delivering to threads

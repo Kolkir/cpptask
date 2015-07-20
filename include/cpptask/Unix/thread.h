@@ -31,7 +31,7 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#include "./exception.h"
+#include "../exception.h"
 #include "event.h"
 
 namespace cpptask

@@ -25,48 +25,50 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _TIMER_H_
-#define _TIMER_H_
+#ifndef _ALIGNED_ALLOC_H_
+#define _ALIGNED_ALLOC_H_
 
-#include <sys/time.h>
-#include "./exception.h"
+#include <unistd.h>
+#include <malloc.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 namespace cpptask
 {
-class Timer
+
+inline size_t GetCacheLineSize()
 {
-public:
-    Timer()
+    FILE * p = 0;
+    p = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
+    unsigned int size = 0;
+    if (p)
     {
-        startTime.tv_sec = 0;
-        startTime.tv_usec = 0;
+        fscanf(p, "%d", &size);
+        fclose(p);
     }
-    void Start()
+    else
     {
-        if (gettimeofday(&startTime, 0) != 0)
-        {
-            throw Exception("Can't get a time");
-        }
+        size = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
     }
-    double End()
-    {
-        struct timeval currentTime;
-        if (gettimeofday(&currentTime, 0) != 0)
-        {
-            throw Exception("Can't get a time");
-        }
+    return size;
+}
 
-        double const secs = currentTime.tv_sec - startTime.tv_sec;
-        double const us = currentTime.tv_usec - startTime.tv_usec;
-
-        return (secs * 1000.0) + (us / 1000.0);
+inline void* AlignedAlloc(size_t size, size_t alignment)
+{
+    void* ret = 0;
+    if (posix_memalign(&ret, alignment, size) != 0)
+    {
+        ret = 0;
+        throw std::bad_alloc();
     }
-private:
-    Timer(const Timer&);
-    const Timer& operator=(const Timer&);
-private:
-    struct timeval startTime; 
-};
+    return ret;
+}
+
+inline void AlignedFree(void* ptr)
+{
+    free(ptr);
+}
+
 }
 
 #endif

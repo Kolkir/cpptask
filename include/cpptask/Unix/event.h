@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2012, Kirill Kolodyazhnyi
+* Copyright (c) 2011, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,81 +25,94 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _SEMAPHORE_H_
-#define _SEMAPHORE_H_
+#ifndef _EVENT_H_
+#define _EVENT_H_
 
-#include "event.h"
 #include "mutex.h"
 #include "multwait.h"
-#include <semaphore.h>
-#include "./exception.h"
+#include "../exception.h"
+
+#include <pthread.h>
 
 namespace cpptask
 {
 
-class Semaphore : public MultWaitBase<Event, Mutex>
+class Event : public MultWaitBase<Event, Mutex>
 {
 public:
-    Semaphore()
+    Event()
     {
-        int err = sem_init(&psem, 0, 0);
-        if (err != 0)
+        if (pthread_cond_init(&pcond, NULL) != 0)
         {
-            throw Exception("Can't create a semaphore");
+            throw Exception("Can't create an event");
         }
+        signaled = false;
     }
-    ~Semaphore()
+    ~Event()
     {
-        if (sem_destroy(&psem) != 0)
+        if (pthread_cond_destroy(&pcond) != 0)
         {
             assert(false);
         }
     }
-
     void Wait()
     {
-        int err = sem_wait(&psem);
-        if (err != 0)
+        int rc = 0;
+        Lock();
+        while (!signaled)
         {
-            throw Exception("Semaphore wait error");
+            rc = pthread_cond_wait(&pcond, GetMutex());
+            if (rc != 0)
+            {
+                throw Exception("Event wait failed");
+            }
         }
+        UnLock();
     }
-
+    bool Check()
+    {
+        bool isSignaled = false;
+        Lock();
+        isSignaled = signaled;
+        UnLock();
+        return isSignaled;
+    }
     void Signal()
     {
         Lock();
-        int err = sem_post(&psem);
-        if (err != 0)
+        if (!signaled)
         {
-            throw Exception("Semaphore signal error");
+            signaled = true;
+            if (pthread_cond_broadcast(&pcond) != 0)
+            {
+                throw Exception("Event signal failed");
+            }
+
+            MultSignal();
         }
-        MultSignal();
+        UnLock();
+    }
+    void Reset()
+    {
+        Lock();
+        signaled = false;
         UnLock();
     }
 
     virtual bool MultCheck()
     {
-        int err = sem_trywait(&psem);
-        if (err == 0)
-        {
-            return true;
-        }
-        else if (errno != EAGAIN)
-        {
-            throw Exception("Semaphore wait error");
-        }
-        return false;
+        return Check();
     }
 
 private:
-    Semaphore(const Semaphore&);
-    const Semaphore& operator=(const Semaphore&);
+    Event(const Event&);
+    const Event& operator=(const Event&);
 
 private:
-    sem_t psem;
+    pthread_cond_t pcond;
+    bool signaled;
 };
 
 }
 
 #endif
-

@@ -30,7 +30,7 @@
 
 #include <pthread.h>
 #include <assert.h>
-#include "./exception.h"
+#include "../exception.h"
 
 namespace cpptask
 {

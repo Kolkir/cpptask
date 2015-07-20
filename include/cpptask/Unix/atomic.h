@@ -39,7 +39,7 @@ inline long InterlockedExchange(volatile long* target, long newVal)
 #if (defined(__GNUC__) || defined(__ICC)) && (defined(__i386__) || defined(__x86_64__))
     long ret = newVal;
      __asm__ __volatile__("lock\n\t"
-                          "xchgl %0,%1\n\t" : "=r" (ret) : "m" (*target), "0" (ret) : "memory");
+                          "xchgq %0,%1\n\t" : "=r" (ret) : "m" (*target), "0" (ret) : "memory");
      return ret;
 #else
 #warning Synchronizing not supported
@@ -72,7 +72,7 @@ inline void* InterlockedExchangePointer(volatile void** target, void* newVal)
                           "xchgl %0,%1\n\t" : "=r" (ret) : "m" (*target), "0" (ret) : "memory");
      return ret;
 #elif (defined(__GNUC__) || defined(__ICC)) && defined(__x86_64__)
-     EType* ret = newVal;
+     void* ret = newVal;
      __asm__ __volatile__("lock\n\t"
                           "xchgq %0,%1\n\t" : "=r" (ret) : "m" (*target), "0" (ret) : "memory");
      return ret;

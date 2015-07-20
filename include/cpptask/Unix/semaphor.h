@@ -1,6 +1,6 @@
 /*
 * http://code.google.com/p/cpptask/
-* Copyright (c) 2011, Kirill Kolodyazhnyi
+* Copyright (c) 2012, Kirill Kolodyazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -25,49 +25,81 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _ALIGNED_ALLOC_H_
-#define _ALIGNED_ALLOC_H_
+#ifndef _SEMAPHORE_H_
+#define _SEMAPHORE_H_
 
-#include <malloc.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include "event.h"
+#include "mutex.h"
+#include "multwait.h"
+#include <semaphore.h>
+#include "../exception.h"
 
 namespace cpptask
 {
 
-inline size_t GetCacheLineSize()
+class Semaphore : public MultWaitBase<Event, Mutex>
 {
-    FILE * p = 0;
-    p = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
-    unsigned int size = 0;
-    if (p)
+public:
+    Semaphore()
     {
-        fscanf(p, "%d", &size);
-        fclose(p);
+        int err = sem_init(&psem, 0, 0);
+        if (err != 0)
+        {
+            throw Exception("Can't create a semaphore");
+        }
     }
-    else
+    ~Semaphore()
     {
-        size = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+        if (sem_destroy(&psem) != 0)
+        {
+            assert(false);
+        }
     }
-    return size;
-}
 
-inline void* AlignedAlloc(size_t size, size_t alignment)
-{
-    void* ret = 0;
-    if (posix_memalign(&ret, alignment, size) != 0)
+    void Wait()
     {
-        ret = 0;
-        throw std::bad_alloc();
+        int err = sem_wait(&psem);
+        if (err != 0)
+        {
+            throw Exception("Semaphore wait error");
+        }
     }
-    return ret;
-}
 
-inline void AlignedFree(void* ptr)
-{
-    free(ptr);
-}
+    void Signal()
+    {
+        Lock();
+        int err = sem_post(&psem);
+        if (err != 0)
+        {
+            throw Exception("Semaphore signal error");
+        }
+        MultSignal();
+        UnLock();
+    }
+
+    virtual bool MultCheck()
+    {
+        int err = sem_trywait(&psem);
+        if (err == 0)
+        {
+            return true;
+        }
+        else if (errno != EAGAIN)
+        {
+            throw Exception("Semaphore wait error");
+        }
+        return false;
+    }
+
+private:
+    Semaphore(const Semaphore&);
+    const Semaphore& operator=(const Semaphore&);
+
+private:
+    sem_t psem;
+};
 
 }
 
 #endif
+
