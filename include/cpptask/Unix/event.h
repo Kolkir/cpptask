@@ -104,9 +104,8 @@ public:
         return Check();
     }
 
-private:
-    Event(const Event&);
-    const Event& operator=(const Event&);
+    Event(const Event&) = delete;
+    const Event& operator=(const Event&) = delete;
 
 private:
     pthread_cond_t pcond;

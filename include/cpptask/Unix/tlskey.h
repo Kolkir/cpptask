@@ -68,9 +68,8 @@ public:
         }
     }
 
-private:
-    TLSKey(const TLSKey&);
-    const TLSKey& operator=(const TLSKey&);
+    TLSKey(const TLSKey&) = delete;
+    const TLSKey& operator=(const TLSKey&) = delete;
 private:
     pthread_key_t key;
 };

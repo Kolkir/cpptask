@@ -30,10 +30,10 @@
 
 #include "thread.h"
 #include "event.h"
-#include "atomic.h"
 #include "taskmanager.h"
 
 #include <memory>
+#include <atomic>
 
 namespace cpptask
 {
@@ -58,7 +58,7 @@ private:
     Event stopEvent;
     Semaphore& newTaskEvent;
     std::unique_ptr<TaskManager> manager;
-    AtomicFlag done;
+    std::atomic<bool> done;
 };
 
 }

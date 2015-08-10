@@ -31,7 +31,6 @@
 #include "taskthread.h"
 #include "mutex.h"
 #include "event.h"
-#include "atomic.h"
 #include "alignedalloc.h"
 
 #include <memory>

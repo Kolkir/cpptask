@@ -61,9 +61,9 @@ public:
 
         return (secs * 1000.0) + (us / 1000.0);
     }
-private:
-    Timer(const Timer&);
-    const Timer& operator=(const Timer&);
+
+    Timer(const Timer&) = delete;
+    const Timer& operator=(const Timer&) = delete;
 private:
     struct timeval startTime; 
 };

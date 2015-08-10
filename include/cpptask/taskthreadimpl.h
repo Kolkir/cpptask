@@ -40,6 +40,7 @@ inline TaskThread::TaskThread(TaskThreadPool& threadPool, Semaphore& newTaskEven
     : newTaskEvent(newTaskEvent)
 {
     manager.reset(new TaskManager(threadPool, newTaskEvent, this));
+    done.store(false, std::memory_order_relaxed);
 }
 
 inline TaskThread::~TaskThread()
@@ -52,7 +53,7 @@ inline void TaskThread::Run()
 {
     manager->RegisterInTLS();
 
-    while (!done.IsSet())
+    while (!done.load(std::memory_order_relaxed))
     {
         Task* task = manager->GetTask();
         if (task == 0)
@@ -77,7 +78,7 @@ inline void TaskThread::Run()
 inline void TaskThread::Stop()
 {
     stopEvent.Signal();
-    done.Set();
+    done.store(true, std::memory_order_relaxed);
 }
 
 inline TaskManager& TaskThread::GetTaskManager()

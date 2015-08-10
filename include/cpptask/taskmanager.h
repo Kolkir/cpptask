@@ -71,9 +71,8 @@ public:
 
     void WaitTask(Task& waitTask);
 
-private:
-    TaskManager(const TaskManager&);
-    TaskManager& operator=(const TaskManager&);
+    TaskManager(const TaskManager&) = delete;
+    TaskManager& operator=(const TaskManager&) = delete;
 
 private:
     TaskThread* parentThread;
