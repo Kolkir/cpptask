@@ -28,11 +28,12 @@
 #ifndef _THREADPOOL_H_
 #define _THREADPOOL_H_
 
-#include "refptr.h"
 #include "semaphor.h"
 #include "taskthread.h"
 #include "taskmanager.h"
 #include "tlskey.h"
+
+#include <memory>
 
 namespace cpptask
 {
@@ -43,7 +44,7 @@ public:
     TaskThreadPool(size_t threadsNum)
     {
         assert(threadsNum != 0);
-        manager.Reset(new TaskManager(*this, newTaskEvent, 0));
+        manager.reset(new TaskManager(*this, newTaskEvent, 0));
         manager->RegisterInTLS();
 
         for (size_t i = 0; i < threadsNum; ++i)
@@ -78,25 +79,24 @@ public:
     {
         if (index < threads.size())
         {
-            return threads[index].Get();
+            return threads[index].get();
         }
         return 0;
     }
 
     TaskManager& GetTaskManager()
     {
-        return *manager.Get();
+        return *manager;
     }
 
+    TaskThreadPool(const TaskThreadPool&) = delete;
+    const TaskThreadPool& operator=(const TaskThreadPool&) = delete;
 private:
-    TaskThreadPool(const TaskThreadPool&);
-    const TaskThreadPool& operator=(const TaskThreadPool&);
-private:
-    typedef RefPtr<TaskThread> TaskThreadPtr;
+    typedef std::shared_ptr<TaskThread> TaskThreadPtr;
     typedef std::vector<TaskThreadPtr> Threads;
     Threads threads;
     Semaphore newTaskEvent;
-    RefPtr<TaskManager> manager;
+    std::unique_ptr<TaskManager> manager;
 };
 
 }

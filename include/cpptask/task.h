@@ -33,8 +33,8 @@
 #include "event.h"
 #include "atomic.h"
 #include "alignedalloc.h"
-#include "refptr.h"
 
+#include <memory>
 #include <algorithm>
 #include <functional>
 #include <vector>
@@ -66,21 +66,21 @@ public:
         catch(Exception& err)
         {
             ScopedLock<Mutex> lock(exceptionGuard);
-            lastException.Reset(err.Clone());
+            lastException.reset(err.Clone());
         }
         catch(...)
         {
-            lastException.Reset(new Exception("Unknown exception"));
+            lastException.reset(new Exception("Unknown exception"));
         }
     }
 
     const Exception* GetLastException() const
     {
-        if (lastException.IsNull())
+        if (!lastException)
         {
             return 0;
         }
-        return lastException.Get();
+        return lastException.get();
     }
 
     bool CheckFinished()
@@ -117,11 +117,10 @@ public:
         AlignedFree(ptr);
     }
 
+    Task(const Task&) = delete;
+    const Task& operator=(const Task&) = delete;
 private:
-    Task(const Task&);
-    const Task& operator=(const Task&);
-private:
-    RefPtr<Exception> lastException;
+    std::unique_ptr<Exception> lastException;
     Mutex exceptionGuard;
     Event waitEvent;
 };

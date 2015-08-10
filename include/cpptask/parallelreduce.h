@@ -70,7 +70,7 @@ public:
             std::vector<Range> ranges = SplitRange(range.start, range.end, splitCount);
         
             typedef ReduceTask<Range, Functor> TASK;
-            typedef RefPtr<TASK> TASKPtr;
+            typedef std::shared_ptr<TASK> TASKPtr;
             TASKPtr tasks[splitCount];
 
             typedef Functor* FUNCPtr;
@@ -89,13 +89,13 @@ public:
                                          *functors[i], 
                                          myDepth - 1);
 
-                    tasks[i].Reset(ptr);
-                    manager->AddTask(*tasks[i].Get());
+                    tasks[i].reset(ptr);
+                    manager->AddTask(*tasks[i]);
                 };
 
                 for (size_t i = 0; i != splitCount; ++i)
                 {
-                    manager->WaitTask(*tasks[i].Get());
+                    manager->WaitTask(*tasks[i]);
                 };
 
                 //check exceptions in child tasks
@@ -110,9 +110,9 @@ public:
                 //Join
                 for (size_t i = 1; i != splitCount; ++i)
                 {
-                    tasks[0]->Join(*tasks[i].Get());
+                    tasks[0]->Join(*tasks[i]);
                 }
-                Join(*tasks[0].Get());
+                Join(*tasks[0]);
             }
             else
             {
@@ -139,10 +139,10 @@ inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, size_
     {
         typedef Range<Iterator> RANGE;
         typedef ReduceTask<RANGE, Functor> TASK;
-        typedef RefPtr<TASK> TASKPtr;
+        typedef std::shared_ptr<TASK> TASKPtr;
         TASKPtr task(new(manager->GetCacheLineSize()) TASK(RANGE(start, end), functor, maxDepth));
-        manager->AddTask(*task.Get());
-        manager->WaitTask(*task.Get());
+        manager->AddTask(*task);
+        manager->WaitTask(*task);
         if (task->GetLastException() != 0)
         {
             task->GetLastException()->Throw();

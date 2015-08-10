@@ -92,7 +92,7 @@ private:
 template<class Functor, class RANGES, class TaskType>
 void ParallelForBase(RANGES ranges, Functor functor, TaskManager& manager)
 {
-    typedef RefPtr<TaskType> TASKPtr;
+    typedef std::shared_ptr<TaskType> TASKPtr;
     typedef std::vector<TASKPtr> TASKS;
     TASKS tasks;
 
@@ -103,14 +103,14 @@ void ParallelForBase(RANGES ranges, Functor functor, TaskManager& manager)
         TaskType* ptr = new(manager.GetCacheLineSize()) TaskType(*i, functor);
         TASKPtr task(ptr);
         tasks.push_back(task);
-        manager.AddTask(*task.Get());
+        manager.AddTask(*task);
     }
 
     typename TASKS::iterator it = tasks.begin();
     typename TASKS::iterator et = tasks.end();
     for (; it != et; ++it)
     {
-        manager.WaitTask(*(*it).Get());
+        manager.WaitTask(*(*it));
     }
     it = tasks.begin();
     for (; it != et; ++it)

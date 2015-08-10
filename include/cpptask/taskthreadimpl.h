@@ -39,7 +39,7 @@ namespace cpptask
 inline TaskThread::TaskThread(TaskThreadPool& threadPool, Semaphore& newTaskEvent)
     : newTaskEvent(newTaskEvent)
 {
-    manager.Reset(new TaskManager(threadPool, newTaskEvent, this));
+    manager.reset(new TaskManager(threadPool, newTaskEvent, this));
 }
 
 inline TaskThread::~TaskThread()
@@ -82,7 +82,7 @@ inline void TaskThread::Stop()
 
 inline TaskManager& TaskThread::GetTaskManager()
 {
-    return *manager.Get();
+    return *manager;
 }
 
 }

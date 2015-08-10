@@ -31,8 +31,9 @@
 #include "thread.h"
 #include "event.h"
 #include "atomic.h"
-#include "refptr.h"
 #include "taskmanager.h"
+
+#include <memory>
 
 namespace cpptask
 {
@@ -51,13 +52,12 @@ public:
 
     TaskManager& GetTaskManager();
 
-private:
-    TaskThread(const TaskThread&);
-    TaskThread& operator=(const TaskThread&);
+    TaskThread(const TaskThread&) = delete;
+    TaskThread& operator=(const TaskThread&) = delete;
 private:
     Event stopEvent;
     Semaphore& newTaskEvent;
-    RefPtr<TaskManager> manager;
+    std::unique_ptr<TaskManager> manager;
     AtomicFlag done;
 };
 
