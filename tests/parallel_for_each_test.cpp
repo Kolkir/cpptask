@@ -6,7 +6,7 @@
 
 TEST_F(CppTaskTest, ForEach_Serial)
 {
-    cpptask::TaskThreadPool threadPool(1);
+    cpptask::TaskThreadPool threadPool(0);
 
     cpptask::ParallelForEach(testArray.begin(), testArray.end(), DoubleSqrt());
 }

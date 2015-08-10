@@ -61,9 +61,9 @@ public:
     {
         this->p = p;
     }
-    void SetMemory(void* memory)
+    void SetMemory(void* memoryPtr)
     {
-        this->memory = memory;
+        this->memory = memoryPtr;
     }
     void* GetMemory()
     {

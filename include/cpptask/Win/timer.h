@@ -49,7 +49,7 @@ public:
             throw Exception("Timer create error - " + GetLastWinErrMsg());
         }
 
-        DWORD err = ::SetThreadAffinityMask(threadHandle, 1);
+        auto err = ::SetThreadAffinityMask(threadHandle, 1);
         if (err  == ERROR_INVALID_PARAMETER && err == 0)
         {
             throw Exception("Timer create error - " + GetLastWinErrMsg());
@@ -68,7 +68,7 @@ public:
     }
     void Start()
     {
-        DWORD err = ::SetThreadAffinityMask(threadHandle, 1);
+        auto err = ::SetThreadAffinityMask(threadHandle, 1);
         if (err  == ERROR_INVALID_PARAMETER && err == 0)
         {
             throw Exception("Timer start error - " + GetLastWinErrMsg());
@@ -87,7 +87,7 @@ public:
     }
     double End()
     {
-        DWORD err = ::SetThreadAffinityMask(threadHandle, 1);
+        auto err = ::SetThreadAffinityMask(threadHandle, 1);
         if (err  == ERROR_INVALID_PARAMETER && err == 0)
         {
             throw Exception("Timer end error - " + GetLastWinErrMsg());

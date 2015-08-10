@@ -6,6 +6,7 @@ include_directories("${PROJECT_SOURCE_DIR}/3rdparty/gtest/")
 include_directories("${PROJECT_SOURCE_DIR}/include/")
 
 if(MSVC)
+    set(CMAKE_CXX_FLAGS "/W4 /EHsc")
     set(CMAKE_CXX_FLAGS_DEBUG "/D_DEBUG /MTd /Zi /Ob0 /Od /RTC1 /MP2")
     set(CMAKE_CXX_FLAGS_MINSIZEREL     "/MT /O1 /Ob1 /D NDEBUG /MP")
     set(CMAKE_CXX_FLAGS_RELEASE        "/MT /O2 /Ob2 /D NDEBUG /MP")
