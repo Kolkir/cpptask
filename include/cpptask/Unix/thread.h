@@ -125,7 +125,7 @@ private:
     Event startEvent;
 };
 
-void Sleep(unsigned long milliseconds)
+inline void Sleep(unsigned long milliseconds)
 {
     if (milliseconds<1000)
     {

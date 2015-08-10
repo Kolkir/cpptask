@@ -37,7 +37,6 @@ file(GLOB SRC_TESTS_FILES tests/*
 )
 
 set(GTEST_SOURCES
-    ${PROJECT_SOURCE_DIR}/3rdparty/gtest/src/gtest_main.cc
     ${PROJECT_SOURCE_DIR}/3rdparty/gtest/src/gtest-all.cc
     )
     
