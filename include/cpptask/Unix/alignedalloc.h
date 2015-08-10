@@ -38,19 +38,23 @@ namespace cpptask
 
 inline size_t GetCacheLineSize()
 {
-    FILE * p = 0;
-    p = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
-    unsigned int size = 0;
-    if (p)
+    static unsigned int  cacheLineSize = 0;
+    if (cacheLineSize == 0)
     {
-        fscanf(p, "%d", &size);
-        fclose(p);
+        FILE * p = 0;
+        p = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
+        if (p)
+        {
+            fscanf(p, "%d", &cacheLineSize);
+            fclose(p);
+        }
+        else
+        {
+            cacheLineSize = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+        }
     }
-    else
-    {
-        size = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
-    }
-    return size;
+    assert(cacheLineSize != 0);
+    return cacheLineSize;
 }
 
 inline void* AlignedAlloc(size_t size, size_t alignment)

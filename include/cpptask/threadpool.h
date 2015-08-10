@@ -43,7 +43,6 @@ class TaskThreadPool
 public:
     TaskThreadPool(size_t threadsNum)
     {
-        assert(threadsNum != 0);
         manager.reset(new TaskManager(*this, newTaskEvent, 0));
         manager->RegisterInTLS();
 

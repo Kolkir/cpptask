@@ -101,35 +101,38 @@ typedef BOOL (WINAPI *LPFN_GLPI)(
 
 inline size_t GetCacheLineSize()
 {
-    size_t line_size = 0;
-    DWORD buffer_size = 0;
-    DWORD i = 0;
-
-    SYSTEM_LOGICAL_PROCESSOR_INFORMATION * buffer = 0;
-
-    LPFN_GLPI glpi = (LPFN_GLPI) GetProcAddress(
-                            GetModuleHandle(TEXT("kernel32")),
-                            "GetLogicalProcessorInformation");
-    if (0 == glpi)
+    static size_t line_size = 0;
+    if (line_size == 0)
     {
-        throw Exception("Can't get address of GetLogicalProcessorInformation function - " + GetLastWinErrMsg());
-    }
+        DWORD buffer_size = 0;
+        DWORD i = 0;
 
-    glpi(0, &buffer_size);
-    buffer = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION *)malloc(buffer_size);
-    glpi(&buffer[0], &buffer_size);
+        SYSTEM_LOGICAL_PROCESSOR_INFORMATION * buffer = 0;
 
-    for (i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i)
-    {
-        if (buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == 1)
+        LPFN_GLPI glpi = (LPFN_GLPI) GetProcAddress(
+                                GetModuleHandle(TEXT("kernel32")),
+                                "GetLogicalProcessorInformation");
+        if (0 == glpi)
         {
-            line_size = buffer[i].Cache.LineSize;
-            break;
+            throw Exception("Can't get address of GetLogicalProcessorInformation function - " + GetLastWinErrMsg());
         }
+
+        glpi(0, &buffer_size);
+        buffer = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION *)malloc(buffer_size);
+        glpi(&buffer[0], &buffer_size);
+
+        for (i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i)
+        {
+            if (buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == 1)
+            {
+                line_size = buffer[i].Cache.LineSize;
+                break;
+            }
+        }
+
+        free(buffer);
     }
-
-    free(buffer);
-
+    assert(line_size != 0);
     return line_size;
 }
 
