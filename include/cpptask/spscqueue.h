@@ -31,7 +31,6 @@
 #define _SPSCQUEUE_H_
 
 #include <cassert>
-#include <cstdalign>
 #include <atomic>
 
 namespace cpptask
@@ -127,11 +126,15 @@ private:
     public:
     // consumer part
     // accessed mainly by consumer, infrequently be producer
-    alignas(64) std::atomic<Node*> head; // head of the queue
+    std::atomic<Node*> head; // head of the queue
+
+    // delimiter between consumer part and producer part,
+    // so that they situated on different cache lines
+    char cache_line_pad[64];
 
     // producer part
     // accessed only by producer
-    alignas(64) Node* tail; // tail of the queue
+    Node* tail; // tail of the queue
     Node* cache_start; // first unused node (head of node cache)
     Node* cache_end; // helper (points somewhere between cache_start and head)
 };
