@@ -28,31 +28,68 @@
 #ifndef _THREAD_SELECT_H_
 #define _THREAD_SELECT_H_
 
-#ifdef _WIN32
-#include "Win/thread.h"
-#else
-#include "Unix/thread.h"
-#endif
+#include <thread>
+#include <exception>
 
 namespace cpptask
 {
-
-template<class F>
-class ThreadFunction : public Thread
-{
-public:
-    ThreadFunction(F f)
-        : func(f)
+    class Thread
     {
-    }
-    virtual void Run()
-    {
-        func();
-    }
-private:
-    F func;
-};
+    public:
+        Thread()
+        {
 
+        }
+
+        void Start() // required because in constructor virtual Run function can be not defined yet in derived classes
+        {
+            thread = std::move(std::thread(std::bind(&Thread::ThreadFunc, this)));
+        }
+
+        virtual ~Thread()
+        {
+            Join();
+        }
+
+        virtual void Run() = 0;
+
+        void Join()
+        {
+            if (thread.joinable())
+            {
+                thread.join();
+            };
+        }
+
+        void Detach()
+        {
+            thread.detach();
+        }
+
+        std::exception_ptr GetLastException() const
+        {
+            return lastException;
+        }
+    private:
+
+        void ThreadFunc()
+        {
+            try
+            {
+                Run();
+            }
+            catch (...)
+            {
+                lastException = std::current_exception();
+            }
+        }
+
+        Thread(const Thread&) = delete;
+        const Thread& operator=(const Thread&) = delete;
+    private:
+        std::thread thread;
+        std::exception_ptr lastException;
+    };
 }
 
 #endif

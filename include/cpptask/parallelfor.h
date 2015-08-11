@@ -117,7 +117,7 @@ void ParallelForBase(RANGES ranges, Functor functor, TaskManager& manager)
     {
         if ((*it)->GetLastException() != 0)
         {
-            (*it)->GetLastException()->Throw();
+            std::rethrow_exception((*it)->GetLastException());
         }
     }
 }

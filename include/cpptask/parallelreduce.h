@@ -101,7 +101,7 @@ public:
                 {
                     if (tasks[i]->GetLastException() != 0)
                     {
-                        tasks[i]->GetLastException()->Throw();
+                        std::rethrow_exception(tasks[i]->GetLastException());
                     }
                 };
 
@@ -143,7 +143,7 @@ inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, size_
         manager->WaitTask(*task);
         if (task->GetLastException() != 0)
         {
-            task->GetLastException()->Throw();
+            std::rethrow_exception(task->GetLastException());
         }
     }
     else

@@ -65,7 +65,7 @@ public:
         for (;i != e; ++i)
         {
             (*i)->Stop();
-            (*i)->Wait();
+            (*i)->Join();
         }
     }
 

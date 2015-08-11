@@ -63,17 +63,7 @@ public:
         return *this;
     }
 
-    virtual Exception* Clone() const
-    {
-        return new Exception(*this);
-    }
-
-    virtual void Throw() const
-    {
-        throw *this;
-    }
-
-    virtual const char* what() const throw()
+    virtual const char* what() const
     {
         return message.c_str();
     }

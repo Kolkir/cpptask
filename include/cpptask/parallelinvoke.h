@@ -72,11 +72,11 @@ inline void ParallelInvoke(Functor1 func1, Functor2 func2)
 
         if (task1.GetLastException() != 0)
         {
-            task1.GetLastException()->Throw();
+            std::rethrow_exception(task1.GetLastException());
         }
         if (task2.GetLastException() != 0)
         {
-            task2.GetLastException()->Throw();
+            std::rethrow_exception(task2.GetLastException());
         }
     }
     else

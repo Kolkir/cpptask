@@ -68,24 +68,15 @@ public:
         {
             Execute();
         }
-        catch(Exception& err)
-        {
-            ScopedLock<Mutex> lock(exceptionGuard);
-            lastException.reset(err.Clone());
-        }
         catch(...)
         {
-            lastException.reset(new Exception("Unknown exception"));
+            lastException = std::current_exception();
         }
     }
 
-    const Exception* GetLastException() const
+    std::exception_ptr GetLastException() const
     {
-        if (!lastException)
-        {
-            return 0;
-        }
-        return lastException.get();
+        return lastException;
     }
 
     bool CheckFinished()
@@ -125,7 +116,7 @@ public:
     Task(const Task&) = delete;
     const Task& operator=(const Task&) = delete;
 private:
-    std::unique_ptr<Exception> lastException;
+    std::exception_ptr lastException;
     Mutex exceptionGuard;
     Event waitEvent;
 };

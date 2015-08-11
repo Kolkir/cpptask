@@ -46,7 +46,7 @@ inline TaskThread::TaskThread(TaskThreadPool& threadPool, Semaphore& newTaskEven
 inline TaskThread::~TaskThread()
 {
     Stop();
-    Wait();
+    Join();
 }
 
 inline void TaskThread::Run()
