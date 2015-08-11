@@ -28,8 +28,6 @@
 #ifndef _ALIGNED_ALLOC_H_
 #define _ALIGNED_ALLOC_H_
 
-#include "./exception.h"
-
 #include <stdlib.h>
 #include <malloc.h>
 #include <windows.h>
@@ -104,33 +102,37 @@ inline size_t GetCacheLineSize()
     static size_t line_size = 0;
     if (line_size == 0)
     {
-        DWORD buffer_size = 0;
-        DWORD i = 0;
+        auto mHandle = GetModuleHandle(TEXT("kernel32"));
+        if (mHandle == 0)
+        {
+            throw Exception("Can't get handle to kernel32 module - " + GetLastWinErrMsg());
+        }
 
-        SYSTEM_LOGICAL_PROCESSOR_INFORMATION * buffer = 0;
-
-        LPFN_GLPI glpi = (LPFN_GLPI) GetProcAddress(
-                                GetModuleHandle(TEXT("kernel32")),
-                                "GetLogicalProcessorInformation");
-        if (0 == glpi)
+        LPFN_GLPI glpi = (LPFN_GLPI) GetProcAddress(mHandle, "GetLogicalProcessorInformation");
+        if (glpi == 0)
         {
             throw Exception("Can't get address of GetLogicalProcessorInformation function - " + GetLastWinErrMsg());
         }
 
+        DWORD buffer_size = 0;
         glpi(0, &buffer_size);
-        buffer = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION *)malloc(buffer_size);
-        glpi(&buffer[0], &buffer_size);
 
-        for (i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i)
+        if (buffer_size > 0)
         {
-            if (buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == 1)
+            std::vector<char> bufferData(buffer_size, 0);
+            SYSTEM_LOGICAL_PROCESSOR_INFORMATION* buffer = reinterpret_cast<SYSTEM_LOGICAL_PROCESSOR_INFORMATION*>(bufferData.data());
+
+            glpi(&buffer[0], &buffer_size);
+
+            for (int i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i)
             {
-                line_size = buffer[i].Cache.LineSize;
-                break;
+                if (buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == 1)
+                {
+                    line_size = buffer[i].Cache.LineSize;
+                    break;
+                }
             }
         }
-
-        free(buffer);
     }
     assert(line_size != 0);
     return line_size;

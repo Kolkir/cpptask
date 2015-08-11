@@ -1,10 +1,10 @@
-#include "cpptasktest.h"
+#include <gtest/gtest.h>
 
 #include <cpptask/cpptask.h>
 
 #include <algorithm>
 
-TEST_F(CppTaskTest, Exception_Propagation)
+TEST(ExceptionsTest, Propagation)
 {
     cpptask::TaskThreadPool threadPool(4);
 
@@ -16,6 +16,6 @@ TEST_F(CppTaskTest, Exception_Propagation)
         [this]()
     {
         double x = 5;
-        DoubleSqrt()(x);
+        x *=x;
     }), cpptask::Exception);
 }

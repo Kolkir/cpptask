@@ -41,13 +41,25 @@ class SPSCQueue
 {
 public:
 
-    SPSCQueue()
+#if defined(_DEBUG) || defined(DEBUG)
+    SPSCQueue(T defaultValue)
     {
         Node* n = new Node;
+        n->value = defaultValue;
         n->next.store(nullptr, std::memory_order_relaxed);
         head.store(n, std::memory_order_relaxed);
         tail = n;
-        cache_start = cache_end = n;
+        cache_start = cache_mid = n;
+    }
+#endif
+
+    SPSCQueue()
+    {
+        Node* n = new Node();
+        n->next.store(nullptr, std::memory_order_relaxed);
+        head.store(n, std::memory_order_relaxed);
+        tail = n;
+        cache_start = cache_mid = n;
     }
 
     ~SPSCQueue()
@@ -62,7 +74,24 @@ public:
         while (n != nullptr);
     }
 
-    void Push(T v)
+#if defined(_DEBUG) || defined(DEBUG)
+    //not thread safe - for testing purposes
+    template<class IF>
+    void Iterate(IF func) const
+    {
+        auto h = head.load(std::memory_order_relaxed);
+
+        Node* n = cache_start;
+        do
+        {
+            func(n->value, n == h, n == tail, n == cache_start, n == cache_mid);
+            Node* next = n->next.load(std::memory_order_relaxed);
+            n = next;
+        } while (n != nullptr);
+    }
+#endif
+
+    void Enqueue(T v)
     {
         Node* n = AllocNode();
         n->next = nullptr;
@@ -71,14 +100,13 @@ public:
         tail = n;
     }
 
-    bool Pop(T& v)
+    bool Dequeue(T& v)
     {
         auto h = head.load(std::memory_order_acquire);
         auto h_next = h->next.load(std::memory_order_acquire);
         if (h_next != nullptr)
         {
             v = h_next->value;
-            assert(v != 0);
             head.store(h_next, std::memory_order_release);
             return true;
         }
@@ -90,6 +118,7 @@ public:
 
     SPSCQueue(SPSCQueue const&) = delete;
     SPSCQueue& operator = (SPSCQueue const&) = delete;
+
 private:
     // internal node structure
     struct Node
@@ -103,16 +132,16 @@ private:
         // cache_start tries to allocate node from internal node cache,
         // if attempt fails, allocates node via ::operator new()
 
-        if (cache_start != cache_end)
+        if (cache_start != cache_mid)
         {
             Node* n = cache_start;
             cache_start = cache_start->next.load(std::memory_order_acquire);
             return n;
         }
 
-        cache_end = head.load(std::memory_order_acquire);
+        cache_mid = head.load(std::memory_order_acquire);
 
-        if (cache_start != cache_end)
+        if (cache_start != cache_mid)
         {
             Node* n = cache_start;
             cache_start = cache_start->next.load(std::memory_order_acquire);
@@ -122,8 +151,6 @@ private:
         return n;
     }
 
-//private:
-    public:
     // consumer part
     // accessed mainly by consumer, infrequently be producer
     std::atomic<Node*> head; // head of the queue
@@ -136,7 +163,7 @@ private:
     // accessed only by producer
     Node* tail; // tail of the queue
     Node* cache_start; // first unused node (head of node cache)
-    Node* cache_end; // helper (points somewhere between cache_start and head)
+    Node* cache_mid; // points somewhere between cache_start and head - minimize accesses to the head node during allocation
 };
 
 }

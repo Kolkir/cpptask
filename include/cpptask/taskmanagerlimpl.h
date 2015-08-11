@@ -55,7 +55,7 @@ inline size_t TaskManager::GetThreadsNum() const
 
 inline void TaskManager::AddTask(Task& task)
 {
-    taskQueue.Push(&task);
+    taskQueue.Enqueue(&task);
     newTaskEvent.Signal();
 }
 
@@ -64,7 +64,7 @@ inline Task* TaskManager::GetOwnTask()
     Task* res = 0;
     if (getGuard.TryLock())
     {
-        if (!taskQueue.Pop(res))
+        if (!taskQueue.Dequeue(res))
         {
             res = 0;
         }

@@ -28,8 +28,6 @@
 #ifndef _TIMER_H_
 #define _TIMER_H_
 
-#include "./exception.h"
-
 #include <windows.h>
 #include "winerrmsg.h"
 
@@ -50,7 +48,7 @@ public:
         }
 
         auto err = ::SetThreadAffinityMask(threadHandle, 1);
-        if (err  == ERROR_INVALID_PARAMETER && err == 0)
+        if (err  == ERROR_INVALID_PARAMETER || err == 0)
         {
             throw Exception("Timer create error - " + GetLastWinErrMsg());
         }
@@ -60,8 +58,8 @@ public:
             throw Exception("Timer create error - " + GetLastWinErrMsg());
         }
 
-        err= ::SetThreadAffinityMask(threadHandle, processAffinityMask);
-        if (err  == ERROR_INVALID_PARAMETER && err == 0)
+        err = ::SetThreadAffinityMask(threadHandle, processAffinityMask);
+        if (err  == ERROR_INVALID_PARAMETER || err == 0)
         {
             throw Exception("Timer create error - " + GetLastWinErrMsg());
         }
@@ -69,7 +67,7 @@ public:
     void Start()
     {
         auto err = ::SetThreadAffinityMask(threadHandle, 1);
-        if (err  == ERROR_INVALID_PARAMETER && err == 0)
+        if (err  == ERROR_INVALID_PARAMETER || err == 0)
         {
             throw Exception("Timer start error - " + GetLastWinErrMsg());
         }
@@ -80,7 +78,7 @@ public:
         }
         
         err = ::SetThreadAffinityMask(threadHandle, processAffinityMask);
-        if (err  == ERROR_INVALID_PARAMETER && err == 0)
+        if (err  == ERROR_INVALID_PARAMETER || err == 0)
         {
             throw Exception("Timer start error - " + GetLastWinErrMsg());
         }
@@ -88,7 +86,7 @@ public:
     double End()
     {
         auto err = ::SetThreadAffinityMask(threadHandle, 1);
-        if (err  == ERROR_INVALID_PARAMETER && err == 0)
+        if (err  == ERROR_INVALID_PARAMETER || err == 0)
         {
             throw Exception("Timer end error - " + GetLastWinErrMsg());
         }
@@ -99,7 +97,7 @@ public:
         }
 
         err = ::SetThreadAffinityMask(threadHandle, processAffinityMask);
-        if (err  == ERROR_INVALID_PARAMETER && err == 0)
+        if (err  == ERROR_INVALID_PARAMETER || err == 0)
         {
             throw Exception("Timer end error - " + GetLastWinErrMsg());
         }
@@ -108,13 +106,13 @@ public:
         double const mseconds = double(elapsedTime) / (double(frequency.QuadPart) / 1000.0);
         return mseconds;
     }
-private:
-    Timer(const Timer&);
-    const Timer& operator=(const Timer&);
+
+    Timer(const Timer&) = delete;
+    const Timer& operator=(const Timer&) = delete;
 private:
     LARGE_INTEGER startTime;
     LARGE_INTEGER endTime;
-	LARGE_INTEGER frequency;
+    LARGE_INTEGER frequency;
     void* threadHandle;
 #if defined(_WIN64)
     unsigned __int64 processAffinityMask;
