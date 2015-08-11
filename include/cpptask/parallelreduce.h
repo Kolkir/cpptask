@@ -137,13 +137,12 @@ inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, size_
     {
         typedef Range<Iterator> RANGE;
         typedef ReduceTask<RANGE, Functor> TASK;
-        typedef std::shared_ptr<TASK> TASKPtr;
-        TASKPtr task(new TASK(RANGE(start, end), functor, maxDepth));
-        manager->AddTask(*task);
-        manager->WaitTask(*task);
-        if (task->GetLastException() != 0)
+        TASK task(RANGE(start, end), functor, maxDepth);
+        manager->AddTask(task);
+        manager->WaitTask(task);
+        if (task.GetLastException() != 0)
         {
-            std::rethrow_exception(task->GetLastException());
+            std::rethrow_exception(task.GetLastException());
         }
     }
     else

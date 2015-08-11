@@ -33,7 +33,7 @@
 namespace cpptask
 {
 
-inline void* aligned_alloc(size_t size, size_t align_size)
+inline void* aligned_alloc(size_t align_size, size_t size)
 {
 #ifdef __GNUC__
     return __mingw_aligned_malloc(size, align_size);

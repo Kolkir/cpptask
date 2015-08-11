@@ -100,7 +100,7 @@ public:
 
     void* operator new(size_t size)
     {
-        return aligned_alloc(size, _CPP_TASK_CACHE_LINE_SIZE_);
+        return aligned_alloc(_CPP_TASK_CACHE_LINE_SIZE_, size);
     }
 
     void operator delete(void* ptr)

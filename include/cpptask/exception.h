@@ -63,7 +63,7 @@ public:
         return *this;
     }
 
-    virtual const char* what() const
+    virtual const char* what() const noexcept
     {
         return message.c_str();
     }

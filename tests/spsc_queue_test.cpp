@@ -176,7 +176,7 @@ TEST(SPSCTest, Parallel)
     producerThread.join();
     consumerThread.join();
 
-    ASSERT_EQ(N, x.size());
+    ASSERT_EQ(N, static_cast<int>(x.size()));
 
     for (int i = 0; i < N; ++i)
     {
