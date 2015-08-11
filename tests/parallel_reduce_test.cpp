@@ -11,6 +11,7 @@ namespace
     {
     public:
         Accumulator(double init) : res(init) {}
+
         Accumulator(const Accumulator& accumulator, cpptask::SplitMark)
             : res(accumulator.res) {}
 

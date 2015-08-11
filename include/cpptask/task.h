@@ -37,11 +37,17 @@
 #include <algorithm>
 #include <functional>
 #include <vector>
+#include <stdlib.h>
+
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable : 4324 )
+#endif
 
 namespace cpptask
 {
 
-class Task
+class alignas(_CPP_TASK_CACHE_LINE_SIZE_) Task
 {
 public:
     Task()
@@ -101,19 +107,19 @@ public:
         return &waitEvent;
     }
 
-    void* operator new(size_t size, size_t alignment)
+    void* operator new(size_t size)
     {
-        return AlignedAlloc(size, alignment);
+        return aligned_alloc(size, _CPP_TASK_CACHE_LINE_SIZE_);
     }
 
     void operator delete(void* ptr)
     {
-        AlignedFree(ptr);
+        free(ptr);
     }
 
     void operator delete(void* ptr, size_t)
     {
-        AlignedFree(ptr);
+        free(ptr);
     }
 
     Task(const Task&) = delete;
@@ -124,21 +130,10 @@ private:
     Event waitEvent;
 };
 
-template<class F>
-class TaskFunction : public Task
-{
-public:
-    TaskFunction(F f)
-        : func(f)
-    {
-    }
-    virtual void Execute()
-    {
-        func();
-    }
-private:
-    F func;
-};
-
 }
+
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
+
 #endif

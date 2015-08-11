@@ -100,7 +100,7 @@ void ParallelForBase(RANGES ranges, Functor functor, TaskManager& manager)
     typename RANGES::iterator e = ranges.end();
     for (; i != e; ++i)
     {
-        TaskType* ptr = new(manager.GetCacheLineSize()) TaskType(*i, functor);
+        TaskType* ptr = new TaskType(*i, functor);
         TASKPtr task(ptr);
         tasks.push_back(task);
         manager.AddTask(*task);

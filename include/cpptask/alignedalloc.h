@@ -30,51 +30,6 @@
 
 #ifdef _WIN32
 #include "Win/alignedalloc.h"
-#else
-#include "Unix/alignedalloc.h"
 #endif
 
-namespace cpptask
-{
-
-template<class T>
-class AlignedPointer
-{
-public:
-     AlignedPointer()
-        : p(0)
-        , memory(0)
-    {
-    }
-    ~AlignedPointer()
-    {
-        if (p != 0)
-        {
-            p->~T();
-        }
-        if (memory != 0)
-        {
-            AlignedFree(memory);
-        }
-    }
-    void SetPointer(T* p)
-    {
-        this->p = p;
-    }
-    void SetMemory(void* memoryPtr)
-    {
-        this->memory = memoryPtr;
-    }
-    void* GetMemory()
-    {
-        return memory;
-    }
-private:
-    AlignedPointer(const AlignedPointer&);
-    AlignedPointer& operator=(const AlignedPointer&);
-private:
-    T* p;
-    void* memory;
-};
-}
 #endif

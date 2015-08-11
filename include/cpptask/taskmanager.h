@@ -32,7 +32,6 @@
 #include "tlskey.h"
 #include "mutex.h"
 #include "semaphor.h"
-#include "alignedalloc.h"
 
 namespace cpptask
 {
@@ -63,8 +62,6 @@ public:
 
     Task* GetTask();
 
-    size_t GetCacheLineSize() const;
-
     static TaskManager* GetCurrent();
 
     void RegisterInTLS();
@@ -78,7 +75,6 @@ private:
     TaskThread* parentThread;
     TaskThreadPool& threadPool;
     SPSCQueue<Task*> taskQueue;
-    size_t cacheLineSize;
     Mutex getGuard;
     Semaphore& newTaskEvent;
 };

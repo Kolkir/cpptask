@@ -57,28 +57,26 @@ inline void ParallelInvoke(Functor1 func1, Functor2 func2)
     TaskManager* manager = TaskManager::GetCurrent();
     if (manager != 0)
     {
-        typedef InvokeTask<Functor1> TASK1;
-        typedef std::shared_ptr<TASK1> TASKPtr1;
+        typedef InvokeTask<Functor1> TaskType1;
 
-        TASKPtr1 task1(new(manager->GetCacheLineSize()) TASK1(func1));
-        manager->AddTask(*task1);
+        TaskType1 task1(func1);
+        manager->AddTask(task1);
 
-        typedef InvokeTask<Functor2> TASK2;
-        typedef std::shared_ptr<TASK2> TASKPtr2;
+        typedef InvokeTask<Functor2> TaskType2;
+       
+        TaskType2 task2(func2);
+        manager->AddTask(task2);
 
-        TASKPtr2 task2(new(manager->GetCacheLineSize()) TASK2(func2));
-        manager->AddTask(*task2);
+        manager->WaitTask(task1);
+        manager->WaitTask(task2);
 
-        manager->WaitTask(*task1);
-        manager->WaitTask(*task2);
-
-        if (task1->GetLastException() != 0)
+        if (task1.GetLastException() != 0)
         {
-            task1->GetLastException()->Throw();
+            task1.GetLastException()->Throw();
         }
-        if (task2->GetLastException() != 0)
+        if (task2.GetLastException() != 0)
         {
-            task2->GetLastException()->Throw();
+            task2.GetLastException()->Throw();
         }
     }
     else

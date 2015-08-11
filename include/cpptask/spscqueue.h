@@ -157,7 +157,7 @@ private:
 
     // delimiter between consumer part and producer part,
     // so that they situated on different cache lines
-    char cache_line_pad[64];
+    char cache_line_pad[_CPP_TASK_CACHE_LINE_SIZE_];
 
     // producer part
     // accessed only by producer

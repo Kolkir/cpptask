@@ -33,6 +33,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <type_traits>
 
 namespace cpptask
 {
@@ -73,21 +74,18 @@ public:
             typedef std::shared_ptr<TASK> TASKPtr;
             TASKPtr tasks[splitCount];
 
-            typedef Functor* FUNCPtr;
-            FUNCPtr functors[splitCount];
-            AlignedPointer<Functor> mems[splitCount];
+            typename std::aligned_storage<sizeof(Functor), _CPP_TASK_CACHE_LINE_SIZE_>::type functors[splitCount];
 
             TaskManager* manager = TaskManager::GetCurrent();
             if (manager != 0)
             {
                 for (size_t i = 0; i != splitCount; ++i)
                 {
-                    mems[i].SetMemory(AlignedAlloc(sizeof(Functor), manager->GetCacheLineSize()));
-                    functors[i] = new(mems[i].GetMemory()) Functor(functor, SplitMark());
+                    new(functors + i)Functor(functor, SplitMark());
                 
-                    TASK* ptr = new(manager->GetCacheLineSize()) TASK(ranges[i], 
-                                         *functors[i], 
-                                         myDepth - 1);
+                    TASK* ptr = new TASK(ranges[i], 
+                                    *reinterpret_cast<Functor*>(functors + i),
+                                    myDepth - 1);
 
                     tasks[i].reset(ptr);
                     manager->AddTask(*tasks[i]);
@@ -140,7 +138,7 @@ inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, size_
         typedef Range<Iterator> RANGE;
         typedef ReduceTask<RANGE, Functor> TASK;
         typedef std::shared_ptr<TASK> TASKPtr;
-        TASKPtr task(new(manager->GetCacheLineSize()) TASK(RANGE(start, end), functor, maxDepth));
+        TASKPtr task(new TASK(RANGE(start, end), functor, maxDepth));
         manager->AddTask(*task);
         manager->WaitTask(*task);
         if (task->GetLastException() != 0)

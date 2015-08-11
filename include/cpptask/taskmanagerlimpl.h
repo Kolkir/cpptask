@@ -41,7 +41,6 @@ inline TaskManager::TaskManager(TaskThreadPool& threadPool, Semaphore& newTaskEv
     , threadPool(threadPool)
     , newTaskEvent(newTaskEvent)
 {
-    cacheLineSize = cpptask::GetCacheLineSize();
 }
 
 inline TaskManager::~TaskManager()
@@ -97,11 +96,6 @@ inline Task* TaskManager::GetTask()
         }
     }
     return res;
-}
-
-inline size_t TaskManager::GetCacheLineSize() const
-{
-    return cacheLineSize;
 }
 
 inline TaskManager* TaskManager::GetCurrent()
