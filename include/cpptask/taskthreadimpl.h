@@ -38,15 +38,19 @@ namespace cpptask
 
 inline TaskThread::TaskThread(TaskThreadPool& threadPool, Semaphore& newTaskEvent)
     : newTaskEvent(newTaskEvent)
+    , manager(new TaskManager(threadPool, newTaskEvent, this))
+    , done(false)
+    , thread(std::bind(&TaskThread::Run, this))
 {
-    manager.reset(new TaskManager(threadPool, newTaskEvent, this));
-    done.store(false, std::memory_order_relaxed);
 }
 
 inline TaskThread::~TaskThread()
 {
     Stop();
-    Join();
+    if (thread.joinable())
+    {
+        thread.join();
+    }
 }
 
 inline void TaskThread::Run()

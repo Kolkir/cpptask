@@ -28,25 +28,23 @@
 #ifndef _TASKTHREAD_H_
 #define _TASKTHREAD_H_
 
-#include "thread.h"
 #include "event.h"
 #include "taskmanager.h"
 
 #include <memory>
 #include <atomic>
+#include <thread>
 
 namespace cpptask
 {
 
 class Task;
 class TaskThreadPool;
-class TaskThread: public Thread
+class TaskThread
 {
 public:
     TaskThread(TaskThreadPool& threadPool, Semaphore& newTaskEvent);
     ~TaskThread();
-
-    virtual void Run();
 
     void Stop();
 
@@ -54,11 +52,17 @@ public:
 
     TaskThread(const TaskThread&) = delete;
     TaskThread& operator=(const TaskThread&) = delete;
+
+private:
+
+    void Run();
+
 private:
     Event stopEvent;
     Semaphore& newTaskEvent;
     std::unique_ptr<TaskManager> manager;
     std::atomic<bool> done;
+    std::thread thread;
 };
 
 }

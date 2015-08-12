@@ -51,11 +51,6 @@ public:
             TaskThreadPtr tptr(new TaskThread(*this, newTaskEvent));
             threads.push_back(tptr);
         }
-
-        for (size_t i = 0; i < threadsNum; ++i)
-        {
-            threads[i]->Start();
-        }
     }
 
     ~TaskThreadPool()
@@ -65,7 +60,6 @@ public:
         for (;i != e; ++i)
         {
             (*i)->Stop();
-            (*i)->Join();
         }
     }
 
