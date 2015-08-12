@@ -67,7 +67,7 @@ public:
     bool wait_until(const std::chrono::time_point<Clock, Duration>& time)
     {
         std::unique_lock<std::mutex> lock(_mutex);
-        cv.wait_until(lock, time, duration, [&] {return signaled; });
+        return cv.wait_until(lock, time, [&] {return signaled; });
     }
 
     void notify()

@@ -47,8 +47,8 @@ public:
     MultWaitBase(const MultWaitBase&) = delete;
     MultWaitBase& operator=(const MultWaitBase&) = delete;
 
-    template <class E>
-    friend int wait_one_of(std::vector<MultWaitBase<E>*>& events);
+    template <class TE>
+    friend int wait_one_of(std::vector<MultWaitBase<TE>*>& events);
 
 protected:
 
