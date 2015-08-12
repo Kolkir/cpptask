@@ -25,13 +25,84 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _EVENT_SELECT_H_
-#define _EVENT_SELECT_H_
+#ifndef _EVENT_H_
+#define _EVENT_H_
 
-#ifdef _WIN32
-#include "Win/event.h"
-#else
-#include "Unix/event.h"
-#endif
+#include "mutex.h"
+#include "waitoneof.h"
+
+#include <condition_variable>
+
+namespace cpptask
+{
+
+class event : public MultWaitBase<event>
+{
+public:
+    using native_handle_type = std::condition_variable::native_handle_type;
+
+    event() noexcept
+        : signaled(false)
+    {}
+    
+    ~event() {}
+
+    event(const event&) = delete;
+    const event& operator=(const event&) = delete;
+
+    void wait()
+    {
+        std::unique_lock<std::mutex> lock(_mutex);
+        cv.wait(lock, [&] {return signaled; });
+    }
+
+    template<class Rep, class Period>
+    bool wait_for(const std::chrono::duration<Rep, Period>& duration)
+    {
+        std::unique_lock<std::mutex> lock(_mutex);
+        return cv.wait_for(lock, duration, [&] {return signaled; });
+    }
+
+    template<class Clock, class Duration>
+    bool wait_until(const std::chrono::time_point<Clock, Duration>& time)
+    {
+        std::unique_lock<std::mutex> lock(_mutex);
+        cv.wait_until(lock, time, duration, [&] {return signaled; });
+    }
+
+    void notify()
+    {
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            signaled = true;
+        }
+        cv.notify_all();
+
+        MultSignal();
+    }
+    void reset()
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        signaled = false;
+    }
+
+    native_handle_type native_handle()
+    {
+        return cv.native_handle();
+    }
+
+protected:
+    virtual bool MultCheck()
+    {
+        return wait_for(std::chrono::milliseconds(0));
+    }
+
+private:
+    std::condition_variable cv;
+    std::mutex _mutex;
+    bool signaled;
+};
+
+}
 
 #endif

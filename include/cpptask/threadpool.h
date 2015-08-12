@@ -51,6 +51,11 @@ public:
             TaskThreadPtr tptr(new TaskThread(*this, newTaskEvent));
             threads.push_back(tptr);
         }
+
+        for (size_t i = 0; i < threadsNum; ++i)
+        {
+            threads[i]->Start();
+        }
     }
 
     ~TaskThreadPool()
@@ -74,7 +79,7 @@ public:
         {
             return threads[index].get();
         }
-        return 0;
+        return nullptr;
     }
 
     TaskManager& GetTaskManager()
@@ -88,8 +93,8 @@ private:
     typedef std::shared_ptr<TaskThread> TaskThreadPtr;
     typedef std::vector<TaskThreadPtr> Threads;
     Threads threads;
-    Semaphore newTaskEvent;
     std::unique_ptr<TaskManager> manager;
+    semaphore newTaskEvent;
 };
 
 }

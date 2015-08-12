@@ -34,7 +34,6 @@
 #include "taskthreadimpl.h"
 #include "taskmanagerlimpl.h"
 #include "threadpool.h"
-#include "timer.h"
 
 #include "parallelinvoke.h"
 #include "parallelfor.h"

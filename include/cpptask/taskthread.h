@@ -43,9 +43,10 @@ class TaskThreadPool;
 class TaskThread
 {
 public:
-    TaskThread(TaskThreadPool& threadPool, Semaphore& newTaskEvent);
+    TaskThread(TaskThreadPool& threadPool, semaphore& newTaskEvent);
     ~TaskThread();
 
+    void Start();
     void Stop();
 
     TaskManager& GetTaskManager();
@@ -58,8 +59,8 @@ private:
     void Run();
 
 private:
-    Event stopEvent;
-    Semaphore& newTaskEvent;
+    event stopEvent;
+    semaphore& newTaskEvent;
     std::unique_ptr<TaskManager> manager;
     std::atomic<bool> done;
     std::thread thread;

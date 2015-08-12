@@ -50,7 +50,7 @@ inline TLSKey& GetManagerKey()
 class TaskManager
 {
 public:
-    TaskManager(TaskThreadPool& threadPool, Semaphore& newTaskEvent, TaskThread* parentThread);
+    TaskManager(TaskThreadPool& threadPool, semaphore& newTaskEvent, TaskThread* parentThread);
 
     ~TaskManager();
 
@@ -75,8 +75,8 @@ private:
     TaskThread* parentThread;
     TaskThreadPool& threadPool;
     SPSCQueue<Task*> taskQueue;
-    Mutex getGuard;
-    Semaphore& newTaskEvent;
+    mutex getGuard;
+    semaphore& newTaskEvent;
 };
 
 

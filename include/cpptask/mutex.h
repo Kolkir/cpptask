@@ -28,35 +28,57 @@
 #ifndef _MUTEX_SELECT_H_
 #define _MUTEX_SELECT_H_
 
-#ifdef _WIN32
-#include "Win/mutex.h"
-#else
-#include "Unix/mutex.h"
-#endif
+#include "waitoneof.h"
+#include "event.h"
+
+#include <mutex>
 
 namespace cpptask
 {
-
-template <class T>
-class ScopedLock
-{
-public:
-    ScopedLock(T& guard)
-        : guard(guard)
+    class mutex : public MultWaitBase<event>
     {
+    public:
+        using native_handle_type = std::mutex::native_handle_type;
 
-        guard.Lock();
-    }
-    ~ScopedLock()
-    {
-        guard.UnLock();
-    }
-private:
-    ScopedLock(const ScopedLock&);
-    const ScopedLock& operator=(const ScopedLock&);
-private:
-    T& guard;
-};
+        mutex() noexcept {}
+        ~mutex() {}
 
+        mutex(const mutex&) = delete;
+        mutex& operator=(const mutex&) = delete;
+
+        void lock()
+        {
+            _mutex.lock();
+        }
+
+        bool try_lock()
+        {
+            return _mutex.try_lock();
+        }
+
+        void unlock()
+        {
+            _mutex.unlock();
+            MultSignal();
+        }
+        
+        native_handle_type native_handle()
+        {
+            return _mutex.native_handle();
+        }
+
+        virtual bool MultCheck()
+        {
+            auto res = try_lock();
+            if (res)
+            {
+                unlock();
+            }
+            return res;
+        }
+
+    private:
+        std::mutex _mutex;
+    };
 }
 #endif

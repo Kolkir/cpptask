@@ -52,14 +52,14 @@ class alignas(_CPP_TASK_CACHE_LINE_SIZE_) Task
 public:
     Task()
     {
-        waitEvent.Reset();
+        waitEvent.reset();
     }
     virtual ~Task(){}
     virtual void Execute() = 0;
 
     void SignalDone()
     {
-        waitEvent.Signal();
+        waitEvent.notify();
     }
 
     void Run()
@@ -81,7 +81,7 @@ public:
 
     bool CheckFinished()
     {
-        if (waitEvent.Check())
+        if (waitEvent.wait_for(std::chrono::milliseconds(0)))
         {
             return true;
         }
@@ -90,10 +90,10 @@ public:
 
     void Wait()
     {
-        waitEvent.Wait();
+        waitEvent.wait();
     }
 
-    Event* GetWaitEvent()
+    event* GetWaitEvent()
     {
         return &waitEvent;
     }
@@ -117,8 +117,8 @@ public:
     const Task& operator=(const Task&) = delete;
 private:
     std::exception_ptr lastException;
-    Mutex exceptionGuard;
-    Event waitEvent;
+    mutex exceptionGuard;
+    event waitEvent;
 };
 
 }

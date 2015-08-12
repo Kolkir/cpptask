@@ -36,7 +36,7 @@
 namespace cpptask
 {
 
-inline TaskManager::TaskManager(TaskThreadPool& threadPool, Semaphore& newTaskEvent, TaskThread* parentThread)
+inline TaskManager::TaskManager(TaskThreadPool& threadPool, semaphore& newTaskEvent, TaskThread* parentThread)
     : parentThread(parentThread)
     , threadPool(threadPool)
     , newTaskEvent(newTaskEvent)
@@ -55,19 +55,19 @@ inline size_t TaskManager::GetThreadsNum() const
 inline void TaskManager::AddTask(Task& task)
 {
     taskQueue.Enqueue(&task);
-    newTaskEvent.Signal();
+    newTaskEvent.notify();
 }
 
 inline Task* TaskManager::GetOwnTask()
 {
     Task* res = 0;
-    if (getGuard.TryLock())
+    std::unique_lock<mutex> lock(getGuard, std::try_to_lock);
+    if (lock)
     {
         if (!taskQueue.Dequeue(res))
         {
             res = 0;
         }
-        getGuard.UnLock();
     }
     return res;
 }
@@ -83,6 +83,11 @@ inline Task* TaskManager::GetTask()
             for (size_t i = 0; i < threadPool.GetThreadsNum(); ++i)
             {
                 TaskThread* thread = threadPool.GetThread(i);
+                if (thread == 0)
+                {
+                    int c = 0;
+                    ++c;
+                }
                 assert(thread != 0);
                 if (thread != parentThread)
                 {
@@ -120,10 +125,10 @@ inline void TaskManager::WaitTask(Task& waitTask)
         Task* task = GetTask();
         if (task == 0)
         {
-            std::vector<MultWaitBase<Event, Mutex>*> events(2);
+            std::vector<MultWaitBase<event>*> events(2);
             events[0] = &newTaskEvent;
             events[1] = waitTask.GetWaitEvent();
-            int res = WaitForMultiple(events);
+            int res = wait_one_of(events);
             if (res == 0)
             {
                 task = GetTask();

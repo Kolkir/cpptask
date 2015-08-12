@@ -36,36 +36,31 @@
 namespace cpptask
 {
 
-inline TaskThread::TaskThread(TaskThreadPool& threadPool, Semaphore& newTaskEvent)
+inline TaskThread::TaskThread(TaskThreadPool& threadPool, semaphore& newTaskEvent)
     : newTaskEvent(newTaskEvent)
     , manager(new TaskManager(threadPool, newTaskEvent, this))
     , done(false)
-    , thread(std::bind(&TaskThread::Run, this))
 {
 }
 
 inline TaskThread::~TaskThread()
 {
     Stop();
-    if (thread.joinable())
-    {
-        thread.join();
-    }
 }
 
 inline void TaskThread::Run()
 {
     manager->RegisterInTLS();
 
-    while (!done.load(std::memory_order_relaxed))
+    while (!done.load(std::memory_order_acquire))
     {
         Task* task = manager->GetTask();
         if (task == 0)
         {
-            std::vector<MultWaitBase<Event, Mutex>*> events(2);
+            std::vector<MultWaitBase<event>*> events(2);
             events[0] = &newTaskEvent;
             events[1] = &stopEvent;
-            int res = WaitForMultiple(events);
+            int res = wait_one_of(events);
             if (res == 0)
             {
                 task = manager->GetTask();
@@ -79,10 +74,19 @@ inline void TaskThread::Run()
     }
 }
 
+inline void TaskThread::Start()
+{
+    thread = std::move(std::thread(std::bind(&TaskThread::Run, this)));
+}
+
 inline void TaskThread::Stop()
 {
-    stopEvent.Signal();
-    done.store(true, std::memory_order_relaxed);
+    if (!done.load(std::memory_order_acquire))
+    {
+        stopEvent.notify();
+        done.store(true, std::memory_order_release);
+        thread.join();
+    }
 }
 
 inline TaskManager& TaskThread::GetTaskManager()

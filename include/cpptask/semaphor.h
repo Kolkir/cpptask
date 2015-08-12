@@ -28,10 +28,88 @@
 #ifndef _SEMAPHORE_SELECT_H_
 #define _SEMAPHORE_SELECT_H_
 
-#ifdef _WIN32
-#include "Win/semaphore.h"
-#else
-#include "Unix/semaphor.h"
-#endif
+#include "waitoneof.h"
+#include "event.h"
 
+#include <condition_variable>
+namespace cpptask
+{
+    class semaphore : public MultWaitBase<event>
+    {
+    public:
+        using native_handle_type = std::condition_variable::native_handle_type;
+
+        explicit semaphore(size_t n = 0)
+            : count{ n }
+        {
+
+        }
+
+        semaphore(const semaphore&) = delete;
+        semaphore& operator=(const semaphore&) = delete;
+
+        void notify()
+        {
+            {
+                std::lock_guard<std::mutex> lock{ _mutex };
+                ++count;
+            }
+            cv.notify_one();
+            MultSignal();
+        }
+
+        void wait()
+        {
+            std::unique_lock<std::mutex> lock{ _mutex };
+            cv.wait(lock, [&] { return count > 0; });
+            --count;
+        }
+
+        template<class Rep, class Period>
+        bool wait_for(const std::chrono::duration<Rep, Period>& duration)
+        {
+            std::unique_lock<std::mutex> lock{ _mutex };
+            auto finished = cv.wait_for(lock, duration, [&] { return count > 0; });
+
+            if (finished)
+            {
+                --count;
+            }
+
+            return finished;
+        }
+
+
+        template<class Clock, class Duration>
+        bool wait_until(const std::chrono::time_point<Clock, Duration>& time)
+        {
+            std::unique_lock<std::mutex> lock{ _mutex };
+            auto finished = cv.wait_until(lock, time, [&] { return count > 0; });
+
+            if (finished)
+            {
+                --count;
+            }
+
+            return finished;
+        }
+
+        native_handle_type native_handle()
+        {
+            return cv.native_handle();
+        }
+
+    protected:
+
+        virtual bool MultCheck()
+        {
+            return wait_for(std::chrono::milliseconds(0));
+        }
+
+    private:
+        size_t count;
+        std::condition_variable cv;
+        std::mutex _mutex;
+    };
+}
 #endif
