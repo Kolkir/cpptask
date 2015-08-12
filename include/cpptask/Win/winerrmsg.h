@@ -1,6 +1,6 @@
 /*
-* http://code.google.com/p/cpptask/
-* Copyright (c) 2013, Kirill Kolodyazhnyi
+* https://github.com/Kolkir/cpptask/
+* Copyright (c) 2013, Kyrylo Kolodiazhnyi
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
