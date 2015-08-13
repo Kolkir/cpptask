@@ -99,14 +99,17 @@ inline Task* TaskManager::GetTask()
     return res;
 }
 
-inline TaskManager* TaskManager::GetCurrent()
+inline TaskManager& TaskManager::GetCurrent()
 {
     void* pvalue = GetManagerKey().GetValue();
-    if (pvalue != 0)
+    if (pvalue != nullptr)
     {
-        return reinterpret_cast<TaskManager*>(pvalue);
+        return *reinterpret_cast<TaskManager*>(pvalue);
     }
-    return 0;
+    else
+    {
+        throw Exception("Can't acquire current task manager");
+    }
 }
 
 inline void TaskManager::RegisterInTLS()

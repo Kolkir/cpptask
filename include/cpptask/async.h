@@ -94,16 +94,9 @@ namespace cpptask
             {
                 if (!deffered)
                 {
-                    TaskManager* manager = TaskManager::GetCurrent();
-                    if (manager != nullptr)
-                    {
-                        manager->WaitTask(*task);
-                        realFuture.wait();
-                    }
-                    else
-                    {
-                        throw Exception("Can't acquire current task manager");
-                    }
+                    auto& manager = TaskManager::GetCurrent();
+                    manager.WaitTask(*task);
+                    realFuture.wait();
                 }
                 else
                 {
@@ -165,16 +158,9 @@ namespace cpptask
         }
         else if (policy == std::launch::async)
         {
-            TaskManager* manager = TaskManager::GetCurrent();
-            if (manager != nullptr)
-            {
-                manager->AddTask(*task);
-                return future<typename std::result_of<Function(Args...)>::type>(std::move(task), std::move(res), false);
-            }
-            else
-            {
-                throw Exception("Can't acquire current task manager");
-            }
+            auto& manager = TaskManager::GetCurrent();
+            manager.AddTask(*task);
+            return future<typename std::result_of<Function(Args...)>::type>(std::move(task), std::move(res), false);
         }
         else
         {

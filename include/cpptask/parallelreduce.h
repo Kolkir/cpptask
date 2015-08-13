@@ -78,46 +78,40 @@ namespace internal
 
                 typename std::aligned_storage<sizeof(Functor), _CPP_TASK_CACHE_LINE_SIZE_>::type functors[splitCount];
 
-                TaskManager* manager = TaskManager::GetCurrent();
-                if (manager != nullptr)
+                auto& manager = TaskManager::GetCurrent();
+
+                for (size_t i = 0; i != splitCount; ++i)
                 {
-                    for (size_t i = 0; i != splitCount; ++i)
+                    new(functors + i)Functor(functor, SplitMark());
+
+                    TASK* ptr = new TASK(ranges[i],
+                        *reinterpret_cast<Functor*>(functors + i),
+                        myDepth - 1);
+
+                    tasks[i].reset(ptr);
+                    manager.AddTask(*tasks[i]);
+                };
+
+                for (size_t i = 0; i != splitCount; ++i)
+                {
+                    manager.WaitTask(*tasks[i]);
+                };
+
+                //check exceptions in child tasks
+                for (size_t i = 0; i != splitCount; ++i)
+                {
+                    if (tasks[i]->GetLastException() != nullptr)
                     {
-                        new(functors + i)Functor(functor, SplitMark());
-
-                        TASK* ptr = new TASK(ranges[i],
-                            *reinterpret_cast<Functor*>(functors + i),
-                            myDepth - 1);
-
-                        tasks[i].reset(ptr);
-                        manager->AddTask(*tasks[i]);
-                    };
-
-                    for (size_t i = 0; i != splitCount; ++i)
-                    {
-                        manager->WaitTask(*tasks[i]);
-                    };
-
-                    //check exceptions in child tasks
-                    for (size_t i = 0; i != splitCount; ++i)
-                    {
-                        if (tasks[i]->GetLastException() != nullptr)
-                        {
-                            std::rethrow_exception(tasks[i]->GetLastException());
-                        }
-                    };
-
-                    //Join
-                    for (size_t i = 1; i != splitCount; ++i)
-                    {
-                        tasks[0]->Join(*tasks[i]);
+                        std::rethrow_exception(tasks[i]->GetLastException());
                     }
-                    Join(*tasks[0]);
-                }
-                else
+                };
+
+                //Join
+                for (size_t i = 1; i != splitCount; ++i)
                 {
-                    throw Exception("Can't acquire current task manager");
+                    tasks[0]->Join(*tasks[i]);
                 }
+                Join(*tasks[0]);
             }
             else
             {
@@ -135,22 +129,16 @@ namespace internal
 template<class Iterator, class Functor>
 inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, size_t maxDepth = 5)
 {
-    TaskManager* manager = TaskManager::GetCurrent();
-    if (manager != nullptr)
+    auto& manager = TaskManager::GetCurrent();
+
+    typedef Range<Iterator> RANGE;
+    typedef internal::ReduceTask<RANGE, Functor> TASK;
+    TASK task(RANGE(start, end), functor, maxDepth);
+    manager.AddTask(task);
+    manager.WaitTask(task);
+    if (task.GetLastException() != nullptr)
     {
-        typedef Range<Iterator> RANGE;
-        typedef internal::ReduceTask<RANGE, Functor> TASK;
-        TASK task(RANGE(start, end), functor, maxDepth);
-        manager->AddTask(task);
-        manager->WaitTask(task);
-        if (task.GetLastException() != nullptr)
-        {
-            std::rethrow_exception(task.GetLastException());
-        }
-    }
-    else
-    {
-        throw Exception("Can't acquire current task manager");
+        std::rethrow_exception(task.GetLastException());
     }
 }
 

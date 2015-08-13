@@ -57,34 +57,28 @@ namespace internal
 template<class Functor1, class Functor2>
 inline void ParallelInvoke(Functor1 func1, Functor2 func2)
 {
-    TaskManager* manager = TaskManager::GetCurrent();
-    if (manager != nullptr)
+    auto& manager = TaskManager::GetCurrent();
+
+    typedef internal::InvokeTask<Functor1> TaskType1;
+
+    TaskType1 task1(func1);
+    manager.AddTask(task1);
+
+    typedef internal::InvokeTask<Functor2> TaskType2;
+
+    TaskType2 task2(func2);
+    manager.AddTask(task2);
+
+    manager.WaitTask(task1);
+    manager.WaitTask(task2);
+
+    if (task1.GetLastException() != nullptr)
     {
-        typedef internal::InvokeTask<Functor1> TaskType1;
-
-        TaskType1 task1(func1);
-        manager->AddTask(task1);
-
-        typedef internal::InvokeTask<Functor2> TaskType2;
-       
-        TaskType2 task2(func2);
-        manager->AddTask(task2);
-
-        manager->WaitTask(task1);
-        manager->WaitTask(task2);
-
-        if (task1.GetLastException() != nullptr)
-        {
-            std::rethrow_exception(task1.GetLastException());
-        }
-        if (task2.GetLastException() != nullptr)
-        {
-            std::rethrow_exception(task2.GetLastException());
-        }
+        std::rethrow_exception(task1.GetLastException());
     }
-    else
+    if (task2.GetLastException() != nullptr)
     {
-        throw Exception("Can't acquire current task manager");
+        std::rethrow_exception(task2.GetLastException());
     }
 }
 

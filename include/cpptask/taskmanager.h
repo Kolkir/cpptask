@@ -66,7 +66,7 @@ public:
 
     Task* GetTask();
 
-    static TaskManager* GetCurrent();
+    static TaskManager& GetCurrent();
 
     void RegisterInTLS();
 
