@@ -34,6 +34,7 @@
 #include "taskthreadimpl.h"
 #include "taskmanagerlimpl.h"
 #include "threadpool.h"
+#include "async.h"
 
 #include "parallelinvoke.h"
 #include "parallelfor.h"

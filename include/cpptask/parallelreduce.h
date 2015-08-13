@@ -42,92 +42,95 @@ class SplitMark
 {
 };
 
-template<class Range, class Functor>
-class ReduceTask : public Task
+namespace internal
 {
-public:
-    ReduceTask(const Range& range, 
-               Functor& functor, 
-               size_t maxDepth)
-        : myDepth(maxDepth)
-        , range(range)
-        , functor(functor)
+    template<class Range, class Functor>
+    class ReduceTask : public Task
     {
-    }
-    ~ReduceTask()
-    {
-    }
-
-    void Join(ReduceTask& task)
-    {
-        functor.Join(task.functor);
-    }
-
-    virtual void Execute()
-    {
-        if (myDepth > 0)
+    public:
+        ReduceTask(const Range& range,
+            Functor& functor,
+            size_t maxDepth)
+            : myDepth(maxDepth)
+            , range(range)
+            , functor(functor)
         {
-            const size_t splitCount = 2;
-            std::vector<Range> ranges = SplitRange(range.start, range.end, splitCount);
-        
-            typedef ReduceTask<Range, Functor> TASK;
-            typedef std::shared_ptr<TASK> TASKPtr;
-            TASKPtr tasks[splitCount];
+        }
+        ~ReduceTask()
+        {
+        }
 
-            typename std::aligned_storage<sizeof(Functor), _CPP_TASK_CACHE_LINE_SIZE_>::type functors[splitCount];
+        void Join(ReduceTask& task)
+        {
+            functor.Join(task.functor);
+        }
 
-            TaskManager* manager = TaskManager::GetCurrent();
-            if (manager != nullptr)
+        virtual void Execute()
+        {
+            if (myDepth > 0)
             {
-                for (size_t i = 0; i != splitCount; ++i)
-                {
-                    new(functors + i)Functor(functor, SplitMark());
-                
-                    TASK* ptr = new TASK(ranges[i], 
-                                    *reinterpret_cast<Functor*>(functors + i),
-                                    myDepth - 1);
+                const size_t splitCount = 2;
+                std::vector<Range> ranges = SplitRange(range.start, range.end, splitCount);
 
-                    tasks[i].reset(ptr);
-                    manager->AddTask(*tasks[i]);
-                };
+                typedef ReduceTask<Range, Functor> TASK;
+                typedef std::shared_ptr<TASK> TASKPtr;
+                TASKPtr tasks[splitCount];
 
-                for (size_t i = 0; i != splitCount; ++i)
-                {
-                    manager->WaitTask(*tasks[i]);
-                };
+                typename std::aligned_storage<sizeof(Functor), _CPP_TASK_CACHE_LINE_SIZE_>::type functors[splitCount];
 
-                //check exceptions in child tasks
-                for (size_t i = 0; i != splitCount; ++i)
+                TaskManager* manager = TaskManager::GetCurrent();
+                if (manager != nullptr)
                 {
-                    if (tasks[i]->GetLastException() != nullptr)
+                    for (size_t i = 0; i != splitCount; ++i)
                     {
-                        std::rethrow_exception(tasks[i]->GetLastException());
-                    }
-                };
+                        new(functors + i)Functor(functor, SplitMark());
 
-                //Join
-                for (size_t i = 1; i != splitCount; ++i)
-                {
-                    tasks[0]->Join(*tasks[i]);
+                        TASK* ptr = new TASK(ranges[i],
+                            *reinterpret_cast<Functor*>(functors + i),
+                            myDepth - 1);
+
+                        tasks[i].reset(ptr);
+                        manager->AddTask(*tasks[i]);
+                    };
+
+                    for (size_t i = 0; i != splitCount; ++i)
+                    {
+                        manager->WaitTask(*tasks[i]);
+                    };
+
+                    //check exceptions in child tasks
+                    for (size_t i = 0; i != splitCount; ++i)
+                    {
+                        if (tasks[i]->GetLastException() != nullptr)
+                        {
+                            std::rethrow_exception(tasks[i]->GetLastException());
+                        }
+                    };
+
+                    //Join
+                    for (size_t i = 1; i != splitCount; ++i)
+                    {
+                        tasks[0]->Join(*tasks[i]);
+                    }
+                    Join(*tasks[0]);
                 }
-                Join(*tasks[0]);
+                else
+                {
+                    throw Exception("Can't acquire current task manager");
+                }
             }
             else
             {
-                throw Exception("Can't acquire current task manager");
+                functor(range);
             }
         }
-        else
-        {
-            functor(range);
-        }
-    }
 
-private:
-    size_t myDepth;
-    Range range;
-    Functor& functor;
-};
+    private:
+        size_t myDepth;
+        Range range;
+        Functor& functor;
+    };
+}
 
 template<class Iterator, class Functor>
 inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, size_t maxDepth = 5)
@@ -136,7 +139,7 @@ inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, size_
     if (manager != nullptr)
     {
         typedef Range<Iterator> RANGE;
-        typedef ReduceTask<RANGE, Functor> TASK;
+        typedef internal::ReduceTask<RANGE, Functor> TASK;
         TASK task(RANGE(start, end), functor, maxDepth);
         manager->AddTask(task);
         manager->WaitTask(task);

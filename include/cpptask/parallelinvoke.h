@@ -31,25 +31,28 @@
 namespace cpptask
 {
 
-template<class Functor>
-class InvokeTask : public Task
+namespace internal
 {
-public:
-    InvokeTask(const Functor& functor)
-        : functor(functor)
+    template<class Functor>
+    class InvokeTask : public Task
     {
-    }
-    ~InvokeTask()
-    {
-    }
-    virtual void Execute()
-    {
-        functor();
-    }
+    public:
+        InvokeTask(const Functor& functor)
+            : functor(functor)
+        {
+        }
+        ~InvokeTask()
+        {
+        }
+        virtual void Execute()
+        {
+            functor();
+        }
 
-private:
-    Functor functor;
-};
+    private:
+        Functor functor;
+    };
+}
 
 template<class Functor1, class Functor2>
 inline void ParallelInvoke(Functor1 func1, Functor2 func2)
@@ -57,12 +60,12 @@ inline void ParallelInvoke(Functor1 func1, Functor2 func2)
     TaskManager* manager = TaskManager::GetCurrent();
     if (manager != nullptr)
     {
-        typedef InvokeTask<Functor1> TaskType1;
+        typedef internal::InvokeTask<Functor1> TaskType1;
 
         TaskType1 task1(func1);
         manager->AddTask(task1);
 
-        typedef InvokeTask<Functor2> TaskType2;
+        typedef internal::InvokeTask<Functor2> TaskType2;
        
         TaskType2 task2(func2);
         manager->AddTask(task2);
