@@ -159,16 +159,16 @@ TEST(SPSCTest, Parallel)
         bool done = false;
         while (!done)
         {
-            int x = 0;
-            if (queue.Dequeue(x))
-            {
-                *inserter = x;
-                ++inserter;
-            }
-            else
             {
                 std::unique_lock<std::mutex> lk(m);
                 done = cv.wait_for(lk, std::chrono::milliseconds(5), [&] {return producerFinished; });
+            }
+
+            int x = 0;
+            while (queue.Dequeue(x))
+            {
+                *inserter = x;
+                ++inserter;
             }
         }
     });
