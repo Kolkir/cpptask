@@ -36,7 +36,7 @@ protected:
 
     ArrayType GetBigArray()
     {
-        const size_t n = 10000000;
+        const size_t n = 25000000;
         ArrayType m(n);
         for (size_t i = 0; i < n; ++i)
         {

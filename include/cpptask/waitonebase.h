@@ -30,6 +30,7 @@
 
 #include <vector>
 #include <mutex>
+#include <algorithm>
 
 namespace cpptask
 {
