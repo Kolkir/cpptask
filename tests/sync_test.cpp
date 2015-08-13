@@ -3,6 +3,7 @@
 #include <cpptask/mutex.h>
 #include <cpptask/event.h>
 #include <cpptask/semaphor.h>
+#include <cpptask/waitoneof.h>
 
 #include <future>
 
@@ -33,11 +34,9 @@ TEST(SyncTest, MutexMultipleImmediateUnlock)
     m2.lock();
     auto f = std::async([&]()
     {
-       std::vector<cpptask::MultWaitBase<cpptask::event>*> mutexes(2);
-       mutexes[0] = &m1;
-       mutexes[1] = &m2;
-       int res = cpptask::wait_one_of(mutexes);
-       ASSERT_EQ(1, res);
+        cpptask::wait_array mutexes = {&m1, &m2};
+        int res = cpptask::wait_one_of(mutexes);
+        ASSERT_EQ(1, res);
     });
     m2.unlock();
 
@@ -53,9 +52,7 @@ TEST(SyncTest, MutexMultipleWaitUnlock)
     m1.lock();
     auto f = std::async([&]()
     {
-        std::vector<cpptask::MultWaitBase<cpptask::event>*> mutexes(2);
-        mutexes[0] = &m1;
-        mutexes[1] = &m2;
+        cpptask::wait_array mutexes = {&m1, &m2};
         int res = cpptask::wait_one_of(mutexes);
         ASSERT_EQ(0, res);
     });
@@ -88,9 +85,7 @@ TEST(SyncTest, EventMultipleImmediateUnlock)
     e2.notify();
     auto f = std::async([&]()
     {
-        std::vector<cpptask::MultWaitBase<cpptask::event>*> events(2);
-        events[0] = &e1;
-        events[1] = &e2;
+        cpptask::wait_array events = {&e1, &e2};
         int res = cpptask::wait_one_of(events);
         ASSERT_EQ(1, res);
     });
@@ -107,10 +102,8 @@ TEST(SyncTest, EventMultipleWaitUnlock)
 
     auto f = std::async([&]()
     {
-        std::vector<cpptask::MultWaitBase<cpptask::event>*> events(2);
-        events[0] = &e1;
-        events[1] = &e2;
-        int res = cpptask::wait_one_of(events);
+        cpptask::wait_array events = {&e1, &e2};
+        int res = cpptask::wait_one_of(events.begin(), events.end());
         ASSERT_EQ(0, res);
     });
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -154,9 +147,7 @@ TEST(SyncTest, SemaphoreMultipleWaitUnlock)
 
     auto f = std::async([&]()
     {
-        std::vector<cpptask::MultWaitBase<cpptask::event>*> events(2);
-        events[0] = &e;
-        events[1] = &s;
+        cpptask::wait_array events = { &e, &s };
         int res = cpptask::wait_one_of(events);
         ASSERT_EQ(1, res);
     });

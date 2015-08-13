@@ -54,6 +54,10 @@ public:
 
     ~TaskManager();
 
+    TaskManager(const TaskManager&) = delete;
+
+    TaskManager& operator=(const TaskManager&) = delete;
+
     size_t GetThreadsNum() const;
 
     void AddTask(Task& task);
@@ -68,9 +72,6 @@ public:
 
     void WaitTask(Task& waitTask);
 
-    TaskManager(const TaskManager&) = delete;
-    TaskManager& operator=(const TaskManager&) = delete;
-
 private:
     TaskThread* parentThread;
     TaskThreadPool& threadPool;
@@ -78,7 +79,6 @@ private:
     mutex getGuard;
     semaphore& newTaskEvent;
 };
-
 
 }
 #endif

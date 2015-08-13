@@ -115,7 +115,7 @@ void ParallelForBase(RANGES ranges, Functor functor, TaskManager& manager)
     it = tasks.begin();
     for (; it != et; ++it)
     {
-        if ((*it)->GetLastException() != 0)
+        if ((*it)->GetLastException() != nullptr)
         {
             std::rethrow_exception((*it)->GetLastException());
         }
@@ -126,7 +126,7 @@ template<class Iterator, class Functor>
 void ParallelForEach(Iterator start, Iterator end, Functor functor)
 {
     TaskManager* manager = TaskManager::GetCurrent();
-    if(manager != 0)
+    if(manager != nullptr)
     {
         typedef std::vector<Range<Iterator> > RANGES;
         RANGES ranges = SplitRange(start, end, manager->GetThreadsNum());
@@ -143,7 +143,7 @@ void ParallelFor(Num start, Num end, Functor functor)
 {
     assert(end >= start);
     TaskManager* manager = TaskManager::GetCurrent();
-    if(manager != 0)
+    if(manager != nullptr)
     {
         typedef std::vector<Range<Num> > RANGES;
         RANGES ranges = SplitNumRange(start, end, manager->GetThreadsNum());

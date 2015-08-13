@@ -28,9 +28,10 @@
 #ifndef _TLSKEY_H_
 #define _TLSKEY_H_
 
+#include "../exception.h"
+
 #include <Windows.h>
 #include <assert.h>
-#include "./exception.h"
 #include "winerrmsg.h"
 
 namespace cpptask
@@ -55,11 +56,15 @@ public:
             assert(false);
         }
     }
-   
+
+    TLSKey(const TLSKey&) = delete;
+
+    const TLSKey& operator=(const TLSKey&) = delete;
+
     void* GetValue() const
     {
         void* rez = TlsGetValue(tlsIndex);
-        if (rez == 0 && ::GetLastError() != ERROR_SUCCESS)
+        if (rez == nullptr && ::GetLastError() != ERROR_SUCCESS)
         {
             throw Exception("Can't get a TLS value - " + GetLastWinErrMsg());
         }
@@ -74,9 +79,6 @@ public:
         }
     }
 
-private:
-    TLSKey(const TLSKey&);
-    const TLSKey& operator=(const TLSKey&);
 private:
     DWORD tlsIndex;
 };

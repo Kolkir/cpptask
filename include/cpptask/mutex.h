@@ -25,17 +25,17 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _MUTEX_SELECT_H_
-#define _MUTEX_SELECT_H_
+#ifndef _MUTEX_H_
+#define _MUTEX_H_
 
-#include "waitoneof.h"
+#include "waitonebase.h"
 #include "event.h"
 
 #include <mutex>
 
 namespace cpptask
 {
-    class mutex : public MultWaitBase<event>
+    class mutex : public WaitOneBase<event>
     {
     public:
         using native_handle_type = std::mutex::native_handle_type;

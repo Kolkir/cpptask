@@ -40,19 +40,23 @@ namespace cpptask
 
 class Task;
 class TaskThreadPool;
+
 class TaskThread
 {
 public:
     TaskThread(TaskThreadPool& threadPool, semaphore& newTaskEvent);
+
     ~TaskThread();
 
+    TaskThread(const TaskThread&) = delete;
+
+    TaskThread& operator=(const TaskThread&) = delete;
+
     void Start();
+
     void Stop();
 
     TaskManager& GetTaskManager();
-
-    TaskThread(const TaskThread&) = delete;
-    TaskThread& operator=(const TaskThread&) = delete;
 
 private:
 

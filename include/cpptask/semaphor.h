@@ -25,16 +25,17 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _SEMAPHORE_SELECT_H_
-#define _SEMAPHORE_SELECT_H_
+#ifndef _SEMAPHORE_H_
+#define _SEMAPHORE_H_
 
-#include "waitoneof.h"
+#include "waitonebase.h"
 #include "event.h"
 
 #include <condition_variable>
+
 namespace cpptask
 {
-    class semaphore : public MultWaitBase<event>
+    class semaphore : public WaitOneBase<event>
     {
     public:
         using native_handle_type = std::condition_variable::native_handle_type;

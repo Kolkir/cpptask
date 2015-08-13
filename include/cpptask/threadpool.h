@@ -52,6 +52,7 @@ public:
             threads.push_back(tptr);
         }
 
+        //Deffered start required to prevent race in already started threads during stealing new tasks
         for (size_t i = 0; i < threadsNum; ++i)
         {
             threads[i]->Start();
@@ -67,6 +68,10 @@ public:
             (*i)->Stop();
         }
     }
+    
+    TaskThreadPool(const TaskThreadPool&) = delete;
+
+    const TaskThreadPool& operator=(const TaskThreadPool&) = delete;
 
     size_t GetThreadsNum() const
     {
@@ -87,8 +92,6 @@ public:
         return *manager;
     }
 
-    TaskThreadPool(const TaskThreadPool&) = delete;
-    const TaskThreadPool& operator=(const TaskThreadPool&) = delete;
 private:
     typedef std::shared_ptr<TaskThread> TaskThreadPtr;
     typedef std::vector<TaskThreadPtr> Threads;

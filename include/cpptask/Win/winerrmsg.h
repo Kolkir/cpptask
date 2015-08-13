@@ -37,7 +37,7 @@ namespace cpptask
 inline std::string GetLastWinErrMsg()
 {
     DWORD err = ::GetLastError();
-    void* cstr = 0;
+    void* cstr = nullptr;
     FormatMessage(
         FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
         NULL,

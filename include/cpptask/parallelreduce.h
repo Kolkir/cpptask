@@ -77,7 +77,7 @@ public:
             typename std::aligned_storage<sizeof(Functor), _CPP_TASK_CACHE_LINE_SIZE_>::type functors[splitCount];
 
             TaskManager* manager = TaskManager::GetCurrent();
-            if (manager != 0)
+            if (manager != nullptr)
             {
                 for (size_t i = 0; i != splitCount; ++i)
                 {
@@ -99,7 +99,7 @@ public:
                 //check exceptions in child tasks
                 for (size_t i = 0; i != splitCount; ++i)
                 {
-                    if (tasks[i]->GetLastException() != 0)
+                    if (tasks[i]->GetLastException() != nullptr)
                     {
                         std::rethrow_exception(tasks[i]->GetLastException());
                     }
@@ -133,14 +133,14 @@ template<class Iterator, class Functor>
 inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, size_t maxDepth = 5)
 {
     TaskManager* manager = TaskManager::GetCurrent();
-    if (manager != 0)
+    if (manager != nullptr)
     {
         typedef Range<Iterator> RANGE;
         typedef ReduceTask<RANGE, Functor> TASK;
         TASK task(RANGE(start, end), functor, maxDepth);
         manager->AddTask(task);
         manager->WaitTask(task);
-        if (task.GetLastException() != 0)
+        if (task.GetLastException() != nullptr)
         {
             std::rethrow_exception(task.GetLastException());
         }

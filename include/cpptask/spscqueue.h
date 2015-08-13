@@ -74,6 +74,10 @@ public:
         while (n != nullptr);
     }
 
+    SPSCQueue(SPSCQueue const&) = delete;
+
+    SPSCQueue& operator = (SPSCQueue const&) = delete;
+
 #if defined(_DEBUG) || defined(DEBUG)
     //not thread safe - for testing purposes
     template<class IF>
@@ -115,9 +119,6 @@ public:
             return false;
         }
     }
-
-    SPSCQueue(SPSCQueue const&) = delete;
-    SPSCQueue& operator = (SPSCQueue const&) = delete;
 
 private:
     // internal node structure

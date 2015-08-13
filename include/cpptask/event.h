@@ -29,14 +29,14 @@
 #define _EVENT_H_
 
 #include "mutex.h"
-#include "waitoneof.h"
+#include "waitonebase.h"
 
 #include <condition_variable>
 
 namespace cpptask
 {
 
-class event : public MultWaitBase<event>
+class event : public WaitOneBase<event>
 {
 public:
     using native_handle_type = std::condition_variable::native_handle_type;

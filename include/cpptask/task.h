@@ -39,7 +39,7 @@
 #include <vector>
 #include <stdlib.h>
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning( push )
 #pragma warning( disable : 4324 )
 #endif
@@ -54,7 +54,13 @@ public:
     {
         waitEvent.reset();
     }
+    
     virtual ~Task(){}
+
+    Task(const Task&) = delete;
+
+    const Task& operator=(const Task&) = delete;
+
     virtual void Execute() = 0;
 
     void SignalDone()
@@ -113,8 +119,6 @@ public:
         free(ptr);
     }
 
-    Task(const Task&) = delete;
-    const Task& operator=(const Task&) = delete;
 private:
     std::exception_ptr lastException;
     mutex exceptionGuard;
@@ -123,7 +127,7 @@ private:
 
 }
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning( pop )
 #endif
 

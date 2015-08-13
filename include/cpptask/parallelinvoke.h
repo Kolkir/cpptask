@@ -55,7 +55,7 @@ template<class Functor1, class Functor2>
 inline void ParallelInvoke(Functor1 func1, Functor2 func2)
 {
     TaskManager* manager = TaskManager::GetCurrent();
-    if (manager != 0)
+    if (manager != nullptr)
     {
         typedef InvokeTask<Functor1> TaskType1;
 
@@ -70,11 +70,11 @@ inline void ParallelInvoke(Functor1 func1, Functor2 func2)
         manager->WaitTask(task1);
         manager->WaitTask(task2);
 
-        if (task1.GetLastException() != 0)
+        if (task1.GetLastException() != nullptr)
         {
             std::rethrow_exception(task1.GetLastException());
         }
-        if (task2.GetLastException() != 0)
+        if (task2.GetLastException() != nullptr)
         {
             std::rethrow_exception(task2.GetLastException());
         }

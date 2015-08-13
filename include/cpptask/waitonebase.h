@@ -25,83 +25,71 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _MULTWAIT_H_
-#define _MULTWAIT_H_
-
-#include "event.h"
+#ifndef _WAITONEBASE_H_
+#define _WAITONEBASE_H_
 
 #include <vector>
+#include <mutex>
 
 namespace cpptask
 {
-
-    typedef std::vector<WaitOneBase<event>*> wait_array;
-
-    template <class Container>
-    int wait_one_of(Container container)
+    template <class E>
+    class WaitOneBase
     {
-        return wait_one_of(std::begin(container), std::end(container));
-    }
+    public:
 
-    template <class SyncIterator>
-    int wait_one_of(SyncIterator start, SyncIterator end)
-    {
-        event commonEvent;
+        WaitOneBase() {}
 
-        auto i = start;
-        auto e = end;
+        virtual ~WaitOneBase() {}
 
-        int index = -1;
-        bool needWait = true;
-        for (int j = 0; i != e; ++i, ++j)
+        WaitOneBase(const WaitOneBase&) = delete;
+
+        WaitOneBase& operator=(const WaitOneBase&) = delete;
+
+        template <class Container>
+        friend int wait_one_of(Container container);
+
+        template <class SyncIterator>
+        friend int wait_one_of(SyncIterator start, SyncIterator end);
+
+    protected:
+
+        void AddWaitEvent(E& event)
         {
-            assert((*i) != nullptr);
-            if ((*i) != nullptr)
+            std::lock_guard<std::mutex> lock(_mutex);
+            waitEvents.push_back(&event);
+        }
+
+        void DelWaitEvent(E* event)
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            typename std::vector<E*>::iterator i = std::find(this->waitEvents.begin(),
+                this->waitEvents.end(),
+                event);
+            if (i != this->waitEvents.end())
             {
-                (*i)->AddWaitEvent(commonEvent);
-                if ((*i)->MultCheck())
-                {
-                    index = j;
-                    needWait = false;
-                    break;
-                }
+                this->waitEvents.erase(i);
             }
         }
 
-        if (needWait)
+        void MultSignal()
         {
-            commonEvent.wait();
-        }
-
-        i = start;
-        if (index == -1)
-        {
-            for (int j = 0; i != e; ++i, ++j)
+            std::lock_guard<std::mutex> lock(_mutex);
+            typename std::vector<E*>::iterator i = waitEvents.begin(),
+                e = waitEvents.end();
+            for (; i != e; ++i)
             {
-                assert((*i) != nullptr);
-                if ((*i) != nullptr)
-                {
-                    if ((*i)->MultCheck())
-                    {
-                        index = j;
-                        break;
-                    }
-                }
+                (*i)->notify();
             }
         }
 
-        i = start;
-        for (; i != e; ++i)
-        {
-            assert((*i) != nullptr);
-            if ((*i) != nullptr)
-            {
-                (*i)->DelWaitEvent(&commonEvent);
-            }
-        }
+        virtual bool MultCheck() = 0;
 
-        return index;
-    }
+    private:
+        std::mutex _mutex;
+        std::vector<E*> waitEvents;
+    };
 }
 
 #endif
+#pragma once

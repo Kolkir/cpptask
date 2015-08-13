@@ -30,6 +30,7 @@
 
 #include "task.h"
 #include "taskmanager.h"
+#include "waitoneof.h"
 
 #include <assert.h>
 
@@ -55,18 +56,16 @@ inline void TaskThread::Run()
     while (!done.load(std::memory_order_acquire))
     {
         Task* task = manager->GetTask();
-        if (task == 0)
+        if (task == nullptr)
         {
-            std::vector<MultWaitBase<event>*> events(2);
-            events[0] = &newTaskEvent;
-            events[1] = &stopEvent;
+            wait_array events = { &newTaskEvent , &stopEvent };
             int res = wait_one_of(events);
             if (res == 0)
             {
                 task = manager->GetTask();
             }
         }
-        if (task != 0)
+        if (task != nullptr)
         {
             task->Run();
             task->SignalDone();

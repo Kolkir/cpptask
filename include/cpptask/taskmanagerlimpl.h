@@ -30,6 +30,7 @@
 
 #include "taskmanager.h"
 #include "threadpool.h"
+#include "waitoneof.h"
 
 #include <assert.h>
 
@@ -60,13 +61,13 @@ inline void TaskManager::AddTask(Task& task)
 
 inline Task* TaskManager::GetOwnTask()
 {
-    Task* res = 0;
+    Task* res = nullptr;
     std::unique_lock<mutex> lock(getGuard, std::try_to_lock);
     if (lock)
     {
         if (!taskQueue.Dequeue(res))
         {
-            res = 0;
+            res = nullptr;
         }
     }
     return res;
@@ -75,24 +76,19 @@ inline Task* TaskManager::GetOwnTask()
 inline Task* TaskManager::GetTask()
 {
     Task* res = GetOwnTask();
-    if (res == 0)
+    if (res == nullptr)
     {
         res = threadPool.GetTaskManager().GetOwnTask();
-        if (res == 0)
+        if (res == nullptr)
         {
             for (size_t i = 0; i < threadPool.GetThreadsNum(); ++i)
             {
                 TaskThread* thread = threadPool.GetThread(i);
-                if (thread == 0)
-                {
-                    int c = 0;
-                    ++c;
-                }
-                assert(thread != 0);
+                assert(thread != nullptr);
                 if (thread != parentThread)
                 {
                     res = thread->GetTaskManager().GetOwnTask();
-                    if (res != 0)
+                    if (res != nullptr)
                     {
                         break;
                     }
@@ -123,18 +119,16 @@ inline void TaskManager::WaitTask(Task& waitTask)
     while (!waitTask.CheckFinished())
     {
         Task* task = GetTask();
-        if (task == 0)
+        if (task == nullptr)
         {
-            std::vector<MultWaitBase<event>*> events(2);
-            events[0] = &newTaskEvent;
-            events[1] = waitTask.GetWaitEvent();
+            wait_array events = { &newTaskEvent, waitTask.GetWaitEvent() };
             int res = wait_one_of(events);
             if (res == 0)
             {
                 task = GetTask();
             }
         }
-        if (task != 0)
+        if (task != nullptr)
         {
             task->Run();
             task->SignalDone();
