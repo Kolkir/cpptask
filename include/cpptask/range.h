@@ -54,6 +54,17 @@ public:
     Iterator end;
 };
 
+template<class I>
+typename I::value_type& get_iterator_value(I i)
+{
+    return *i;
+}
+
+template<class I>
+typename std::enable_if<std::is_arithmetic<I>::value,I>::type& get_iterator_value(I& i)
+{
+    return i;
+}
 
 template<class Iterator, class Diff>
 std::vector<Range<Iterator> > SplitRangeBase(Iterator start, Iterator end, Diff rangeLen, size_t rangesNum)

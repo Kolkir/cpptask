@@ -63,11 +63,6 @@ public:
 
     virtual void Execute() = 0;
 
-    void SignalDone()
-    {
-        waitEvent.notify();
-    }
-
     void Run()
     {
         try
@@ -78,6 +73,7 @@ public:
         {
             lastException = std::current_exception();
         }
+        waitEvent.notify();
     }
 
     std::exception_ptr GetLastException() const
@@ -121,7 +117,6 @@ public:
 
 private:
     std::exception_ptr lastException;
-    mutex exceptionGuard;
     event waitEvent;
 };
 

@@ -70,6 +70,8 @@ public:
 
     void RegisterInTLS();
 
+    void RemoveFromTLS();
+
     void WaitTask(Task& waitTask);
 
 private:

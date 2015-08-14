@@ -68,7 +68,6 @@ inline void TaskThread::Run()
         if (task != nullptr)
         {
             task->Run();
-            task->SignalDone();
         }
     }
 }

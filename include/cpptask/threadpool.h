@@ -67,6 +67,7 @@ public:
         {
             (*i)->Stop();
         }
+        manager->RemoveFromTLS();
     }
     
     TaskThreadPool(const TaskThreadPool&) = delete;

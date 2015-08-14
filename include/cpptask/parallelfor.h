@@ -56,33 +56,7 @@ namespace internal
             typename Range::value_type i = range.start;
             for (; i != range.end; ++i)
             {
-                functor(*i);
-            };
-        }
-
-    private:
-        Range range;
-        Functor functor;
-    };
-
-    template<class Range, class Functor>
-    class ForTask : public Task
-    {
-    public:
-        ForTask(const Range& range, const Functor& functor)
-            : range(range)
-            , functor(functor)
-        {
-        }
-        ~ForTask()
-        {
-        }
-        virtual void Execute()
-        {
-            typename Range::value_type i = range.start;
-            for (; i != range.end; ++i)
-            {
-                functor(i);
+                functor(get_iterator_value(i));
             };
         }
 
@@ -132,17 +106,6 @@ void ParallelForEach(Iterator start, Iterator end, Functor functor)
     typedef std::vector<Range<Iterator> > RANGES;
     RANGES ranges = SplitRange(start, end, manager.GetThreadsNum());
     internal::ParallelForBase<Functor, RANGES, internal::ForEachTask<Range<Iterator>,Functor> >(ranges, functor, manager);
-}
-
-template<class Num, class Functor>
-void ParallelFor(Num start, Num end, Functor functor)
-{
-    assert(end >= start);
-    auto& manager = TaskManager::GetCurrent();
-
-    typedef std::vector<Range<Num> > RANGES;
-    RANGES ranges = SplitNumRange(start, end, manager.GetThreadsNum());
-    internal::ParallelForBase<Functor, RANGES, internal::ForTask<Range<Num>,Functor> >(ranges, functor, manager);
 }
 
 

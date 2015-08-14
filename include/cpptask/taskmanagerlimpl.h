@@ -117,6 +117,11 @@ inline void TaskManager::RegisterInTLS()
     GetManagerKey().SetValue(this);
 }
 
+inline void TaskManager::RemoveFromTLS()
+{
+    GetManagerKey().SetValue(nullptr);
+}
+
 inline void TaskManager::WaitTask(Task& waitTask)
 {
     while (!waitTask.CheckFinished())
@@ -134,7 +139,6 @@ inline void TaskManager::WaitTask(Task& waitTask)
         if (task != nullptr)
         {
             task->Run();
-            task->SignalDone();
         }
     }
 }

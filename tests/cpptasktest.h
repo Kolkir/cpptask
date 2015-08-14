@@ -22,6 +22,7 @@ public:
 
 protected:
     ArrayType testArray;
+    char pad[64];
     ArrayType testArray2;
 
     virtual void SetUp()
