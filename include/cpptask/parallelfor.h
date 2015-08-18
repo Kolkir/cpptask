@@ -28,86 +28,34 @@
 #ifndef _PARALLEL_FOR_H_
 #define _PARALLEL_FOR_H_
 
-#include "taskmanager.h"
 #include "range.h"
+#include "async.h"
 
-#include <algorithm>
 #include <vector>
 
 namespace cpptask
 {
 
-namespace internal
+template<class Iterator, class Functor>
+void for_each(Iterator start, Iterator end, Functor functor)
 {
-    template<class Range, class Functor>
-    class ForEachTask : public Task
+    auto& manager = TaskManager::GetCurrent();
+    typedef Range<Iterator> RangeType;
+    typedef std::vector<RangeType> Ranges;
+    Ranges ranges = SplitRange(start, end, manager.GetThreadsNum());
+    std::vector<future<void>> futures;
+    for (const auto& r : ranges)
     {
-    public:
-        ForEachTask(const Range& range, const Functor& functor)
-            : range(range)
-            , functor(functor)
+        futures.emplace_back(async(std::launch::async, [&](const RangeType& range)
         {
-        }
-        ~ForEachTask()
-        {
-        }
-        virtual void Execute()
-        {
-            typename Range::value_type i = range.start;
+            typename RangeType::value_type i = range.start;
             for (; i != range.end; ++i)
             {
                 functor(get_iterator_value(i));
             };
-        }
-
-    private:
-        Range range;
-        Functor functor;
-    };
-
-    template<class Functor, class RANGES, class TaskType>
-    void ParallelForBase(RANGES ranges, Functor functor, TaskManager& manager)
-    {
-        typedef std::shared_ptr<TaskType> TASKPtr;
-        typedef std::vector<TASKPtr> TASKS;
-        TASKS tasks;
-
-        typename RANGES::iterator i = ranges.begin();
-        typename RANGES::iterator e = ranges.end();
-        for (; i != e; ++i)
-        {
-            TaskType* ptr = new TaskType(*i, functor);
-            TASKPtr task(ptr);
-            tasks.push_back(task);
-            manager.AddTask(*task);
-        }
-
-        typename TASKS::iterator it = tasks.begin();
-        typename TASKS::iterator et = tasks.end();
-        for (; it != et; ++it)
-        {
-            manager.WaitTask(*(*it));
-        }
-        it = tasks.begin();
-        for (; it != et; ++it)
-        {
-            if ((*it)->GetLastException() != nullptr)
-            {
-                std::rethrow_exception((*it)->GetLastException());
-            }
-        }
+        }, std::cref(r)));
     }
 }
-
-template<class Iterator, class Functor>
-void ParallelForEach(Iterator start, Iterator end, Functor functor)
-{
-    auto& manager = TaskManager::GetCurrent();
-    typedef std::vector<Range<Iterator> > RANGES;
-    RANGES ranges = SplitRange(start, end, manager.GetThreadsNum());
-    internal::ParallelForBase<Functor, RANGES, internal::ForEachTask<Range<Iterator>,Functor> >(ranges, functor, manager);
-}
-
 
 }
 

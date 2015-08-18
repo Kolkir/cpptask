@@ -7,15 +7,10 @@
 TEST(ExceptionsTest, Propagation)
 {
     cpptask::TaskThreadPool threadPool(4);
-
-    ASSERT_THROW(cpptask::ParallelInvoke(
+    auto f = cpptask::async(std::launch::async,
         []()
     {
         throw cpptask::Exception("Test exception message");
-    }, 
-        [this]()
-    {
-        double x = 5;
-        x *=x;
-    }), cpptask::Exception);
+    });
+    ASSERT_THROW(f.get(), cpptask::Exception);
 }
