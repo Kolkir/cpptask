@@ -26,9 +26,7 @@ TEST(SyncTest, EventMultipleImmediateUnlock)
     cpptask::event e1;
     cpptask::event e2;
 
-    cpptask::wait_one_of waits;
-    waits.addEvent(e1);
-    waits.addEvent(e2);
+    cpptask::wait_one_of waits{&e1, &e2};
 
     e2.notify();
     auto f = std::async([&]()
@@ -46,9 +44,7 @@ TEST(SyncTest, EventMultipleWaitUnlock)
     cpptask::event e1;
     cpptask::event e2;
 
-    cpptask::wait_one_of waits;
-    waits.addEvent(e1);
-    waits.addEvent(e2);
+    cpptask::wait_one_of waits {&e1, &e2 };
 
     auto f = std::async([&]()
     {        
@@ -94,9 +90,7 @@ TEST(SyncTest, SemaphoreMultipleWaitUnlock)
     cpptask::event e;
     cpptask::semaphore s;
 
-    cpptask::wait_one_of waits;
-    waits.addEvent(e);
-    waits.addEvent(s);
+    cpptask::wait_one_of waits{&e,&s};
 
     auto f = std::async([&]()
     {        

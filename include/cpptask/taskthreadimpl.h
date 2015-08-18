@@ -52,9 +52,7 @@ inline void TaskThread::Run()
 {
     manager->RegisterInTLS();
 
-    wait_one_of waits;
-    waits.addEvent(newTaskEvent);
-    waits.addEvent(stopEvent);
+    wait_one_of waits { &newTaskEvent , &stopEvent };
 
     bool done = false;
     while (!done)

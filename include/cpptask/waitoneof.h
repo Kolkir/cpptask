@@ -47,6 +47,17 @@ namespace cpptask
             :lastEvent(nullptr)
         {}
 
+        wait_one_of(std::initializer_list<wait_event*> inputs)
+            : events(inputs)
+            , lastEvent(nullptr)
+        {
+            std::unique_lock<std::mutex> lock(guard);
+            for (auto e : events)
+            {
+                e->addWaiter(*this);
+            }
+        }
+
         ~wait_one_of()
         {
             for(auto e : events)

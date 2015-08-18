@@ -124,9 +124,7 @@ inline void TaskManager::RemoveFromTLS()
 
 inline void TaskManager::WaitTask(Task& waitTask)
 {
-    wait_one_of waits;
-    waits.addEvent(newTaskEvent);
-    waits.addEvent(waitTask.GetWaitEvent());
+    wait_one_of waits{ &newTaskEvent, &waitTask.GetWaitEvent() };
 
     bool done = false;
     while (!waitTask.CheckFinished())
