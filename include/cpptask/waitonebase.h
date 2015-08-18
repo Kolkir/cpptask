@@ -34,7 +34,7 @@
 
 namespace cpptask
 {
-    template <class E>
+    template <class Waiter>
     class WaitOneBase
     {
     public:
@@ -47,48 +47,46 @@ namespace cpptask
 
         WaitOneBase& operator=(const WaitOneBase&) = delete;
 
-        template <class Container>
-        friend int wait_one_of(Container container);
-
-        template <class SyncIterator>
-        friend int wait_one_of(SyncIterator start, SyncIterator end);
-
-    protected:
-
-        void AddWaitEvent(E& event)
+        void addWaiter(Waiter& event)
         {
-            std::lock_guard<std::mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(getMutex());
             waitEvents.push_back(&event);
         }
 
-        void DelWaitEvent(E* event)
+        void removeWaiter(Waiter& event)
         {
-            std::lock_guard<std::mutex> lock(_mutex);
-            typename std::vector<E*>::iterator i = std::find(this->waitEvents.begin(),
-                this->waitEvents.end(),
-                event);
+            std::lock_guard<std::mutex> lock(getMutex());
+            auto i = std::find(this->waitEvents.begin(), this->waitEvents.end(), &event);
             if (i != this->waitEvents.end())
             {
                 this->waitEvents.erase(i);
             }
         }
 
-        void MultSignal()
+        void notifyWaiters()
         {
-            std::lock_guard<std::mutex> lock(_mutex);
-            typename std::vector<E*>::iterator i = waitEvents.begin(),
-                e = waitEvents.end();
-            for (; i != e; ++i)
+            bool done = false;
+            while(!done && !waitEvents.empty())
             {
-                (*i)->notify();
+                for (auto e : waitEvents)
+                {
+                    if (e->notify(*this))
+                    {
+                        done = true;
+                        break;
+                    }
+                }
             }
         }
 
-        virtual bool MultCheck() = 0;
+        virtual void waitBase() = 0;
+
+    protected:
+
+        virtual std::mutex& getMutex() = 0;
 
     private:
-        std::mutex _mutex;
-        std::vector<E*> waitEvents;
+        std::vector<Waiter*> waitEvents;
     };
 }
 

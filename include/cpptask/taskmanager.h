@@ -30,7 +30,6 @@
 
 #include "spscqueue.h"
 #include "tlskey.h"
-#include "mutex.h"
 #include "semaphor.h"
 
 namespace cpptask
@@ -78,7 +77,7 @@ private:
     TaskThread* parentThread;
     TaskThreadPool& threadPool;
     SPSCQueue<Task*> taskQueue;
-    mutex getGuard;
+    std::mutex getGuard;
     semaphore& newTaskEvent;
 };
 

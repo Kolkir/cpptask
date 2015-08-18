@@ -66,7 +66,6 @@ private:
     event stopEvent;
     semaphore& newTaskEvent;
     std::unique_ptr<TaskManager> manager;
-    std::atomic<bool> done;
     std::thread thread;
 };
 

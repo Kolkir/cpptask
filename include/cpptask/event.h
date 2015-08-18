@@ -28,78 +28,73 @@
 #ifndef _EVENT_H_
 #define _EVENT_H_
 
-#include "mutex.h"
 #include "waitonebase.h"
+#include "waitoneof.h"
 
 #include <condition_variable>
 
 namespace cpptask
 {
 
-class event : public WaitOneBase<event>
+class event : public WaitOneBase<wait_one_of>
 {
 public:
-    using native_handle_type = std::condition_variable::native_handle_type;
 
     event() noexcept
         : signaled(false)
     {}
     
-    ~event() {}
+    ~event()
+    {}
 
     event(const event&) = delete;
     const event& operator=(const event&) = delete;
 
     void wait()
     {
-        std::unique_lock<std::mutex> lock(_mutex);
+        std::unique_lock<std::mutex> lock(guard);
+        if (signaled)
+        {
+            return;
+        }
         cv.wait(lock, [&] {return signaled; });
     }
 
-    template<class Rep, class Period>
-    bool wait_for(const std::chrono::duration<Rep, Period>& duration)
-    {
-        std::unique_lock<std::mutex> lock(_mutex);
-        return cv.wait_for(lock, duration, [&] {return signaled; });
-    }
-
-    template<class Clock, class Duration>
-    bool wait_until(const std::chrono::time_point<Clock, Duration>& time)
-    {
-        std::unique_lock<std::mutex> lock(_mutex);
-        return cv.wait_until(lock, time, [&] {return signaled; });
-    }
-
     void notify()
-    {
-        {
-            std::lock_guard<std::mutex> lock(_mutex);
-            signaled = true;
-        }
+    {        
+        std::lock_guard<std::mutex> lock(guard);
+        signaled = true;
         cv.notify_all();
-
-        MultSignal();
+        notifyWaiters();
     }
+
+    bool check()
+    {
+        std::unique_lock<std::mutex> lock(guard);
+        return signaled;
+    }
+
     void reset()
     {
-        std::lock_guard<std::mutex> lock(_mutex);
+        std::unique_lock<std::mutex> lock(guard);
         signaled = false;
     }
 
-    native_handle_type native_handle()
+    virtual void waitBase()
     {
-        return cv.native_handle();
+        wait();
     }
 
 protected:
-    virtual bool MultCheck()
+
+    virtual std::mutex& getMutex()
     {
-        return wait_for(std::chrono::milliseconds(0));
+        return guard;
     }
 
 private:
     std::condition_variable cv;
-    std::mutex _mutex;
+    std::mutex guard;
     bool signaled;
 };
 

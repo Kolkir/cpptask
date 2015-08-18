@@ -40,7 +40,6 @@ namespace cpptask
 inline TaskThread::TaskThread(TaskThreadPool& threadPool, semaphore& newTaskEvent)
     : newTaskEvent(newTaskEvent)
     , manager(new TaskManager(threadPool, newTaskEvent, this))
-    , done(false)
 {
 }
 
@@ -53,16 +52,29 @@ inline void TaskThread::Run()
 {
     manager->RegisterInTLS();
 
-    while (!done.load(std::memory_order_acquire))
+    wait_one_of waits;
+    waits.addEvent(newTaskEvent);
+    waits.addEvent(stopEvent);
+
+    bool done = false;
+    while (!done)
     {
         Task* task = manager->GetTask();
         if (task == nullptr)
-        {
-            wait_array events = { &newTaskEvent , &stopEvent };
-            int res = wait_one_of(events);
+        {           
+            int res = waits.wait();
             if (res == 0)
             {
                 task = manager->GetTask();
+            }
+            else if (res == 1)
+            {
+                done = true;
+                break;
+            }
+            else
+            {
+                assert(false);
             }
         }
         if (task != nullptr)
@@ -79,10 +91,9 @@ inline void TaskThread::Start()
 
 inline void TaskThread::Stop()
 {
-    if (!done.load(std::memory_order_acquire))
+    if (thread.joinable())
     {
         stopEvent.notify();
-        done.store(true, std::memory_order_release);
         thread.join();
     }
 }

@@ -1,66 +1,10 @@
 #include <gtest/gtest.h>
 
-#include <cpptask/mutex.h>
 #include <cpptask/event.h>
 #include <cpptask/semaphor.h>
 #include <cpptask/waitoneof.h>
 
 #include <future>
-
-
-TEST(SyncTest, Mutex)
-{
-    cpptask::mutex m;
-    {
-        std::lock_guard<cpptask::mutex> lock(m);
-        auto f = std::async([&]()
-        {
-            ASSERT_FALSE(m.try_lock());
-        });
-        f.wait();
-    }
-    ASSERT_TRUE(m.try_lock());
-    m.unlock();
-    ASSERT_TRUE(m.try_lock());
-    m.unlock();
-}
-
-TEST(SyncTest, MutexMultipleImmediateUnlock)
-{
-    cpptask::mutex m1;
-    cpptask::mutex m2;
-    std::lock_guard<cpptask::mutex> lock(m1);
-
-    m2.lock();
-    auto f = std::async([&]()
-    {
-        cpptask::wait_array mutexes = {&m1, &m2};
-        int res = cpptask::wait_one_of(mutexes);
-        ASSERT_EQ(1, res);
-    });
-    m2.unlock();
-
-    f.wait();
-}
-
-TEST(SyncTest, MutexMultipleWaitUnlock)
-{
-    cpptask::mutex m1;
-    cpptask::mutex m2;
-    std::lock_guard<cpptask::mutex> lock(m2);
-
-    m1.lock();
-    auto f = std::async([&]()
-    {
-        cpptask::wait_array mutexes = {&m1, &m2};
-        int res = cpptask::wait_one_of(mutexes);
-        ASSERT_EQ(0, res);
-    });
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    m1.unlock();
-
-    f.wait();
-}
 
 TEST(SyncTest, Event)
 {
@@ -69,7 +13,7 @@ TEST(SyncTest, Event)
         m.notify();
         auto f = std::async([&]()
         {
-            ASSERT_TRUE(m.wait_for(std::chrono::milliseconds(0)));
+            ASSERT_TRUE(m.check());
         });
         f.wait();
     }
@@ -82,12 +26,14 @@ TEST(SyncTest, EventMultipleImmediateUnlock)
     cpptask::event e1;
     cpptask::event e2;
 
+    cpptask::wait_one_of waits;
+    waits.addEvent(e1);
+    waits.addEvent(e2);
+
     e2.notify();
     auto f = std::async([&]()
-    {
-        cpptask::wait_array events = {&e1, &e2};
-        int res = cpptask::wait_one_of(events);
-        ASSERT_EQ(1, res);
+    {        
+        ASSERT_EQ(1, waits.wait());
     });
     f.wait();
 
@@ -100,10 +46,13 @@ TEST(SyncTest, EventMultipleWaitUnlock)
     cpptask::event e1;
     cpptask::event e2;
 
+    cpptask::wait_one_of waits;
+    waits.addEvent(e1);
+    waits.addEvent(e2);
+
     auto f = std::async([&]()
-    {
-        cpptask::wait_array events = {&e1, &e2};
-        int res = cpptask::wait_one_of(events.begin(), events.end());
+    {        
+        int res = waits.wait();
         ASSERT_EQ(0, res);
     });
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -120,18 +69,18 @@ TEST(SyncTest, Semaphore)
 
         auto f1 = std::async([&]()
         {
-            ASSERT_TRUE(s.wait_for(std::chrono::milliseconds(0)));
+            ASSERT_TRUE(s.check());
         });
 
         auto f2 = std::async([&]()
         {
-            ASSERT_TRUE(s.wait_for(std::chrono::milliseconds(0)));
+            ASSERT_TRUE(s.check());
         });
 
         s.notify();
         auto f3 = std::async([&]()
         {
-            ASSERT_TRUE(s.wait_for(std::chrono::milliseconds(0)));
+            ASSERT_TRUE(s.check());
         });
 
         f1.wait();
@@ -145,10 +94,13 @@ TEST(SyncTest, SemaphoreMultipleWaitUnlock)
     cpptask::event e;
     cpptask::semaphore s;
 
+    cpptask::wait_one_of waits;
+    waits.addEvent(e);
+    waits.addEvent(s);
+
     auto f = std::async([&]()
-    {
-        cpptask::wait_array events = { &e, &s };
-        int res = cpptask::wait_one_of(events);
+    {        
+        int res = waits.wait();
         ASSERT_EQ(1, res);
     });
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));

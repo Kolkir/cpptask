@@ -72,7 +72,7 @@ namespace cpptask
         {
             if (deffered)
             {
-                task->Execute();
+                task->Run();
                 return realFuture.get();
             }
             else

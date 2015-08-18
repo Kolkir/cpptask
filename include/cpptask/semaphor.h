@@ -29,17 +29,15 @@
 #define _SEMAPHORE_H_
 
 #include "waitonebase.h"
-#include "event.h"
+#include "waitoneof.h"
 
 #include <condition_variable>
 
 namespace cpptask
 {
-    class semaphore : public WaitOneBase<event>
+    class semaphore : public WaitOneBase<wait_one_of>
     {
     public:
-        using native_handle_type = std::condition_variable::native_handle_type;
-
         explicit semaphore(size_t n = 0)
             : count{ n }
         {
@@ -51,66 +49,41 @@ namespace cpptask
 
         void notify()
         {
-            {
-                std::lock_guard<std::mutex> lock{ _mutex };
-                ++count;
-            }
+            std::lock_guard<std::mutex> lock{ guard };
+            ++count;
             cv.notify_one();
-            MultSignal();
+            notifyWaiters();
         }
 
         void wait()
         {
-            std::unique_lock<std::mutex> lock{ _mutex };
+            std::unique_lock<std::mutex> lock{ guard };
             cv.wait(lock, [&] { return count > 0; });
             --count;
         }
 
-        template<class Rep, class Period>
-        bool wait_for(const std::chrono::duration<Rep, Period>& duration)
+        bool check()
         {
-            std::unique_lock<std::mutex> lock{ _mutex };
-            auto finished = cv.wait_for(lock, duration, [&] { return count > 0; });
-
-            if (finished)
-            {
-                --count;
-            }
-
-            return finished;
+            std::unique_lock<std::mutex> lock(guard);
+            return count > 0;
         }
 
-
-        template<class Clock, class Duration>
-        bool wait_until(const std::chrono::time_point<Clock, Duration>& time)
+        virtual void waitBase()
         {
-            std::unique_lock<std::mutex> lock{ _mutex };
-            auto finished = cv.wait_until(lock, time, [&] { return count > 0; });
-
-            if (finished)
-            {
-                --count;
-            }
-
-            return finished;
-        }
-
-        native_handle_type native_handle()
-        {
-            return cv.native_handle();
+            wait();
         }
 
     protected:
 
-        virtual bool MultCheck()
+        virtual std::mutex& getMutex()
         {
-            return wait_for(std::chrono::milliseconds(0));
+            return guard;
         }
 
     private:
         size_t count;
         std::condition_variable cv;
-        std::mutex _mutex;
+        std::mutex guard;
     };
 }
 #endif

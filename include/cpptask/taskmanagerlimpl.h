@@ -62,7 +62,7 @@ inline void TaskManager::AddTask(Task& task)
 inline Task* TaskManager::GetOwnTask()
 {
     Task* res = nullptr;
-    std::unique_lock<mutex> lock(getGuard, std::try_to_lock);
+    std::unique_lock<std::mutex> lock(getGuard, std::try_to_lock);
     if (lock)
     {
         if (!taskQueue.Dequeue(res))
@@ -124,18 +124,32 @@ inline void TaskManager::RemoveFromTLS()
 
 inline void TaskManager::WaitTask(Task& waitTask)
 {
+    wait_one_of waits;
+    waits.addEvent(newTaskEvent);
+    waits.addEvent(waitTask.GetWaitEvent());
+
+    bool done = false;
     while (!waitTask.CheckFinished())
     {
         Task* task = GetTask();
         if (task == nullptr)
-        {
-            wait_array events = { &newTaskEvent, waitTask.GetWaitEvent() };
-            int res = wait_one_of(events);
+        {            
+            int res = waits.wait();
             if (res == 0)
             {
                 task = GetTask();
             }
+            else if(res == 1)
+            {
+                done = true;
+                break;
+            }
+            else
+            {
+                assert(false);
+            }
         }
+
         if (task != nullptr)
         {
             task->Run();

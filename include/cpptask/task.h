@@ -29,7 +29,6 @@
 #define _TASK_H_
 
 #include "taskthread.h"
-#include "mutex.h"
 #include "event.h"
 #include "alignedalloc.h"
 
@@ -51,11 +50,12 @@ class alignas(_CPP_TASK_CACHE_LINE_SIZE_) Task
 {
 public:
     Task()
-    {
-        waitEvent.reset();
-    }
+    {}
     
-    virtual ~Task(){}
+    virtual ~Task()
+    {
+        Wait();
+    }
 
     Task(const Task&) = delete;
 
@@ -83,11 +83,7 @@ public:
 
     bool CheckFinished()
     {
-        if (waitEvent.wait_for(std::chrono::milliseconds(0)))
-        {
-            return true;
-        }
-        return false;
+        return waitEvent.check();
     }
 
     void Wait()
@@ -95,9 +91,9 @@ public:
         waitEvent.wait();
     }
 
-    event* GetWaitEvent()
+    event& GetWaitEvent()
     {
-        return &waitEvent;
+        return waitEvent;
     }
 
     void* operator new(size_t size)

@@ -28,80 +28,71 @@
 #ifndef _MULTWAIT_H_
 #define _MULTWAIT_H_
 
-#include "event.h"
-
 #include <vector>
+#include <mutex>
+#include <condition_variable>
 
 namespace cpptask
 {
 
-    typedef std::vector<WaitOneBase<event>*> wait_array;
+    class wait_one_of;
 
-    template <class Container>
-    int wait_one_of(Container container)
+    typedef WaitOneBase<wait_one_of> wait_event;
+    typedef std::vector<wait_event*> wait_array;
+
+    class wait_one_of
     {
-        return wait_one_of(std::begin(container), std::end(container));
-    }
+    public:
+        wait_one_of()
+            :lastEvent(nullptr)
+        {}
 
-    template <class SyncIterator>
-    int wait_one_of(SyncIterator start, SyncIterator end)
-    {
-        event commonEvent;
-
-        auto i = start;
-        auto e = end;
-
-        int index = -1;
-        bool needWait = true;
-        for (int j = 0; i != e; ++i, ++j)
+        ~wait_one_of()
         {
-            assert((*i) != nullptr);
-            if ((*i) != nullptr)
+            for(auto e : events)
             {
-                (*i)->AddWaitEvent(commonEvent);
-                if ((*i)->MultCheck())
-                {
-                    index = j;
-                    needWait = false;
-                    break;
-                }
+                e->removeWaiter(*this);
             }
         }
 
-        if (needWait)
+        wait_one_of(const wait_one_of&) = delete;
+        wait_one_of& operator=(const wait_one_of&) = delete;
+
+        void addEvent(wait_event& we)
         {
-            commonEvent.wait();
+            std::unique_lock<std::mutex> lock(guard);
+            events.push_back(&we);
+            we.addWaiter(*this);
         }
 
-        i = start;
-        if (index == -1)
+        bool notify(wait_event& e)
         {
-            for (int j = 0; i != e; ++i, ++j)
-            {
-                assert((*i) != nullptr);
-                if ((*i) != nullptr)
-                {
-                    if ((*i)->MultCheck())
-                    {
-                        index = j;
-                        break;
-                    }
-                }
-            }
+           std::unique_lock<std::mutex> lock(guard, std::try_to_lock);
+           if (lock)
+           {
+               lastEvent = &e;
+               cv.notify_one();
+               return true;
+           }
+           return false;
         }
 
-        i = start;
-        for (; i != e; ++i)
+        int wait()
         {
-            assert((*i) != nullptr);
-            if ((*i) != nullptr)
-            {
-                (*i)->DelWaitEvent(&commonEvent);
-            }
+            std::unique_lock<std::mutex> lock(guard);
+            cv.wait(lock,[&](){return lastEvent != nullptr;});
+            lastEvent->waitBase();//required for semaphore to decrease counter
+            auto i = std::find(events.begin(), events.end(), lastEvent);
+            auto index = static_cast<int>(std::distance(events.begin(), i));
+            lastEvent = nullptr;
+            return index;
         }
-
-        return index;
-    }
+    private:
+        std::mutex guard;
+        std::condition_variable cv;
+        wait_array events;
+        wait_event* lastEvent;
+    };
 }
 
 #endif

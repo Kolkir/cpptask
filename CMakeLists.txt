@@ -12,9 +12,18 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS_RELEASE        "/MT /O2 /Ob2 /D NDEBUG /MP")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MT /Zi /O2 /Ob1 /D NDEBUG /MP")
 else()
-    SET(CMAKE_CXX_FLAGS "-Wall -std=c++11 -pthread")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
-    SET(CMAKE_CXX_FLAGS_DEBUG  "-O0 -g -DDEBUG ")
+    SET (CMAKE_C_FLAGS                "-Wall -std=c99")
+    SET (CMAKE_C_FLAGS_DEBUG          "-g")
+    SET (CMAKE_C_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
+    SET (CMAKE_C_FLAGS_RELEASE        "-O4 -DNDEBUG")
+    SET (CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g")
+
+    SET (CMAKE_CXX_FLAGS                "-Wall -std=c++11 -pthread -fPIE -fpie")
+#-fsanitize=thread
+    SET (CMAKE_CXX_FLAGS_DEBUG          "-g")
+    SET (CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
+    SET (CMAKE_CXX_FLAGS_RELEASE        "-O2 -DNDEBUG")
+    SET (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g")
 endif()
 
 file(GLOB SRC_FILES include/cpptask/*
