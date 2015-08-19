@@ -46,7 +46,7 @@ void for_each(Iterator start, Iterator end, Functor functor)
     std::vector<future<void>> futures;
     for (const auto& r : ranges)
     {
-        futures.emplace_back(async(std::launch::async, [&](const RangeType& range)
+        futures.emplace_back(cpptask::async(std::launch::async, [&](const RangeType& range)
         {
             typename RangeType::value_type i = range.start;
             for (; i != range.end; ++i)
