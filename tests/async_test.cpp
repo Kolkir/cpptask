@@ -6,13 +6,13 @@
 
 namespace
 {
-    void processFunc(CppTaskTest::ArrayType& arr)
+    void processFunc(CppTaskTestData::ArrayType& arr)
     {
         auto i = arr.begin();
         auto e = arr.end();
         for (; i != e; ++i)
         {
-            CppTaskTest::DoubleSqrt()(*i);
+            CppTaskTestData::DoubleSqrt()(*i);
         }
     }
 }
@@ -33,6 +33,9 @@ TEST_F(CppTaskTest, Async_Deffered)
 
     ASSERT_NO_THROW(f1.get());
     ASSERT_NO_THROW(f2.get());
+
+    ASSERT_EQ(CppTaskTestData::instance().getResultArray(), testArray);
+    ASSERT_EQ(CppTaskTestData::instance().getResultArray(), testArray2);
 }
 
 TEST_F(CppTaskTest, Async_Parallel)
@@ -51,6 +54,9 @@ TEST_F(CppTaskTest, Async_Parallel)
 
     ASSERT_NO_THROW(f1.get());
     ASSERT_NO_THROW(f2.get());
+
+    ASSERT_EQ(CppTaskTestData::instance().getResultArray(), testArray);
+    ASSERT_EQ(CppTaskTestData::instance().getResultArray(), testArray2);
 }
 
 TEST_F(CppTaskTest, Async_ParallelWait)
@@ -71,4 +77,7 @@ TEST_F(CppTaskTest, Async_ParallelWait)
     ASSERT_NO_THROW(f1.get());
     ASSERT_NO_THROW(f2.wait());
     ASSERT_NO_THROW(f2.get());
+
+    ASSERT_EQ(CppTaskTestData::instance().getResultArray(), testArray);
+    ASSERT_EQ(CppTaskTestData::instance().getResultArray(), testArray2);
 }

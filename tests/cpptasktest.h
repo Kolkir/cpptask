@@ -1,6 +1,7 @@
 #ifndef CPPTASKTEST_H
 #define CPPTASKTEST_H
 
+#include "test_data.h"
 #include <gtest/gtest.h>
 
 #include <cmath>
@@ -8,42 +9,19 @@
 
 class CppTaskTest : public ::testing::Test
 {
-public:
-	typedef std::vector<double> ArrayType;
-
-	struct DoubleSqrt
-	{
-		void operator()(double& x)
-		{
-			x = std::sqrt(std::sqrt(x));
-			x = std::sqrt(std::sqrt(x));
-		}
-	};
-
 protected:
-    ArrayType testArray;
+    CppTaskTestData::ArrayType testArray;
     char pad[64];
-    ArrayType testArray2;
+    CppTaskTestData::ArrayType testArray2;
 
     virtual void SetUp()
     {
-        testArray = GetBigArray();
-        testArray2 = testArray;
+        testArray = CppTaskTestData::instance().getTestArray();
+        testArray2 = CppTaskTestData::instance().getTestArray();
     }
 
     virtual void TearDown()
     {
-    }
-
-    ArrayType GetBigArray()
-    {
-        const size_t n = 25000000;
-        ArrayType m(n);
-        for (size_t i = 0; i < n; ++i)
-        {
-            m[i] = static_cast<double>(i);
-        }
-        return m;
     }
 };
 

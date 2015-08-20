@@ -55,6 +55,11 @@ void for_each(Iterator start, Iterator end, Functor functor)
             };
         }, std::cref(r)));
     }
+    //propagate exceptions
+    for (auto& f : futures)
+    {
+        f.get();
+    }
 }
 
 }

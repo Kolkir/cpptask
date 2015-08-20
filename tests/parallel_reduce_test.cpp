@@ -15,15 +15,15 @@ namespace
         Accumulator(const Accumulator& accumulator, cpptask::SplitMark)
             : res(accumulator.res) {}
 
-        void operator()(const cpptask::Range<CppTaskTest::ArrayType::iterator>& range)
+        void operator()(const cpptask::Range<CppTaskTestData::ArrayType::iterator>& range)
         {
             auto i = range.start;
             auto e = range.end;
             for (; i != e; ++i)
             {
-                res += *i;
-                double t = std::sqrt(std::sqrt(res));
-                res += t - t;
+                double t = *i;
+                CppTaskTestData::DoubleSqrt()(t);
+                res += t;
             };
         }
 
@@ -42,7 +42,9 @@ TEST_F(CppTaskTest, Reduce_Serial)
     cpptask::TaskThreadPool threadPool(0);
 
     Accumulator accumulator(0);
-    cpptask::ParallelReduce(testArray.begin(), testArray.end(), accumulator);
+    ASSERT_NO_THROW(cpptask::ParallelReduce(testArray.begin(), testArray.end(), accumulator));
+
+    ASSERT_EQ(CppTaskTestData::instance().getSum(), accumulator.res);
 }
 
 TEST_F(CppTaskTest, Reduce_Parallel)
@@ -51,5 +53,7 @@ TEST_F(CppTaskTest, Reduce_Parallel)
     cpptask::TaskThreadPool threadPool(4);
 
     Accumulator accumulator(0);
-    cpptask::ParallelReduce(testArray.begin(), testArray.end(), accumulator);
+    ASSERT_NO_THROW(cpptask::ParallelReduce(testArray.begin(), testArray.end(), accumulator));
+
+    ASSERT_EQ(CppTaskTestData::instance().getSum(), accumulator.res);
 }

@@ -8,13 +8,17 @@ TEST_F(CppTaskTest, ForEach_Serial)
 {
     cpptask::TaskThreadPool threadPool(0);
 
-    cpptask::for_each(testArray.begin(), testArray.end(), DoubleSqrt());
+    ASSERT_NO_THROW(cpptask::for_each(testArray.begin(), testArray.end(), CppTaskTestData::DoubleSqrt()));
+
+    ASSERT_EQ(CppTaskTestData::instance().getResultArray(), testArray);
 }
 
 TEST_F(CppTaskTest, ForEach_Parallel)
 {
     cpptask::TaskThreadPool threadPool(4);
 
-    cpptask::for_each(testArray.begin(), testArray.end(), DoubleSqrt());
+    ASSERT_NO_THROW(cpptask::for_each(testArray.begin(), testArray.end(), CppTaskTestData::DoubleSqrt()));
+
+    ASSERT_EQ(CppTaskTestData::instance().getResultArray(), testArray);
 }
 
