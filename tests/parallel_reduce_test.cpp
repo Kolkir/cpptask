@@ -38,7 +38,6 @@ namespace
 
 TEST_F(CppTaskTest, Reduce_Serial)
 {
-    using namespace std::placeholders;
     cpptask::TaskThreadPool threadPool(0);
 
     Accumulator accumulator(0);
@@ -49,7 +48,6 @@ TEST_F(CppTaskTest, Reduce_Serial)
 
 TEST_F(CppTaskTest, Reduce_Parallel)
 {
-    using namespace std::placeholders;
     cpptask::TaskThreadPool threadPool(4);
 
     Accumulator accumulator(0);
@@ -57,3 +55,31 @@ TEST_F(CppTaskTest, Reduce_Parallel)
 
     ASSERT_EQ(CppTaskTestData::instance().getSum(), accumulator.res);
 }
+
+namespace
+{
+    double reduce_func(const cpptask::Range<CppTaskTestData::ArrayType::iterator>& range)
+    {
+        double res = 0;
+        std::for_each(range.start, range.end,
+            [&res](double x)
+        {
+            double t = x;
+            CppTaskTestData::DoubleSqrt()(t);
+            res += t;
+        });
+        return res;
+    }
+}
+
+/*
+TEST_F(CppTaskTest, Reduce_Parallel2)
+{
+    cpptask::TaskThreadPool threadPool(4);
+
+    double sum = cpptask::reduce(testArray.begin(), testArray.end(), reduce_func);
+        
+
+    ASSERT_EQ(CppTaskTestData::instance().getSum(), sum);
+}
+*/

@@ -142,6 +142,49 @@ inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, size_
     }
 }
 
+
+namespace internal
+{
+    template<class Functor, class Range>
+    typename std::result_of<Functor(const Range&)>::type reduceFunc(Functor&& functor, const Range& range, size_t depth)
+    {
+        typedef std::result_of<Functor(const Range&)>::type ReturnType;
+        if (depth > 0) //we can split more
+        {
+            const size_t splitCount = 2;
+            std::vector<Range> ranges = SplitRange(range.start, range.end, splitCount);
+            std::vector<future<ReturnType>> futures;
+            for (size_t i = 0; i < splitCount; ++i) //put tasks to queue - they can be calculated in parallel
+            {
+                futures.emplace_back(cpptask::async(std::launch::async, reduceFunc, std::forward<Functor>(functor), std::cref(range), depth));
+            }
+            //wait results
+            ReturnType result;
+            for (auto& f : futures)
+            {
+                result += f.get();
+            }
+            return result;
+        }
+        else //stop spliting - calculate
+        {
+            return functor(range);
+        }
+    };
+}
+
+template<class Iterator, class Functor>
+typename std::result_of<Functor(const Range<Iterator>&)>::type reduce(Iterator start, Iterator end, Functor&& functor, size_t maxDepth = 5)
+{
+    typedef Range<Iterator> RangeType;
+   
+    RangeType range(start, end);
+    
+    return internal::reduceFunc(std::forward<Functor>(functor),range,0);
+    //auto f = cpptask::async(std::launch::async, internal::reduceFunc, std::forward<Functor>(functor), std::cref(range), maxDepth);
+    //return f.get();
+}
+
 }
 
 #endif
