@@ -122,6 +122,15 @@ inline void TaskManager::RemoveFromTLS()
     GetManagerKey().SetValue(nullptr);
 }
 
+inline void TaskManager::DoOneTask()
+{
+    Task* task = GetTask();
+    if (task != nullptr)
+    {
+        task->Run();
+    }
+}
+
 inline void TaskManager::WaitTask(Task& waitTask)
 {
     wait_one_of waits{ &newTaskEvent, &waitTask.GetWaitEvent() };

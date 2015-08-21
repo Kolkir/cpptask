@@ -19,7 +19,6 @@ namespace
 
 TEST_F(CppTaskTest, Async_Deffered)
 {
-    using namespace std::placeholders;
     cpptask::TaskThreadPool threadPool(4);
 
     auto f1 = cpptask::async(std::launch::deferred, processFunc, std::ref(testArray));
@@ -40,7 +39,6 @@ TEST_F(CppTaskTest, Async_Deffered)
 
 TEST_F(CppTaskTest, Async_Parallel)
 {
-    using namespace std::placeholders;
     cpptask::TaskThreadPool threadPool(4);
 
     auto f1 = cpptask::async(std::launch::async, processFunc, std::ref(testArray));
@@ -61,7 +59,6 @@ TEST_F(CppTaskTest, Async_Parallel)
 
 TEST_F(CppTaskTest, Async_ParallelWait)
 {
-    using namespace std::placeholders;
     cpptask::TaskThreadPool threadPool(4);
 
     auto f1 = cpptask::async(std::launch::async, processFunc, std::ref(testArray));

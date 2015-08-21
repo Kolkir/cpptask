@@ -35,6 +35,9 @@
 #include "taskmanagerlimpl.h"
 #include "threadpool.h"
 #include "async.h"
+#include "event.h"
+#include "semaphor.h"
+#include "process_lock.h"
 
 #include "parallelfor.h"
 #include "parallelreduce.h"

@@ -73,6 +73,8 @@ public:
 
     void WaitTask(Task& waitTask);
 
+    void DoOneTask();
+
 private:
     TaskThread* parentThread;
     TaskThreadPool& threadPool;

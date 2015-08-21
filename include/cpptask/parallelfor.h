@@ -37,12 +37,12 @@ namespace cpptask
 {
 
 template<class Iterator, class Functor>
-void for_each(Iterator start, Iterator end, Functor functor)
+void for_each(Iterator start, Iterator end, Functor functor, int chunksNum = -1)
 {
     auto& manager = TaskManager::GetCurrent();
     typedef Range<Iterator> RangeType;
     typedef std::vector<RangeType> Ranges;
-    Ranges ranges = SplitRange(start, end, manager.GetThreadsNum());
+    Ranges ranges = SplitRange(start, end, chunksNum > 1 ? static_cast<size_t>(chunksNum): manager.GetThreadsNum());
     std::vector<future<void>> futures;
     for (const auto& r : ranges)
     {
