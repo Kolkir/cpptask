@@ -4,82 +4,41 @@
 
 #include <algorithm>
 
-
 namespace
 {
-    class Accumulator
+    double process_func(const cpptask::Range<CppTaskTestData::ArrayType::iterator>& range)
     {
-    public:
-        Accumulator(double init) : res(init) {}
-
-        Accumulator(const Accumulator& accumulator, cpptask::SplitMark)
-            : res(accumulator.res) {}
-
-        void operator()(const cpptask::Range<CppTaskTestData::ArrayType::iterator>& range)
+        double res = 0;
+        std::for_each(range.start, range.end,
+            [&res](double x)
         {
-            auto i = range.start;
-            auto e = range.end;
-            for (; i != e; ++i)
-            {
-                double t = *i;
-                CppTaskTestData::DoubleSqrt()(t);
-                res += t;
-            };
-        }
+            CppTaskTestData::DoubleSqrt()(x);
+            res += x;
+        });
+        return res;
+    }
 
-        void Join(const Accumulator& accumulator)
-        {
-            res += accumulator.res;
-        }
-
-        double res;
-    };
+    double join_func(double a, double b)
+    {
+        return a + b;
+    }
 }
 
 TEST_F(CppTaskTest, Reduce_Serial)
 {
     cpptask::TaskThreadPool threadPool(0);
 
-    Accumulator accumulator(0);
-    ASSERT_NO_THROW(cpptask::ParallelReduce(testArray.begin(), testArray.end(), accumulator));
+    double sum = cpptask::reduce<double>(testArray.begin(), testArray.end(), process_func, join_func);
 
-    ASSERT_EQ(CppTaskTestData::instance().getSum(), accumulator.res);
+    ASSERT_EQ(CppTaskTestData::instance().getSum(), sum);
 }
+
 
 TEST_F(CppTaskTest, Reduce_Parallel)
 {
     cpptask::TaskThreadPool threadPool(4);
 
-    Accumulator accumulator(0);
-    ASSERT_NO_THROW(cpptask::ParallelReduce(testArray.begin(), testArray.end(), accumulator));
-
-    ASSERT_EQ(CppTaskTestData::instance().getSum(), accumulator.res);
-}
-
-namespace
-{
-    double reduce_func(const cpptask::Range<CppTaskTestData::ArrayType::iterator>& range)
-    {
-        double res = 0;
-        std::for_each(range.start, range.end,
-            [&res](double x)
-        {
-            double t = x;
-            CppTaskTestData::DoubleSqrt()(t);
-            res += t;
-        });
-        return res;
-    }
-}
-
-/*
-TEST_F(CppTaskTest, Reduce_Parallel2)
-{
-    cpptask::TaskThreadPool threadPool(4);
-
-    double sum = cpptask::reduce(testArray.begin(), testArray.end(), reduce_func);
-        
+    double sum = cpptask::reduce<double>(testArray.begin(), testArray.end(), process_func, join_func);
 
     ASSERT_EQ(CppTaskTestData::instance().getSum(), sum);
 }
-*/

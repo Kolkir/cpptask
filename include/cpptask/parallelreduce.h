@@ -31,158 +31,57 @@
 #include "taskmanager.h"
 #include "range.h"
 
-#include <algorithm>
-#include <vector>
-#include <type_traits>
-
 namespace cpptask
 {
 
-class SplitMark
-{
-};
-
 namespace internal
 {
-    template<class Range, class Functor>
-    class ReduceTask : public Task
+    template<class ReturnType, class Range, class ProcessFunction, class JoinFunction>
+    typename ReturnType reduceFunc(ProcessFunction&& process, JoinFunction&& join, const Range& range, size_t depth, size_t width)
     {
-    public:
-        ReduceTask(const Range& range,
-            Functor& functor,
-            size_t maxDepth)
-            : myDepth(maxDepth)
-            , range(range)
-            , functor(functor)
-        {
-        }
-        ~ReduceTask()
-        {
-        }
-
-        void Join(ReduceTask& task)
-        {
-            functor.Join(task.functor);
-        }
-
-        virtual void Execute()
-        {
-            if (myDepth > 0)
-            {
-                const size_t splitCount = 2;
-                std::vector<Range> ranges = SplitRange(range.start, range.end, splitCount);
-
-                typedef ReduceTask<Range, Functor> TASK;
-                typedef std::shared_ptr<TASK> TASKPtr;
-                TASKPtr tasks[splitCount];
-
-                typename std::aligned_storage<sizeof(Functor), _CPP_TASK_CACHE_LINE_SIZE_>::type functors[splitCount];
-
-                auto& manager = TaskManager::GetCurrent();
-
-                for (size_t i = 0; i != splitCount; ++i)
-                {
-                    new(functors + i)Functor(functor, SplitMark());
-
-                    TASK* ptr = new TASK(ranges[i],
-                        *reinterpret_cast<Functor*>(functors + i),
-                        myDepth - 1);
-
-                    tasks[i].reset(ptr);
-                    manager.AddTask(*tasks[i]);
-                };
-
-                for (size_t i = 0; i != splitCount; ++i)
-                {
-                    manager.WaitTask(*tasks[i]);
-                };
-
-                //check exceptions in child tasks
-                for (size_t i = 0; i != splitCount; ++i)
-                {
-                    if (tasks[i]->GetLastException() != nullptr)
-                    {
-                        std::rethrow_exception(tasks[i]->GetLastException());
-                    }
-                };
-
-                //Join
-                for (size_t i = 1; i != splitCount; ++i)
-                {
-                    tasks[0]->Join(*tasks[i]);
-                }
-                Join(*tasks[0]);
-            }
-            else
-            {
-                functor(range);
-            }
-        }
-
-    private:
-        size_t myDepth;
-        Range range;
-        Functor& functor;
-    };
-}
-
-template<class Iterator, class Functor>
-inline void ParallelReduce(Iterator start, Iterator end, Functor& functor, size_t maxDepth = 5)
-{
-    auto& manager = TaskManager::GetCurrent();
-
-    typedef Range<Iterator> RANGE;
-    typedef internal::ReduceTask<RANGE, Functor> TASK;
-    TASK task(RANGE(start, end), functor, maxDepth);
-    manager.AddTask(task);
-    manager.WaitTask(task);
-    if (task.GetLastException() != nullptr)
-    {
-        std::rethrow_exception(task.GetLastException());
-    }
-}
-
-
-namespace internal
-{
-    template<class Functor, class Range>
-    typename std::result_of<Functor(const Range&)>::type reduceFunc(Functor&& functor, const Range& range, size_t depth)
-    {
-        typedef std::result_of<Functor(const Range&)>::type ReturnType;
         if (depth > 0) //we can split more
         {
-            const size_t splitCount = 2;
+            assert(width >= 2);
+            const size_t splitCount = (std::max)(size_t(2), width);
             std::vector<Range> ranges = SplitRange(range.start, range.end, splitCount);
             std::vector<future<ReturnType>> futures;
             for (size_t i = 0; i < splitCount; ++i) //put tasks to queue - they can be calculated in parallel
             {
-                futures.emplace_back(cpptask::async(std::launch::async, reduceFunc, std::forward<Functor>(functor), std::cref(range), depth));
+                futures.emplace_back(cpptask::async(std::launch::async,
+                    [&, i]()
+                {
+                    return reduceFunc<ReturnType, Range, ProcessFunction, JoinFunction>(std::forward<ProcessFunction>(process), std::forward<JoinFunction>(join), ranges[i], depth - 1, width);
+                }));
             }
             //wait results
-            ReturnType result;
-            for (auto& f : futures)
+            ReturnType result = futures.front().get();
+            std::for_each(std::next(futures.begin()), futures.end(),
+                [&](future<ReturnType>& f)
             {
-                result += f.get();
-            }
+                result = join(result, f.get());
+            });
             return result;
         }
         else //stop spliting - calculate
         {
-            return functor(range);
+            return process(range);
         }
     };
 }
 
-template<class Iterator, class Functor>
-typename std::result_of<Functor(const Range<Iterator>&)>::type reduce(Iterator start, Iterator end, Functor&& functor, size_t maxDepth = 5)
+template<class ReturnType, class Iterator, class ProcessFunction, class JoinFunction>
+ReturnType reduce(Iterator start, Iterator end, ProcessFunction&& process, JoinFunction&& join, size_t depth = 5, size_t width = 2)
 {
     typedef Range<Iterator> RangeType;
-   
+
     RangeType range(start, end);
-    
-    return internal::reduceFunc(std::forward<Functor>(functor),range,0);
-    //auto f = cpptask::async(std::launch::async, internal::reduceFunc, std::forward<Functor>(functor), std::cref(range), maxDepth);
-    //return f.get();
+
+    auto f = cpptask::async(std::launch::async,
+        [&]()
+    {
+        return internal::reduceFunc<ReturnType>(std::forward<ProcessFunction>(process), std::forward<JoinFunction>(join), range, depth, width);
+    });
+    return f.get();
 }
 
 }

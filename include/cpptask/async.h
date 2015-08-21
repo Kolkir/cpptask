@@ -57,15 +57,30 @@ namespace cpptask
         future& operator=(const future& rhs) = delete;
 
         ~future() 
-        {
-            wait();
-        }
+        {}
         
         future& operator=(future&& f) noexcept
         {
             task = std::move(f.task);
             realFuture = std::move(f.realFuture);
             deffered = f.deffered;
+        }
+
+        R get(TaskManager& manager)
+        {
+            if (deffered)
+            {
+                task->Run();
+                return realFuture.get();
+            }
+            else
+            {
+                if (!task->CheckFinished())
+                {
+                    manager.WaitTask(*task);
+                }
+                return realFuture.get();
+            }
         }
 
         R get()
@@ -77,7 +92,11 @@ namespace cpptask
             }
             else
             {
-                wait();
+                if (!task->CheckFinished())
+                {
+                    auto& manager = TaskManager::GetCurrent();
+                    manager.WaitTask(*task);
+                }
                 return realFuture.get();
             }
         }
@@ -89,18 +108,12 @@ namespace cpptask
 
         void wait() const
         {
-            if (realFuture.valid() && 
-                realFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
+            if (!task->CheckFinished())
             {
                 if (!deffered)
                 {
                     auto& manager = TaskManager::GetCurrent();
                     manager.WaitTask(*task);
-                    realFuture.wait();
-                }
-                else
-                {
-                    realFuture.wait();
                 }
             }
         }
