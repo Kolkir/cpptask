@@ -34,6 +34,15 @@
 
 namespace cpptask
 {
+    enum class EventId : int
+    {
+        NoneEvent = -1,
+        ThreadStopEvent = 0,
+        NewTaskEvent = 1,
+        TaskFinishedEvent = 2,
+        CustomEvent = 3
+    };
+
     class EventManager
     {
     public:
@@ -45,7 +54,7 @@ namespace cpptask
         EventManager(const EventManager&) = delete;
         EventManager& operator=(const EventManager&) = delete;
 
-        void notify(int eventId)
+        void notify(EventId eventId)
         {
             std::lock_guard<std::mutex> lock { guard };
             ++count;
@@ -79,7 +88,7 @@ namespace cpptask
 
     private:
         size_t count;
-        std::queue<int> eventQueue;
+        std::queue<EventId> eventQueue;
         std::condition_variable cv;
         std::mutex guard;
     };

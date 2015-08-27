@@ -36,55 +36,38 @@ TEST(EventManagerTest, SendWait)
 {
     cpptask::EventManager mngr;
 
-    const int N = 100;
+    const int N = 10;
 
     for (int i = 0; i < N; ++i)
     {
         std::vector<std::future<void>> waits;
         log("session start\n");
-        waits.emplace_back(std::async(std::launch::async, [&mngr]
+        for (int j = 0; j < 2; ++j)
         {
-            mngr.notify(100);
-            log("sent 100, waiting 101\n");
-            mngr.wait([](int eventId)
+            waits.emplace_back(std::async(std::launch::async, [&mngr]
             {
-                return eventId == 101;
-            });
-            log("101 received\n");
-        }));
-
-        waits.emplace_back(std::async(std::launch::async, [&mngr]
+                mngr.notify(cpptask::EventId::NewTaskEvent);
+                log("sent NewTask, waiting ThreadStop ", std::this_thread::get_id(), "\n");
+                mngr.wait([](cpptask::EventId eventId)
+                {
+                    return eventId == cpptask::EventId::ThreadStopEvent;
+                });
+                log("ThreadStop received ", std::this_thread::get_id(), "\n");
+            }));
+        }
+        for (int j = 0; j < 2; ++j)
         {
-            mngr.notify(200);
-            log("sent 200, waiting 201\n");
-            mngr.wait([](int eventId)
+            waits.emplace_back(std::async(std::launch::async, [&mngr]
             {
-                return eventId == 201;
-            });
-            log("201 received\n");
-        }));
-
-        waits.emplace_back(std::async(std::launch::async, [&mngr]
-        {
-            log("waiting 100\n");
-            mngr.wait([](int eventId)
-            {
-                return eventId == 100;
-            });
-            mngr.notify(101);
-            log("sent 101\n");
-        }));
-
-        waits.emplace_back(std::async(std::launch::async, [&mngr]
-        {
-            log("waiting 200\n");
-            mngr.wait([](int eventId)
-            {
-                return eventId == 200;
-            });
-            mngr.notify(201);
-            log("sent 201\n");
-        }));
+                log("waiting NewTask ", std::this_thread::get_id(), "\n");
+                mngr.wait([](cpptask::EventId eventId)
+                {
+                    return eventId == cpptask::EventId::NewTaskEvent;
+                });
+                mngr.notify(cpptask::EventId::ThreadStopEvent);
+                log("sent ThreadStop ", std::this_thread::get_id(), "\n");
+            }));
+        }
 
         for (auto& f : waits)
         {
@@ -94,7 +77,6 @@ TEST(EventManagerTest, SendWait)
         log("\n");
     }
 }
-
 
 TEST(EventManagerTest, SendWaitBroadcast)
 {
@@ -111,25 +93,22 @@ TEST(EventManagerTest, SendWaitBroadcast)
         {
             for (int t = 0; t < nt; ++t)
             {
-                mngr.notify(100 + t);
-                log("sent ", 100 + t, " ", std::this_thread::get_id(), "\n");
+                mngr.notify(cpptask::EventId::NewTaskEvent);
+                log("sent ", static_cast<int>(cpptask::EventId::NewTaskEvent), " ", std::this_thread::get_id(), "\n");
             }
             
             for (int t = 0; t < nt; ++t)
             {
-                int id = 0;
-                mngr.wait([&id](int eventId)
+                mngr.wait([](cpptask::EventId eventId)
                 {
-                    auto res =  eventId >= 200;
-                    id = eventId;
-                    return res;
+                    return eventId == cpptask::EventId::TaskFinishedEvent;
                 });
-                log(id , " received ", std::this_thread::get_id(), "\n");
+                log(static_cast<int>(cpptask::EventId::TaskFinishedEvent), " received ", std::this_thread::get_id(), "\n");
             }
 
             for (int t = 0; t < nt; ++t)
             {
-                mngr.notify(300);
+                mngr.notify(cpptask::EventId::ThreadStopEvent);
             }
         }));
 
@@ -141,22 +120,23 @@ TEST(EventManagerTest, SendWaitBroadcast)
                 bool done = false;
                 while (!done)
                 {
-                    int id = 0;
-                    mngr.wait([&id](int eventId)
+                    cpptask::EventId id = cpptask::EventId::NoneEvent;
+                    mngr.wait([&id](cpptask::EventId eventId)
                     {
-                        auto res = (eventId >= 100 && eventId < 200) || eventId == 300;
+                        auto res = eventId == cpptask::EventId::NewTaskEvent ||
+                                   eventId == cpptask::EventId::ThreadStopEvent;
                         id = eventId;
                         return res;
                     });
-                    log(id, " received ", std::this_thread::get_id(), "\n");
-                    if (id == 300)
+                    log(static_cast<int>(id), " received ", std::this_thread::get_id(), "\n");
+                    if (id == cpptask::EventId::ThreadStopEvent)
                     {
                         done = true;
                     }
                     else
                     {
-                        mngr.notify(200 + (id - 100));
-                        log("sent ", 200 + (id - 100), " ", std::this_thread::get_id(), "\n");
+                        mngr.notify(cpptask::EventId::TaskFinishedEvent);
+                        log("sent ", static_cast<int>(cpptask::EventId::TaskFinishedEvent), " ", std::this_thread::get_id(), "\n");
                     }
                 }
             }));
