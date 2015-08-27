@@ -80,6 +80,9 @@ namespace cpptask
                 }
                 else
                 {
+                    //rotate events to prevent dead-locks
+                    eventQueue.push(eventQueue.front());
+                    eventQueue.pop();
                     cv.notify_all();
                 }
             }

@@ -150,3 +150,46 @@ TEST(EventManagerTest, SendWaitBroadcast)
         log("\n");
     }
 }
+
+TEST(EventManagerTest, SendWaitRotate)
+{
+    cpptask::EventManager mngr;
+
+    const int N = 10;
+
+    for (int i = 0; i < N; ++i)
+    {
+        std::vector<std::future<void>> waits;
+        log("session start\n");
+        waits.emplace_back(std::async(std::launch::async, [&mngr]
+        {
+            mngr.notify(cpptask::EventId::NewTaskEvent);
+            mngr.notify(cpptask::EventId::CustomEvent);
+            log("sent NewTask, waiting ThreadStop ", std::this_thread::get_id(), "\n");
+            mngr.wait([](cpptask::EventId eventId)
+            {
+                return eventId == cpptask::EventId::ThreadStopEvent;
+            });
+            log("ThreadStop received ", std::this_thread::get_id(), "\n");
+        }));
+
+        waits.emplace_back(std::async(std::launch::async, [&mngr]
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            log("waiting NewTask ", std::this_thread::get_id(), "\n");
+            mngr.wait([](cpptask::EventId eventId)
+            {
+                return eventId == cpptask::EventId::NewTaskEvent;
+            });
+            mngr.notify(cpptask::EventId::ThreadStopEvent);
+            log("sent ThreadStop ", std::this_thread::get_id(), "\n");
+        }));
+
+        for (auto& f : waits)
+        {
+            f.get();
+        }
+
+        log("\n");
+    }
+}
