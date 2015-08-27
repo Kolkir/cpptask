@@ -10,15 +10,6 @@ namespace
 {
     std::mutex guard;
 
-    void processFunc(CppTaskTestData::ArrayType& arr)
-    {
-        auto i = arr.begin();
-        auto e = arr.end();
-        for (; i != e; ++i)
-        {
-            CppTaskTestData::DoubleSqrt()(*i);
-        }
-    }
     void processFuncLock()
     {
         std::lock_guard<std::mutex> lock(guard);

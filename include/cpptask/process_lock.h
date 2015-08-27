@@ -40,7 +40,7 @@ namespace cpptask
         process_lock(SyncPrimitive& _guard)
             : guardLock(_guard, std::defer_lock)
         {
-            auto f = async(std::launch::async, 
+            auto f = cpptask::async(std::launch::async,
                 [this]() 
             {
                 auto& manager = TaskManager::GetCurrent();

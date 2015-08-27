@@ -37,7 +37,7 @@ namespace cpptask
 namespace internal
 {
     template<class ReturnType, class Range, class ProcessFunction, class JoinFunction>
-    typename ReturnType reduceFunc(ProcessFunction&& process, JoinFunction&& join, const Range& range, size_t depth, size_t width)
+    ReturnType reduceFunc(ProcessFunction&& process, JoinFunction&& join, const Range& range, size_t depth, size_t width)
     {
         if (depth > 0) //we can split more
         {

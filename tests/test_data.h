@@ -9,7 +9,7 @@ class CppTaskTestData
 public:
     typedef std::vector<double> ArrayType;
 
-    const size_t N = 25000000;
+    const int N = 25000000;
 
     struct DoubleSqrt
     {
@@ -46,7 +46,7 @@ public:
 
     void init()
     {
-        for (size_t i = 0; i < sum; ++i)
+        for (int i = 0; i < sum; ++i)
         {
             testArray[i] = resultArray[i] = static_cast<double>(i);
             DoubleSqrt()(resultArray[i]);
@@ -57,9 +57,9 @@ public:
 private:
 
     CppTaskTestData()
-        : sum(0)
-        , testArray(N, 0)
+        : testArray(N, 0)
         , resultArray(N, 0)
+        , sum(0)
     {
     }
 
