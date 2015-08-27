@@ -135,7 +135,6 @@ inline void TaskManager::WaitTask(Task& waitTask)
 {
     wait_one_of waits{ &newTaskEvent, &waitTask.GetWaitEvent() };
 
-    bool done = false;
     while (!waitTask.CheckFinished())
     {
         Task* task = GetTask();
@@ -148,7 +147,6 @@ inline void TaskManager::WaitTask(Task& waitTask)
             }
             else if(res == 1)
             {
-                done = true;
                 break;
             }
             else
