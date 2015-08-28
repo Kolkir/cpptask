@@ -37,6 +37,7 @@
 #include "async.h"
 #include "event.h"
 #include "semaphor.h"
+#include "mutex.h"
 #include "processlock.h"
 
 #include "parallelfor.h"

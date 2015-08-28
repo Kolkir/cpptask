@@ -29,43 +29,47 @@
 #define _TASKTHREADIMPL_H_
 
 #include "task.h"
-#include "taskmanager.h"
-#include "waitoneof.h"
+#include "taskthread.h"
 
 #include <assert.h>
 
 namespace cpptask
 {
 
-inline TaskThread::TaskThread(TaskThreadPool& threadPool, semaphore& newTaskEvent)
-    : newTaskEvent(newTaskEvent)
-    , manager(new TaskManager(threadPool, newTaskEvent, this))
+inline TaskThread::TaskThread(TaskThreadPool& threadPool, EventManager& eventManager)
+    : eventManager(eventManager)
+    , taskManager(new TaskManager(threadPool, eventManager, this))
 {
 }
 
 inline TaskThread::~TaskThread()
 {
-    Stop();
+    Wait();
 }
 
 inline void TaskThread::Run()
 {
-    manager->RegisterInTLS();
-
-    wait_one_of waits { &newTaskEvent , &stopEvent };
+    taskManager->RegisterInTLS();
 
     bool done = false;
     while (!done)
     {
-        Task* task = manager->GetTask();
+        Task* task = taskManager->GetTask();
         if (task == nullptr)
         {           
-            int res = waits.wait();
-            if (res == 0)
+            EventId eventId = EventId::NoneEvent;
+            eventManager.wait([&eventId](EventId id)
             {
-                task = manager->GetTask();
+                eventId = id;
+                return id == EventId::NewTaskEvent ||
+                       id == EventId::ThreadStopEvent;
+            });
+
+            if (eventId == EventId::NewTaskEvent)
+            {
+                task = taskManager->GetTask();
             }
-            else if (res == 1)
+            else if (eventId == EventId::ThreadStopEvent)
             {
                 done = true;
                 break;
@@ -77,7 +81,7 @@ inline void TaskThread::Run()
         }
         if (task != nullptr)
         {
-            task->Run();
+            task->Run(eventManager);
         }
     }
 }
@@ -87,18 +91,17 @@ inline void TaskThread::Start()
     thread = std::move(std::thread(std::bind(&TaskThread::Run, this)));
 }
 
-inline void TaskThread::Stop()
+inline void TaskThread::Wait()
 {
     if (thread.joinable())
     {
-        stopEvent.notify();
         thread.join();
     }
 }
 
 inline TaskManager& TaskThread::GetTaskManager()
 {
-    return *manager;
+    return *taskManager;
 }
 
 }

@@ -29,12 +29,16 @@
 #define _PROCESS_LOCK_H_
 
 #include "async.h"
+#include "eventmanager.h"
 
 namespace cpptask
 {
-
-    template<class SyncPrimitive>
+    template<typename SyncPrimitive, typename Enable = void>
     class process_lock
+    {};
+
+    template<typename SyncPrimitive>
+    class process_lock<SyncPrimitive, typename std::enable_if<std::is_same<typename SyncPrimitive::EventManagerType, EventManager>::value>::type>
     {
     public:
         process_lock(SyncPrimitive& _guard)
@@ -43,13 +47,36 @@ namespace cpptask
             auto f = cpptask::async(std::launch::async,
                 [this]() 
             {
-                auto& manager = TaskManager::GetCurrent();
-                while (!guardLock.try_lock()) //TODO: remove loop
+                auto& taskManager = TaskManager::GetCurrent();
+                auto& eventManager = taskManager.GetEventManager();
+
+                bool done = false;
+                while(!done)
                 {
-                    manager.DoOneTask();
+                    EventId eventId = EventId::NoneEvent;
+                    eventManager.wait([&eventId](EventId id)
+                    {
+                        eventId = id;
+                        return id == EventId::NewTaskEvent ||
+                               id == EventId::CustomEvent;
+                    });
+
+                    if (eventId == EventId::NewTaskEvent)
+                    {
+                        taskManager.DoOneTask();
+                    }
+                    else if (eventId == EventId::CustomEvent)
+                    {
+                        done = guardLock.try_lock();
+                        break;
+                    }
+                    else
+                    {
+                        assert(false);
+                    }
                 }
             });
-            f.wait();
+            f.get();
         }
 
         ~process_lock()

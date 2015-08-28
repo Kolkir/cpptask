@@ -29,10 +29,10 @@
 #define _TASKTHREAD_H_
 
 #include "event.h"
+#include "eventmanager.h"
 #include "taskmanager.h"
 
 #include <memory>
-#include <atomic>
 #include <thread>
 
 namespace cpptask
@@ -44,7 +44,7 @@ class TaskThreadPool;
 class TaskThread
 {
 public:
-    TaskThread(TaskThreadPool& threadPool, semaphore& newTaskEvent);
+    TaskThread(TaskThreadPool& threadPool, EventManager& eventManager);
 
     ~TaskThread();
 
@@ -54,7 +54,7 @@ public:
 
     void Start();
 
-    void Stop();
+    void Wait();
 
     TaskManager& GetTaskManager();
 
@@ -63,9 +63,8 @@ private:
     void Run();
 
 private:
-    event stopEvent;
-    semaphore& newTaskEvent;
-    std::unique_ptr<TaskManager> manager;
+    EventManager& eventManager;
+    std::unique_ptr<TaskManager> taskManager;
     std::thread thread;
 };
 

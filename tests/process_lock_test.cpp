@@ -9,6 +9,7 @@
 namespace
 {
     std::mutex guard;
+    cpptask::mutex guard2;
 
     void processFuncLock()
     {
@@ -17,7 +18,7 @@ namespace
     }
     void processFuncLock2()
     {
-        cpptask::process_lock<std::mutex> lock(guard); //allow use thread for calculations
+        cpptask::process_lock<cpptask::mutex> lock(guard2); //allow use thread for calculations
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
@@ -42,7 +43,7 @@ TEST_F(CppTaskTest, ProcessLock_Parallel)
 {
     cpptask::TaskThreadPool threadPool(1);
 
-    std::unique_lock<std::mutex> lock(guard);
+    std::unique_lock<cpptask::mutex> lock(guard2);
     auto f1 = cpptask::async(std::launch::async, processFuncLock2);
     std::this_thread::sleep_for(std::chrono::milliseconds(10)); // additional thread blocked, he stole task
     ASSERT_NO_THROW(cpptask::for_each(testArray2.begin(), testArray2.end(), CppTaskTestData::DoubleSqrt(), 4)); //generate more tasks

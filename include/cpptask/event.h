@@ -28,15 +28,12 @@
 #ifndef _EVENT_H_
 #define _EVENT_H_
 
-#include "waitonebase.h"
-#include "waitoneof.h"
-
 #include <condition_variable>
 
 namespace cpptask
 {
 
-class event : public WaitOneBase<wait_one_of>
+class event
 {
 public:
 
@@ -65,7 +62,6 @@ public:
         std::lock_guard<std::mutex> lock(guard);
         signaled = true;
         cv.notify_all();
-        notifyWaiters();
     }
 
     bool check()
@@ -78,18 +74,6 @@ public:
     {
         std::unique_lock<std::mutex> lock(guard);
         signaled = false;
-    }
-
-    virtual void waitBase()
-    {
-        wait();
-    }
-
-protected:
-
-    virtual std::mutex& getMutex()
-    {
-        return guard;
     }
 
 private:

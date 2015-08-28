@@ -30,7 +30,7 @@
 
 #include "spscqueue.h"
 #include "tlskey.h"
-#include "semaphor.h"
+#include "eventmanager.h"
 
 namespace cpptask
 {
@@ -49,7 +49,7 @@ inline TLSKey& GetManagerKey()
 class TaskManager
 {
 public:
-    TaskManager(TaskThreadPool& threadPool, semaphore& newTaskEvent, TaskThread* parentThread);
+    TaskManager(TaskThreadPool& threadPool, EventManager& eventManager, TaskThread* parentThread);
 
     ~TaskManager();
 
@@ -67,12 +67,15 @@ public:
 
     static TaskManager& GetCurrent();
 
+    EventManager& GetEventManager();
+
     void RegisterInTLS();
 
     void RemoveFromTLS();
 
     void WaitTask(Task& waitTask);
 
+    void DoTask(Task& task);
     void DoOneTask();
 
 private:
@@ -80,7 +83,7 @@ private:
     TaskThreadPool& threadPool;
     SPSCQueue<Task*> taskQueue;
     std::mutex getGuard;
-    semaphore& newTaskEvent;
+    EventManager& eventManager;
 };
 
 }

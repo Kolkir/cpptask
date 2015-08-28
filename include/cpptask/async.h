@@ -66,35 +66,18 @@ namespace cpptask
             deffered = f.deffered;
         }
 
-        R get(TaskManager& manager)
-        {
-            if (deffered)
-            {
-                task->Run();
-                return realFuture.get();
-            }
-            else
-            {
-                if (!task->CheckFinished())
-                {
-                    manager.WaitTask(*task);
-                }
-                return realFuture.get();
-            }
-        }
-
         R get()
         {
+            auto& manager = TaskManager::GetCurrent();
             if (deffered)
             {
-                task->Run();
+                manager.DoTask(*task);
                 return realFuture.get();
             }
             else
             {
-                if (!task->CheckFinished())
-                {
-                    auto& manager = TaskManager::GetCurrent();
+                if (!task->IsFinished())
+                {                    
                     manager.WaitTask(*task);
                 }
                 return realFuture.get();
@@ -108,7 +91,7 @@ namespace cpptask
 
         void wait() const
         {
-            if (!task->CheckFinished())
+            if (!task->IsFinished())
             {
                 if (!deffered)
                 {

@@ -30,17 +30,16 @@
 
 #include "taskmanager.h"
 #include "threadpool.h"
-#include "waitoneof.h"
 
 #include <assert.h>
 
 namespace cpptask
 {
 
-inline TaskManager::TaskManager(TaskThreadPool& threadPool, semaphore& newTaskEvent, TaskThread* parentThread)
+inline TaskManager::TaskManager(TaskThreadPool& threadPool, EventManager& eventManager, TaskThread* parentThread)
     : parentThread(parentThread)
     , threadPool(threadPool)
-    , newTaskEvent(newTaskEvent)
+    , eventManager(eventManager)
 {
 }
 
@@ -56,7 +55,7 @@ inline size_t TaskManager::GetThreadsNum() const
 inline void TaskManager::AddTask(Task& task)
 {
     taskQueue.Enqueue(&task);
-    newTaskEvent.notify();
+    eventManager.notify(EventId::NewTaskEvent);
 }
 
 inline Task* TaskManager::GetOwnTask()
@@ -112,6 +111,11 @@ inline TaskManager& TaskManager::GetCurrent()
     }
 }
 
+inline EventManager& TaskManager::GetEventManager()
+{
+    return eventManager;
+}
+
 inline void TaskManager::RegisterInTLS()
 {
     GetManagerKey().SetValue(this);
@@ -127,26 +131,38 @@ inline void TaskManager::DoOneTask()
     Task* task = GetTask();
     if (task != nullptr)
     {
-        task->Run();
+        DoTask(*task);
     }
+}
+
+inline void TaskManager::DoTask(Task& task)
+{
+    task.Run(eventManager);
 }
 
 inline void TaskManager::WaitTask(Task& waitTask)
 {
-    wait_one_of waits{ &newTaskEvent, &waitTask.GetWaitEvent() };
-
-    while (!waitTask.CheckFinished())
+    bool done {false};
+    while (!done)
     {
         Task* task = GetTask();
         if (task == nullptr)
         {            
-            int res = waits.wait();
-            if (res == 0)
+            EventId eventId = EventId::NoneEvent;
+            eventManager.wait([&](EventId id)
+            {
+                eventId = id;
+                return id == EventId::NewTaskEvent ||
+                       (id == EventId::TaskFinishedEvent && waitTask.IsFinished());
+            });
+
+            if (eventId == EventId::NewTaskEvent)
             {
                 task = GetTask();
             }
-            else if(res == 1)
+            else if(eventId == EventId::TaskFinishedEvent)
             {
+                done = true;
                 break;
             }
             else
@@ -157,7 +173,7 @@ inline void TaskManager::WaitTask(Task& waitTask)
 
         if (task != nullptr)
         {
-            task->Run();
+            task->Run(eventManager);
         }
     }
 }

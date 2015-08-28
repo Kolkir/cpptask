@@ -28,15 +28,12 @@
 #ifndef _TASK_H_
 #define _TASK_H_
 
-#include "taskthread.h"
 #include "event.h"
 #include "alignedalloc.h"
+#include "eventmanager.h"
+#include "exception.h"
 
-#include <memory>
-#include <algorithm>
-#include <functional>
-#include <vector>
-#include <stdlib.h>
+#include <exception>
 
 #ifdef _MSC_VER
 #pragma warning( push )
@@ -63,8 +60,13 @@ public:
 
     virtual void Execute() = 0;
 
-    void Run()
+    void Run(EventManager& eventManager)
     {
+        if (IsFinished())
+        {
+            throw Exception("Task already finished");
+        }
+
         try
         {
             Execute();
@@ -74,6 +76,7 @@ public:
             lastException = std::current_exception();
         }
         waitEvent.notify();
+        eventManager.notify(EventId::TaskFinishedEvent); //required for multiple waits
     }
 
     std::exception_ptr GetLastException() const
@@ -81,7 +84,7 @@ public:
         return lastException;
     }
 
-    bool CheckFinished()
+    bool IsFinished()
     {
         return waitEvent.check();
     }
@@ -89,11 +92,6 @@ public:
     void Wait()
     {
         waitEvent.wait();
-    }
-
-    event& GetWaitEvent()
-    {
-        return waitEvent;
     }
 
     void* operator new(size_t size)

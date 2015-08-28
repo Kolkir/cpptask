@@ -28,7 +28,7 @@
 #ifndef _THREADPOOL_H_
 #define _THREADPOOL_H_
 
-#include "semaphor.h"
+#include "eventmanager.h"
 #include "taskthread.h"
 #include "taskmanager.h"
 #include "tlskey.h"
@@ -43,12 +43,12 @@ class TaskThreadPool
 public:
     TaskThreadPool(size_t threadsNum)
     {
-        manager.reset(new TaskManager(*this, newTaskEvent, 0));
-        manager->RegisterInTLS();
+        taskManager.reset(new TaskManager(*this, eventManager, 0));
+        taskManager->RegisterInTLS();
 
         for (size_t i = 0; i < threadsNum; ++i)
         {
-            TaskThreadPtr tptr(new TaskThread(*this, newTaskEvent));
+            TaskThreadPtr tptr(new TaskThread(*this, eventManager));
             threads.push_back(tptr);
         }
 
@@ -61,13 +61,15 @@ public:
 
     ~TaskThreadPool()
     {
-        Threads::iterator i = threads.begin();
-        Threads::iterator e = threads.end();
-        for (;i != e; ++i)
+        for (size_t i = 0; i < threads.size(); ++i)
         {
-            (*i)->Stop();
+            eventManager.notify(cpptask::EventId::ThreadStopEvent); //notify multiple waits
         }
-        manager->RemoveFromTLS();
+        for (auto& t : threads)
+        {
+            t->Wait();
+        }
+        taskManager->RemoveFromTLS();
     }
     
     TaskThreadPool(const TaskThreadPool&) = delete;
@@ -90,15 +92,15 @@ public:
 
     TaskManager& GetTaskManager()
     {
-        return *manager;
+        return *taskManager;
     }
 
 private:
     typedef std::shared_ptr<TaskThread> TaskThreadPtr;
     typedef std::vector<TaskThreadPtr> Threads;
     Threads threads;
-    std::unique_ptr<TaskManager> manager;
-    semaphore newTaskEvent;
+    std::unique_ptr<TaskManager> taskManager;
+    EventManager eventManager;
 };
 
 }

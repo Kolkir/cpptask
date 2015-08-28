@@ -28,60 +28,42 @@
 #ifndef _SEMAPHORE_H_
 #define _SEMAPHORE_H_
 
-#include "waitonebase.h"
-#include "waitoneof.h"
-
 #include <condition_variable>
 
 namespace cpptask
 {
-    class semaphore : public WaitOneBase<wait_one_of>
+    class semaphore
     {
     public:
-        explicit semaphore(size_t n = 0)
-            : count{ n }
-        {
-
-        }
+        explicit semaphore(int n = 0, int max = -1)
+            : maxCount { max }
+            , count{ n }
+        {}
 
         semaphore(const semaphore&) = delete;
+
         semaphore& operator=(const semaphore&) = delete;
 
-        void notify()
+        void unlock()
         {
             std::lock_guard<std::mutex> lock{ guard };
-            ++count;
-            cv.notify_one();
-            notifyWaiters();
+            if (maxCount > 0 && count < maxCount)
+            {
+                ++count;
+                cv.notify_one();
+            }
         }
 
-        void wait()
+        void lock()
         {
             std::unique_lock<std::mutex> lock{ guard };
             cv.wait(lock, [&] { return count > 0; });
             --count;
         }
 
-        bool check()
-        {
-            std::unique_lock<std::mutex> lock(guard);
-            return count > 0;
-        }
-
-        virtual void waitBase()
-        {
-            wait();
-        }
-
-    protected:
-
-        virtual std::mutex& getMutex()
-        {
-            return guard;
-        }
-
     private:
-        size_t count;
+        int maxCount;
+        int count;
         std::condition_variable cv;
         std::mutex guard;
     };
