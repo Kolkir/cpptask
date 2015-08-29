@@ -61,6 +61,17 @@ namespace cpptask
             --count;
         }
 
+        bool try_lock()
+        {
+            std::unique_lock<std::mutex> lock{ guard };
+            if (cv.wait_for(lock, std::chrono::milliseconds(0), [&] { return count > 0; }))
+            {
+                --count;
+                return true;
+            }
+            return false;
+        }
+
     private:
         int maxCount;
         int count;

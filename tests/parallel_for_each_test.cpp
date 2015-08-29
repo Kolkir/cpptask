@@ -2,8 +2,6 @@
 
 #include <cpptask/cpptask.h>
 
-#include <algorithm>
-
 TEST_F(CppTaskTest, ForEach_Serial)
 {
     cpptask::TaskThreadPool threadPool(0);

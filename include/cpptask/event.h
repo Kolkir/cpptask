@@ -40,12 +40,25 @@ public:
     event() noexcept
         : signaled(false)
     {}
-    
+
     ~event()
     {}
 
     event(const event&) = delete;
     const event& operator=(const event&) = delete;
+
+    void notify()
+    {
+        std::lock_guard<std::mutex> lock(guard);
+        signaled = true;
+        cv.notify_all();
+    }
+
+    void reset()
+    {
+        std::unique_lock<std::mutex> lock(guard);
+        signaled = false;
+    }
 
     void wait()
     {
@@ -57,29 +70,61 @@ public:
         cv.wait(lock, [&] {return signaled; });
     }
 
-    void notify()
-    {        
-        std::lock_guard<std::mutex> lock(guard);
-        signaled = true;
-        cv.notify_all();
-    }
-
     bool check()
     {
         std::unique_lock<std::mutex> lock(guard);
         return signaled;
     }
 
-    void reset()
-    {
-        std::unique_lock<std::mutex> lock(guard);
-        signaled = false;
-    }
-
 private:
     std::condition_variable cv;
     std::mutex guard;
     bool signaled;
+};
+
+//use this class only if you have corresponding process_lock object
+class lockable_event
+{
+public:
+    typedef EventManager EventManagerType;
+
+    lockable_event() noexcept
+    {}
+    
+    ~lockable_event()
+    {}
+
+    lockable_event(const lockable_event&) = delete;
+    const lockable_event& operator=(const lockable_event&) = delete;
+
+    void notify()
+    {
+        evt.notify();
+        TaskManager::GetCurrent().GetEventManager().notify(EventId::CustomEvent);
+    }
+
+    void reset()
+    {
+        evt.reset();
+    }
+
+    void lock()
+    {
+        evt.wait();
+    }
+
+    void unlock()
+    {
+        //do nothing
+    }
+
+    bool try_lock()
+    {
+        return evt.check();
+    }
+
+private:
+    event evt;
 };
 
 }

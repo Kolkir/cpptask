@@ -35,6 +35,7 @@
 namespace cpptask
 {
 
+//use this class only if you have corresponding process_lock object
 class mutex
 {
 public:

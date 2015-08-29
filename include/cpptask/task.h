@@ -33,7 +33,7 @@
 #include "eventmanager.h"
 #include "exception.h"
 
-#include <exception>
+#include <atomic>
 
 #ifdef _MSC_VER
 #pragma warning( push )
@@ -43,15 +43,16 @@
 namespace cpptask
 {
 
+// wait for task finished only with TaskManager::WaitTask
 class alignas(_CPP_TASK_CACHE_LINE_SIZE_) Task
 {
 public:
     Task()
+        : isFinished(false)
     {}
     
     virtual ~Task()
     {
-        Wait();
     }
 
     Task(const Task&) = delete;
@@ -75,7 +76,7 @@ public:
         {
             lastException = std::current_exception();
         }
-        waitEvent.notify();
+        isFinished = true;
         eventManager.notify(EventId::TaskFinishedEvent); //required for multiple waits
     }
 
@@ -86,12 +87,7 @@ public:
 
     bool IsFinished()
     {
-        return waitEvent.check();
-    }
-
-    void Wait()
-    {
-        waitEvent.wait();
+        return isFinished == true;
     }
 
     void* operator new(size_t size)
@@ -111,7 +107,7 @@ public:
 
 private:
     std::exception_ptr lastException;
-    event waitEvent;
+    std::atomic<bool> isFinished;
 };
 
 }
