@@ -27,9 +27,6 @@ TEST_F(CppTaskTest, Async_Deffered)
     ASSERT_TRUE(f1.valid());
     ASSERT_TRUE(f2.valid());
 
-    ASSERT_FALSE(f1.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready);
-    ASSERT_FALSE(f2.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready);
-
     ASSERT_NO_THROW(f1.get());
     ASSERT_NO_THROW(f2.get());
 
@@ -47,8 +44,8 @@ TEST_F(CppTaskTest, Async_Parallel)
     ASSERT_TRUE(f1.valid());
     ASSERT_TRUE(f2.valid());
 
-    ASSERT_FALSE(f1.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready);
-    ASSERT_FALSE(f2.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready);
+    //try don't use future::wait_for - because it's blocking operation which exclude current thread from calculations
+    //ASSERT_FALSE(f1.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready);
 
     ASSERT_NO_THROW(f1.get());
     ASSERT_NO_THROW(f2.get());
@@ -67,12 +64,10 @@ TEST_F(CppTaskTest, Async_ParallelWait)
     ASSERT_TRUE(f1.valid());
     ASSERT_TRUE(f2.valid());
 
-    ASSERT_FALSE(f1.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready);
-    ASSERT_FALSE(f2.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready);
-
-    ASSERT_NO_THROW(f1.wait());
-    ASSERT_NO_THROW(f1.get());
+    ASSERT_NO_THROW(f1.wait());    
     ASSERT_NO_THROW(f2.wait());
+
+    ASSERT_NO_THROW(f1.get());
     ASSERT_NO_THROW(f2.get());
 
     ASSERT_EQ(CppTaskTestData::instance().getResultArray(), testArray);
