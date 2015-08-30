@@ -28,6 +28,8 @@
 #ifndef _EVENT_H_
 #define _EVENT_H_
 
+#include "taskmanager.h"
+
 #include <condition_variable>
 
 namespace cpptask
@@ -54,26 +56,23 @@ public:
         cv.notify_all();
     }
 
-    void reset()
-    {
-        std::unique_lock<std::mutex> lock(guard);
-        signaled = false;
-    }
-
     void wait()
     {
         std::unique_lock<std::mutex> lock(guard);
-        if (signaled)
-        {
-            return;
-        }
         cv.wait(lock, [&] {return signaled; });
+        signaled = false;        
     }
 
     bool check()
     {
         std::unique_lock<std::mutex> lock(guard);
-        return signaled;
+        if (cv.wait_for(lock, std::chrono::milliseconds(0), [&] {return signaled; }))
+        {
+            signaled = false;
+            cv.notify_all();
+            return true;
+        }
+        return false;
     }
 
 private:
@@ -101,11 +100,6 @@ public:
     {
         evt.notify();
         TaskManager::GetCurrent().GetEventManager().notify(EventId::CustomEvent);
-    }
-
-    void reset()
-    {
-        evt.reset();
     }
 
     void lock()

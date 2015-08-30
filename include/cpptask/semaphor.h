@@ -28,6 +28,8 @@
 #ifndef _SEMAPHORE_H_
 #define _SEMAPHORE_H_
 
+#include "taskmanager.h"
+
 #include <condition_variable>
 
 namespace cpptask
@@ -47,7 +49,8 @@ namespace cpptask
         void unlock()
         {
             std::lock_guard<std::mutex> lock{ guard };
-            if (maxCount > 0 && count < maxCount)
+            if ((maxCount > 0 && count < maxCount) ||
+                 maxCount <= 0)
             {
                 ++count;
                 cv.notify_one();
@@ -77,6 +80,42 @@ namespace cpptask
         int count;
         std::condition_variable cv;
         std::mutex guard;
+    };
+
+    //use this class only if you have corresponding process_lock object
+    class lockable_semaphore
+    {
+    public:
+        typedef EventManager EventManagerType;
+
+        explicit lockable_semaphore(int n = 0, int max = -1) noexcept
+            : sem(n, max)
+        {}
+
+        ~lockable_semaphore()
+        {}
+
+        lockable_semaphore(const lockable_semaphore&) = delete;
+        const lockable_semaphore& operator=(const lockable_semaphore&) = delete;
+
+        void lock()
+        {
+            sem.lock();
+        }
+
+        void unlock()
+        {
+            sem.unlock();
+            TaskManager::GetCurrent().GetEventManager().notify(EventId::CustomEvent);
+        }
+
+        bool try_lock()
+        {
+            return sem.try_lock();
+        }
+
+    private:
+        semaphore sem;
     };
 }
 #endif

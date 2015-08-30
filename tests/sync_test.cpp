@@ -1,82 +1,62 @@
 #include <gtest/gtest.h>
-/*
-#include <cpptask/event.h>
-#include <cpptask/semaphor.h>
-#include <cpptask/waitoneof.h>
+
+#include <cpptask/cpptask.h>
 
 #include <future>
 
 TEST(SyncTest, Event)
 {
-    cpptask::event m;
+    int count = 0;
+    cpptask::event e1;
+    cpptask::event e2;
     {
-        m.notify();
-        auto f = std::async([&]()
+        auto f = std::async(std::launch::async, [&]()
         {
-            ASSERT_TRUE(m.check());
+            while (count != 5)
+            {
+                e1.wait();
+                ++count;            
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                e2.notify();
+            }
         });
+
+        for (int i = 0; i < 5; ++i)
+        {
+            e1.notify();
+            e2.wait();
+        }
         f.wait();
     }
-    m.notify();
-    m.notify();
+    ASSERT_EQ(5, count);
 }
-
-TEST(SyncTest, EventMultipleImmediateUnlock)
-{
-    cpptask::event e1;
-    cpptask::event e2;
-
-    cpptask::wait_one_of waits{&e1, &e2};
-
-    e2.notify();
-    auto f = std::async([&]()
-    {        
-        ASSERT_EQ(1, waits.wait());
-    });
-    f.wait();
-
-    e1.notify();
-    e2.notify();
-}
-
-TEST(SyncTest, EventMultipleWaitUnlock)
-{
-    cpptask::event e1;
-    cpptask::event e2;
-
-    cpptask::wait_one_of waits {&e1, &e2 };
-
-    auto f = std::async([&]()
-    {        
-        int res = waits.wait();
-        ASSERT_EQ(0, res);
-    });
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    e1.notify();
-
-    f.wait();
-}
-
 
 TEST(SyncTest, Semaphore)
 {
-    cpptask::semaphore s(2);
+    cpptask::semaphore s(2,2);
     {
-
-        auto f1 = std::async([&]()
+        auto f1 = std::async(std::launch::async,[&]()
         {
-            ASSERT_TRUE(s.check());
+            s.lock();
+            std::cout << "f1\n";
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            s.unlock();
         });
 
-        auto f2 = std::async([&]()
+        auto f2 = std::async(std::launch::async,[&]()
         {
-            ASSERT_TRUE(s.check());
+            s.lock();
+            std::cout << "f2\n";
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            s.unlock();
         });
 
-        s.notify();
-        auto f3 = std::async([&]()
+        auto f3 = std::async(std::launch::async,[&]()
         {
-            ASSERT_TRUE(s.check());
+            s.lock();
+            std::cout << "f3\n";
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            s.unlock();
         });
 
         f1.wait();
@@ -84,26 +64,3 @@ TEST(SyncTest, Semaphore)
         f3.wait();
     }
 }
-
-TEST(SyncTest, SemaphoreMultipleWaitUnlock)
-{
-    cpptask::event e;
-    cpptask::semaphore s;
-
-    cpptask::wait_one_of waits{&e,&s};
-
-    auto f = std::async([&]()
-    {        
-        int res = waits.wait();
-        ASSERT_EQ(1, res);
-    });
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    s.notify();
-    s.notify();
-    s.notify();
-
-    f.wait();
-
-    e.notify();
-}
-*/
