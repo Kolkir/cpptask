@@ -25,15 +25,15 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _EVENT_MANGER_H_
-#define _EVENT_MANGER_H_
+#ifndef _CPP_TASK_EVENT_MANGER_H_
+#define _CPP_TASK_EVENT_MANGER_H_
 
 #include <queue>
 
 #include <condition_variable>
 
-namespace cpptask
-{
+namespace cpptask { namespace internal {
+
     enum class EventId : int
     {
         NoneEvent = -1,
@@ -95,6 +95,7 @@ namespace cpptask
         std::condition_variable cv;
         std::mutex guard;
     };
-}
+}}
+
 #endif
 

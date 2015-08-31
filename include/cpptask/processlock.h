@@ -25,8 +25,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _PROCESS_LOCK_H_
-#define _PROCESS_LOCK_H_
+#ifndef _CPP_TASK_PROCESS_LOCK_H_
+#define _CPP_TASK_PROCESS_LOCK_H_
 
 #include "async.h"
 #include "eventmanager.h"
@@ -38,7 +38,7 @@ namespace cpptask
     {};
 
     template<typename SyncPrimitive>
-    class process_lock<SyncPrimitive, typename std::enable_if<std::is_same<typename SyncPrimitive::EventManagerType, EventManager>::value>::type>
+    class process_lock<SyncPrimitive, typename std::enable_if<std::is_same<typename SyncPrimitive::EventManagerType, internal::EventManager>::value>::type>
     {
     public:
         process_lock(SyncPrimitive& _guard)
@@ -47,25 +47,25 @@ namespace cpptask
             auto f = cpptask::async(std::launch::async,
                 [this]() 
             {
-                auto& taskManager = TaskManager::GetCurrent();
+                auto& taskManager = internal::TaskManager::GetCurrent();
                 auto& eventManager = taskManager.GetEventManager();
 
                 bool done = false;
                 while(!done)
                 {
-                    EventId eventId = EventId::NoneEvent;
-                    eventManager.wait([&eventId](EventId id)
+                    internal::EventId eventId = internal::EventId::NoneEvent;
+                    eventManager.wait([&eventId](internal::EventId id)
                     {
                         eventId = id;
-                        return id == EventId::NewTaskEvent ||
-                               id == EventId::CustomEvent;
+                        return id == internal::EventId::NewTaskEvent ||
+                               id == internal::EventId::CustomEvent;
                     });
 
-                    if (eventId == EventId::NewTaskEvent)
+                    if (eventId == internal::EventId::NewTaskEvent)
                     {
                         taskManager.DoOneTask();
                     }
-                    else if (eventId == EventId::CustomEvent)
+                    else if (eventId == internal::EventId::CustomEvent)
                     {
                         done = guardLock.try_lock();
                         break;

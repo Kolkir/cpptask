@@ -25,8 +25,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _TLSKEY_SELECT_H_
-#define _TLSKEY_SELECT_H_
+#ifndef _CPP_TASK_TLSKEY_SELECT_H_
+#define _CPP_TASK_TLSKEY_SELECT_H_
 
 #ifdef _WIN32
 #include "Win/tlskey.h"

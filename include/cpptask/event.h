@@ -25,8 +25,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _EVENT_H_
-#define _EVENT_H_
+#ifndef _CPP_TASK_EVENT_H_
+#define _CPP_TASK_EVENT_H_
 
 #include "taskmanager.h"
 
@@ -85,7 +85,7 @@ private:
 class lockable_event
 {
 public:
-    typedef EventManager EventManagerType;
+    typedef internal::EventManager EventManagerType;
 
     lockable_event() noexcept
     {}
@@ -99,7 +99,7 @@ public:
     void notify()
     {
         evt.notify();
-        TaskManager::GetCurrent().GetEventManager().notify(EventId::CustomEvent);
+        internal::TaskManager::GetCurrent().GetEventManager().notify(internal::EventId::CustomEvent);
     }
 
     void lock()

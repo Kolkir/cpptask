@@ -25,8 +25,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _TASK_H_
-#define _TASK_H_
+#ifndef _CPP_TASK_TASK_H_
+#define _CPP_TASK_TASK_H_
 
 #include "event.h"
 #include "alignedalloc.h"
@@ -40,8 +40,7 @@
 #pragma warning( disable : 4324 )
 #endif
 
-namespace cpptask
-{
+namespace cpptask { namespace internal {
 
 // wait for task finished only with TaskManager::WaitTask
 class alignas(_CPP_TASK_CACHE_LINE_SIZE_) Task
@@ -110,7 +109,7 @@ private:
     std::atomic<bool> isFinished;
 };
 
-}
+}}
 
 #ifdef _MSC_VER
 #pragma warning( pop )

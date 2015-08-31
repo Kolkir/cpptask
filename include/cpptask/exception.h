@@ -25,8 +25,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _EXCEPTION_H_
-#define _EXCEPTION_H_
+#ifndef _CPP_TASK_EXCEPTION_H_
+#define _CPP_TASK_EXCEPTION_H_
 
 #include <exception>
 #include <string>

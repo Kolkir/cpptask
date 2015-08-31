@@ -6,7 +6,7 @@
 
 TEST(ExceptionsTest, Propagation)
 {
-    cpptask::TaskThreadPool threadPool(4);
+    cpptask::initialzer init(4);
     auto f = cpptask::async(std::launch::async,
         []()
     {

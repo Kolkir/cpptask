@@ -25,52 +25,31 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _CPP_TASK_MUTEX_H_
-#define _CPP_TASK_MUTEX_H_
+#ifndef _CPP_TASK_INIT_H_
+#define _CPP_TASK_INIT_H_
 
-#include "taskmanager.h"
-
-#include <mutex>
+#include "threadpool.h"
 
 namespace cpptask
 {
 
-//use this class only if you have corresponding process_lock object
-class mutex
+class initialzer
 {
 public:
-    typedef internal::EventManager EventManagerType;
-
-    mutex() noexcept
-    {}
-
-    ~mutex()
-    {}
-
-    mutex(const mutex&) = delete;
-
-    const mutex& operator=(const mutex&) = delete;
-
-    void lock()
+    initialzer(size_t threadsNum)
+        : threadPool(threadsNum)
     {
-       guard.lock();
     }
 
-    void unlock()
-    {
-        guard.unlock();
-        internal::TaskManager::GetCurrent().GetEventManager().notify(internal::EventId::CustomEvent);
-    }
 
-    bool try_lock()
-    {
-        return guard.try_lock();
-    }
+
+    initialzer(const initialzer&) = delete;
+
+    const initialzer& operator=(const initialzer&) = delete;
 
 private:
-    std::mutex guard;
+    internal::TaskThreadPool threadPool;
 };
 
 }
-
 #endif

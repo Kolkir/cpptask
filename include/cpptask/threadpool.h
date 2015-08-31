@@ -25,8 +25,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _THREADPOOL_H_
-#define _THREADPOOL_H_
+#ifndef _CPP_TASK_THREADPOOL_H_
+#define _CPP_TASK_THREADPOOL_H_
 
 #include "eventmanager.h"
 #include "taskthread.h"
@@ -35,8 +35,8 @@
 
 #include <memory>
 
-namespace cpptask
-{
+namespace cpptask { namespace internal {
+
 
 class TaskThreadPool
 {
@@ -63,7 +63,7 @@ public:
     {
         for (size_t i = 0; i < threads.size(); ++i)
         {
-            eventManager.notify(cpptask::EventId::ThreadStopEvent); //notify multiple waits
+            eventManager.notify(cpptask::internal::EventId::ThreadStopEvent); //notify multiple waits
         }
         for (auto& t : threads)
         {
@@ -103,5 +103,5 @@ private:
     EventManager eventManager;
 };
 
-}
+}}
 #endif

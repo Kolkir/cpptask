@@ -25,8 +25,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _CPPTASK_ASYNC_H_
-#define _CPPTASK_ASYNC_H_
+#ifndef _CPP_TASK_ASYNC_H_
+#define _CPP_TASK_ASYNC_H_
 
 #include <future>
 #include <chrono>
@@ -40,16 +40,17 @@ namespace cpptask
         future() noexcept
         {}
 
+        //contructor for internal use only
+        future(std::unique_ptr<internal::Task> task, std::future<R> f, bool deffered) noexcept
+            : task(std::move(task))
+            , realFuture(std::move(f))
+            , deffered(deffered)
+        {}
+
         future(future&& f)
             : task(std::move(f.task))
             , realFuture(std::move(f.realFuture))
             , deffered(f.deffered)
-        {}
-
-        future(std::unique_ptr<Task> task, std::future<R> f, bool deffered) noexcept
-            : task(std::move(task))
-            , realFuture(std::move(f))
-            , deffered(deffered)
         {}
 
         future(const future& rhs) = delete;
@@ -68,7 +69,7 @@ namespace cpptask
 
         R get()
         {
-            auto& manager = TaskManager::GetCurrent();
+            auto& manager = internal::TaskManager::GetCurrent();
             if (deffered)
             {
                 manager.DoTask(*task);
@@ -95,7 +96,7 @@ namespace cpptask
             {
                 if (!deffered)
                 {
-                    auto& manager = TaskManager::GetCurrent();
+                    auto& manager = internal::TaskManager::GetCurrent();
                     manager.WaitTask(*task);
                 }
             }
@@ -114,7 +115,7 @@ namespace cpptask
         }
 
     private:
-        std::unique_ptr<Task> task;
+        std::unique_ptr<internal::Task> task;
         std::future<R> realFuture;
         bool deffered;
     };
@@ -146,7 +147,7 @@ namespace cpptask
     {
         std::packaged_task <typename std::result_of<Function(Args...)>::type()> job(std::bind(std::forward<Function>(f), std::forward<Args>(args)...));
         auto res = job.get_future();
-        std::unique_ptr<Task> task(new internal::AsyncTask<decltype(job)>(std::move(job)));
+        std::unique_ptr<internal::Task> task(new internal::AsyncTask<decltype(job)>(std::move(job)));
 
         if (policy == std::launch::deferred)
         {
@@ -154,7 +155,7 @@ namespace cpptask
         }
         else if (policy == std::launch::async)
         {
-            auto& manager = TaskManager::GetCurrent();
+            auto& manager = internal::TaskManager::GetCurrent();
             manager.AddTask(*task);
             return future<typename std::result_of<Function(Args...)>::type>(std::move(task), std::move(res), false);
         }

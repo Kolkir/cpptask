@@ -25,8 +25,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _ALIGNED_ALLOC_SELECT_H_
-#define _ALIGNED_ALLOC_SELECT_H_
+#ifndef _CPP_TASK_ALIGNED_ALLOC_SELECT_H_
+#define _CPP_TASK_ALIGNED_ALLOC_SELECT_H_
 
 #ifdef _WIN32
 #include "Win/alignedalloc.h"

@@ -25,8 +25,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _PARALLEL_FOR_H_
-#define _PARALLEL_FOR_H_
+#ifndef _CPP_TASK_PARALLEL_FOR_H_
+#define _CPP_TASK_PARALLEL_FOR_H_
 
 #include "range.h"
 #include "async.h"
@@ -39,10 +39,10 @@ namespace cpptask
 template<class Iterator, class Functor>
 void for_each(Iterator start, Iterator end, Functor functor, int chunksNum = -1)
 {
-    auto& manager = TaskManager::GetCurrent();
-    typedef Range<Iterator> RangeType;
+    auto& manager = internal::TaskManager::GetCurrent();
+    typedef range<Iterator> RangeType;
     typedef std::vector<RangeType> Ranges;
-    Ranges ranges = SplitRange(start, end, chunksNum > 1 ? static_cast<size_t>(chunksNum): manager.GetThreadsNum());
+    Ranges ranges = split_range(start, end, chunksNum > 1 ? static_cast<size_t>(chunksNum): manager.GetThreadsNum());
     std::vector<future<void>> futures;
     for (const auto& r : ranges)
     {

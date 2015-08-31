@@ -25,16 +25,15 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _TASKTHREADIMPL_H_
-#define _TASKTHREADIMPL_H_
+#ifndef _CPP_TASK_TASKTHREADIMPL_H_
+#define _CPP_TASK_TASKTHREADIMPL_H_
 
 #include "task.h"
 #include "taskthread.h"
 
 #include <assert.h>
 
-namespace cpptask
-{
+namespace cpptask { namespace internal {
 
 inline TaskThread::TaskThread(TaskThreadPool& threadPool, EventManager& eventManager)
     : eventManager(eventManager)
@@ -104,5 +103,5 @@ inline TaskManager& TaskThread::GetTaskManager()
     return *taskManager;
 }
 
-}
+}}
 #endif

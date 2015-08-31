@@ -6,7 +6,7 @@
 
 namespace
 {
-    double process_func(const cpptask::Range<CppTaskTestData::ArrayType::iterator>& range)
+    double process_func(const cpptask::range<CppTaskTestData::ArrayType::iterator>& range)
     {
         double res = 0;
         std::for_each(range.start, range.end,
@@ -26,7 +26,7 @@ namespace
 
 TEST_F(CppTaskTest, Reduce_Serial)
 {
-    cpptask::TaskThreadPool threadPool(0);
+    cpptask::initialzer init(0);
 
     double sum = cpptask::reduce<double>(testArray.begin(), testArray.end(), process_func, join_func);
 
@@ -36,7 +36,7 @@ TEST_F(CppTaskTest, Reduce_Serial)
 
 TEST_F(CppTaskTest, Reduce_Parallel)
 {
-    cpptask::TaskThreadPool threadPool(4);
+    cpptask::initialzer init(4);
 
     double sum = cpptask::reduce<double>(testArray.begin(), testArray.end(), process_func, join_func);
 

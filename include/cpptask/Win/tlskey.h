@@ -25,8 +25,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _TLSKEY_H_
-#define _TLSKEY_H_
+#ifndef _CPP_TASK_TLSKEY_H_
+#define _CPP_TASK_TLSKEY_H_
 
 #include "../exception.h"
 
@@ -34,8 +34,7 @@
 #include <assert.h>
 #include "winerrmsg.h"
 
-namespace cpptask
-{
+namespace cpptask { namespace internal {
 
 class TLSKey
 {
@@ -83,6 +82,6 @@ private:
     DWORD tlsIndex;
 };
 
-}
+}}
 
 #endif

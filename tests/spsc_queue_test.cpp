@@ -47,7 +47,7 @@ namespace
 
 TEST(SPSCTest, PushPop)
 {
-    cpptask::SPSCQueue<int> queue;
+    cpptask::internal::SPSCQueue<int> queue;
 
     queue.Enqueue(1);
     queue.Enqueue(2);
@@ -75,7 +75,7 @@ TEST(SPSCTest, PushPop)
 #if defined(_DEBUG) || defined(DEBUG)
 TEST(SPSCTest, Structure)
 {
-    cpptask::SPSCQueue<int> queue(-1);
+    cpptask::internal::SPSCQueue<int> queue(-1);
 
     queue.Enqueue(1);
     queue.Enqueue(2);
@@ -127,7 +127,7 @@ TEST(SPSCTest, Structure)
 
 TEST(SPSCTest, Parallel)
 {
-    cpptask::SPSCQueue<int> queue;
+    cpptask::internal::SPSCQueue<int> queue;
     const int N = 1000;
 
     std::random_device rd;

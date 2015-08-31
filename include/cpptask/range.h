@@ -25,8 +25,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RANGE_H_
-#define _RANGE_H_
+#ifndef _CPP_TASK_RANGE_H_
+#define _CPP_TASK_RANGE_H_
 
 #include <algorithm>
 #include <vector>
@@ -35,13 +35,13 @@ namespace cpptask
 {
 
 template<class Iterator>
-class Range
+class range
 {
 public:
     typedef Iterator value_type;
-    Range(){}
-    ~Range(){}
-    Range(Iterator start, Iterator end)
+    range(){}
+    ~range(){}
+    range(Iterator start, Iterator end)
         : start(start)
         , end(end)
     {
@@ -66,10 +66,11 @@ typename std::enable_if<std::is_arithmetic<I>::value,I>::type& get_iterator_valu
     return i;
 }
 
+namespace internal {
 template<class Iterator, class Diff>
-std::vector<Range<Iterator> > SplitRangeBase(Iterator start, Iterator end, Diff rangeLen, size_t rangesNum)
+std::vector<range<Iterator> > SplitRangeBase(Iterator start, Iterator end, Diff rangeLen, size_t rangesNum)
 {
-    typedef Range<Iterator> RANGE;
+    typedef range<Iterator> RANGE;
     if (rangesNum != 0)
     {
         rangeLen /= rangesNum;
@@ -91,19 +92,19 @@ std::vector<Range<Iterator> > SplitRangeBase(Iterator start, Iterator end, Diff 
     }
     return ranges;
 }
-
-
-template<class Iterator>
-std::vector<Range<Iterator> > SplitRange(Iterator start, Iterator end, size_t rangesNum)
-{
-    return SplitRangeBase(start, end, std::distance(start, end), rangesNum);
 }
 
 template<class Iterator>
-std::vector<Range<Iterator> > SplitNumRange(Iterator start, Iterator end, size_t rangesNum)
+std::vector<range<Iterator> > split_range(Iterator start, Iterator end, size_t rangesNum)
+{
+    return internal::SplitRangeBase(start, end, std::distance(start, end), rangesNum);
+}
+
+template<class Iterator>
+std::vector<range<Iterator> > split_num_range(Iterator start, Iterator end, size_t rangesNum)
 {
     assert(start <= end);
-    return SplitRangeBase(start, end, end - start, rangesNum);
+    return internal::SplitRangeBase(start, end, end - start, rangesNum);
 }
 
 }

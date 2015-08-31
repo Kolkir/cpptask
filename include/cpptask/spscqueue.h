@@ -27,14 +27,13 @@
 
 //Idea taken from http://www.1024cores.net/home/lock-free-algorithms/queues/unbounded-spsc-queue
 
-#ifndef _SPSCQUEUE_H_
-#define _SPSCQUEUE_H_
+#ifndef _CPP_TASK_SPSCQUEUE_H_
+#define _CPP_TASK_SPSCQUEUE_H_
 
 #include <cassert>
 #include <atomic>
 
-namespace cpptask
-{
+namespace cpptask { namespace internal {
 
 template<class T>
 class SPSCQueue
@@ -167,7 +166,7 @@ private:
     Node* cache_mid; // points somewhere between cache_start and head - minimize accesses to the head node during allocation
 };
 
-}
+}}
 
 #endif
 

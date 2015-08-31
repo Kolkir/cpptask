@@ -25,8 +25,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _TASKTHREAD_H_
-#define _TASKTHREAD_H_
+#ifndef _CPP_TASK_TASKTHREAD_H_
+#define _CPP_TASK_TASKTHREAD_H_
 
 #include "event.h"
 #include "eventmanager.h"
@@ -35,8 +35,7 @@
 #include <memory>
 #include <thread>
 
-namespace cpptask
-{
+namespace cpptask { namespace internal {
 
 class Task;
 class TaskThreadPool;
@@ -68,5 +67,5 @@ private:
     std::thread thread;
 };
 
-}
+}}
 #endif

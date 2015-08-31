@@ -25,8 +25,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _CPPTASK_H_
-#define _CPPTASK_H_
+#ifndef _CPP_TASK_H_
+#define _CPP_TASK_H_
 
 #define _CPP_TASK_CACHE_LINE_SIZE_ 64
 
@@ -34,6 +34,7 @@
 #include "taskthreadimpl.h"
 #include "taskmanagerlimpl.h"
 #include "threadpool.h"
+#include "init.h"
 #include "async.h"
 #include "event.h"
 #include "semaphor.h"

@@ -25,13 +25,12 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _ALIGNED_ALLOC_H_
-#define _ALIGNED_ALLOC_H_
+#ifndef _CPP_TASK_ALIGNED_ALLOC_H_
+#define _CPP_TASK_ALIGNED_ALLOC_H_
 
 #include <malloc.h>
 
-namespace cpptask
-{
+namespace cpptask { namespace internal {
 
 inline void* aligned_alloc(size_t align_size, size_t size)
 {
@@ -51,6 +50,6 @@ inline void free(void* ptr)
 #endif
 }
 
-}
+}}
 
 #endif

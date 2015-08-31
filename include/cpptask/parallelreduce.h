@@ -25,8 +25,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _PARALLEL_REDUCE_H_
-#define _PARALLEL_REDUCE_H_
+#ifndef _CPP_TASK_PARALLEL_REDUCE_H_
+#define _CPP_TASK_PARALLEL_REDUCE_H_
 
 #include "taskmanager.h"
 #include "range.h"
@@ -43,7 +43,7 @@ namespace internal
         {
             assert(width >= 2);
             const size_t splitCount = (std::max)(size_t(2), width);
-            std::vector<Range> ranges = SplitRange(range.start, range.end, splitCount);
+            std::vector<Range> ranges = split_range(range.start, range.end, splitCount);
             std::vector<future<ReturnType>> futures;
             for (size_t i = 0; i < splitCount; ++i) //put tasks to queue - they can be calculated in parallel
             {
@@ -72,7 +72,7 @@ namespace internal
 template<class ReturnType, class Iterator, class ProcessFunction, class JoinFunction>
 ReturnType reduce(Iterator start, Iterator end, ProcessFunction&& process, JoinFunction&& join, size_t depth = 5, size_t width = 2)
 {
-    typedef Range<Iterator> RangeType;
+    typedef range<Iterator> RangeType;
 
     RangeType range(start, end);
 

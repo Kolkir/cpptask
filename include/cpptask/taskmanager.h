@@ -25,15 +25,14 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _TASKMANAGER_H_
-#define _TASKMANAGER_H_
+#ifndef _CPP_TASK_TASKMANAGER_H_
+#define _CPP_TASK_TASKMANAGER_H_
 
 #include "spscqueue.h"
 #include "tlskey.h"
 #include "eventmanager.h"
 
-namespace cpptask
-{
+namespace cpptask { namespace internal {
 
 class Task;
 class TaskThreadPool;
@@ -86,5 +85,5 @@ private:
     EventManager& eventManager;
 };
 
-}
+}}
 #endif

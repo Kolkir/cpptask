@@ -4,7 +4,7 @@
 
 TEST_F(CppTaskTest, ForEach_Serial)
 {
-    cpptask::TaskThreadPool threadPool(0);
+    cpptask::initialzer init(0);
 
     ASSERT_NO_THROW(cpptask::for_each(testArray.begin(), testArray.end(), CppTaskTestData::DoubleSqrt()));
 
@@ -13,7 +13,7 @@ TEST_F(CppTaskTest, ForEach_Serial)
 
 TEST_F(CppTaskTest, ForEach_Parallel)
 {
-    cpptask::TaskThreadPool threadPool(4);
+    cpptask::initialzer init(4);
 
     ASSERT_NO_THROW(cpptask::for_each(testArray.begin(), testArray.end(), CppTaskTestData::DoubleSqrt()));
 

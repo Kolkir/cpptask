@@ -25,8 +25,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _SEMAPHORE_H_
-#define _SEMAPHORE_H_
+#ifndef _CPP_TASK_SEMAPHORE_H_
+#define _CPP_TASK_SEMAPHORE_H_
 
 #include "taskmanager.h"
 
@@ -86,7 +86,7 @@ namespace cpptask
     class lockable_semaphore
     {
     public:
-        typedef EventManager EventManagerType;
+        typedef internal::EventManager EventManagerType;
 
         explicit lockable_semaphore(int n = 0, int max = -1) noexcept
             : sem(n, max)
@@ -106,7 +106,7 @@ namespace cpptask
         void unlock()
         {
             sem.unlock();
-            TaskManager::GetCurrent().GetEventManager().notify(EventId::CustomEvent);
+            internal::TaskManager::GetCurrent().GetEventManager().notify(internal::EventId::CustomEvent);
         }
 
         bool try_lock()

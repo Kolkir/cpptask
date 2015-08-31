@@ -25,16 +25,15 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _TASKMANAGERIMPL_H_
-#define _TASKMANAGERIMPL_H_
+#ifndef _CPP_TASK_TASKMANAGERIMPL_H_
+#define _CPP_TASK_TASKMANAGERIMPL_H_
 
 #include "taskmanager.h"
 #include "threadpool.h"
 
 #include <assert.h>
 
-namespace cpptask
-{
+namespace cpptask { namespace internal {
 
 inline TaskManager::TaskManager(TaskThreadPool& threadPool, EventManager& eventManager, TaskThread* parentThread)
     : parentThread(parentThread)
@@ -178,5 +177,5 @@ inline void TaskManager::WaitTask(Task& waitTask)
     }
 }
 
-}
+}}
 #endif

@@ -38,7 +38,6 @@ TEST(SyncTest, Semaphore)
         auto f1 = std::async(std::launch::async,[&]()
         {
             s.lock();
-            std::cout << "f1\n";
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             s.unlock();
         });
@@ -46,7 +45,6 @@ TEST(SyncTest, Semaphore)
         auto f2 = std::async(std::launch::async,[&]()
         {
             s.lock();
-            std::cout << "f2\n";
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             s.unlock();
         });
@@ -54,7 +52,6 @@ TEST(SyncTest, Semaphore)
         auto f3 = std::async(std::launch::async,[&]()
         {
             s.lock();
-            std::cout << "f3\n";
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             s.unlock();
         });
