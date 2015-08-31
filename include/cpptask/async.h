@@ -161,7 +161,7 @@ namespace cpptask
         }
         else
         {
-            throw Exception("Wrong launch policy for async");
+            throw exception("Wrong launch policy for async");
         }
     }
 }

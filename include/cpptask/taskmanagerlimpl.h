@@ -106,7 +106,7 @@ inline TaskManager& TaskManager::GetCurrent()
     }
     else
     {
-        throw Exception("Can't acquire current task manager");
+        throw exception("Can't acquire current task manager");
     }
 }
 

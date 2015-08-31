@@ -10,7 +10,7 @@ TEST(ExceptionsTest, Propagation)
     auto f = cpptask::async(std::launch::async,
         []()
     {
-        throw cpptask::Exception("Test exception message");
+        throw cpptask::exception("Test exception message");
     });
-    ASSERT_THROW(f.get(), cpptask::Exception);
+    ASSERT_THROW(f.get(), cpptask::exception);
 }

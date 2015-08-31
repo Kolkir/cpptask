@@ -64,7 +64,7 @@ public:
     {
         if (IsFinished())
         {
-            throw Exception("Task already finished");
+            throw exception("Task already finished");
         }
 
         try

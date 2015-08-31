@@ -44,7 +44,7 @@ public:
         tlsIndex = ::TlsAlloc();
         if (tlsIndex == TLS_OUT_OF_INDEXES)
         {
-            throw Exception("Can't create a TLS key - " + GetLastWinErrMsg());
+            throw exception("Can't create a TLS key - " + GetLastWinErrMsg());
         }
     }
 
@@ -65,7 +65,7 @@ public:
         void* rez = TlsGetValue(tlsIndex);
         if (rez == nullptr && ::GetLastError() != ERROR_SUCCESS)
         {
-            throw Exception("Can't get a TLS value - " + GetLastWinErrMsg());
+            throw exception("Can't get a TLS value - " + GetLastWinErrMsg());
         }
         return rez;
     }
@@ -74,7 +74,7 @@ public:
     {
         if (!::TlsSetValue(tlsIndex, value))
         {
-            throw Exception("Can't set a TLS value - " + GetLastWinErrMsg());
+            throw exception("Can't set a TLS value - " + GetLastWinErrMsg());
         }
     }
 

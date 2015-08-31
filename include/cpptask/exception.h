@@ -34,30 +34,30 @@
 namespace cpptask
 {
 
-class Exception: public std::exception
+class exception: public std::exception
 {
 public:
     typedef std::exception BaseType;
 
-    Exception() throw() {}
-    virtual ~Exception() throw(){}
+    exception() throw() {}
+    virtual ~exception() throw(){}
 
-    explicit Exception(const std::string& message)
+    explicit exception(const std::string& message)
     : message(message)
     {
     }
 
-    explicit Exception(const char *message)
+    explicit exception(const char *message)
     : message(message)
     {
     }
 
-    Exception(const Exception& ex)
+    exception(const exception& ex)
     : message(ex.message)
     {
     }
 
-    Exception& operator = (const Exception& ex)
+    exception& operator = (const exception& ex)
     {
         this->message = ex.message;
         return *this;
