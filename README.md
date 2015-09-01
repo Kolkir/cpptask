@@ -1,21 +1,35 @@
 **Summary**
 
-"cpptask" is an open source library which represents a higher-level, task-based parallelism that abstracts platform details and threading mechanisms. 
+"cpptask" is an open source library which represents a higher-level, task-based parallelism that abstracts platform details and threading mechanisms.
 
 It was made to be similar to native C++ "async" interfaces as much as possible. The main advantages are:
 
 1. You can specify number of threads, library will not create new ones.
 2. "Work stealing" technique is used for load balancing.
 3. You can use special type of synchronization primitives and special lock type to guarantee workload of thread during lock waiting operation.
+4. Library implemented as headers only library.
 
-Library provide two main features:
- * "future" class
- * "async" function
-These features have same signatures as standard C++ analogs. 
+**Library provide next features:**
 
-**Implementation**
-
-It is implemented as headers only library for simple integration to projects.
+1. Task management
+ * **_[future](#futurelink)_** class
+ * **_async_** function
+2. Synchronization
+ * **_mutex_** class
+ * **_event_** class
+ * ***lockable_event*** class
+ * **_semaphore_** class
+ * ***lockable_semaphore*** class
+ * ***process_lock*** class
+3. Algorithms
+ * **_range_** class
+ * ***split_range*** function
+ * ***split_num_range*** function
+ * ***for_each*** function
+ * **_reduce_** function
+4. Miscellaneous
+ * **_initializer_** class
+ * **_exception_** class
 
 **Supported Platforms (was tested on)**
 
@@ -25,13 +39,12 @@ It is implemented as headers only library for simple integration to projects.
   * Visual Studio 2015 (64 bit)
   * MinGw-64 (gcc 5.1)
 
-**Features**
-
- * Event primitive
- * Semaphore primitive
- * Work-Stealing tasks management 
- * Parallel-For algorithm
- * Parallel-Reduce algorithm
- 
-You can learn more on the [UserGuide](https://github.com/Kolkir/cpptask/wiki/UserGuide) page.
 Also you can visit [c-vision.com.ua](http://c-vision.com.ua) to learn more news about project.
+
+Documentation:
+
+<a name="futurelink">
+# **_future_** class
+
+dsfgdfg
+dfgdf
