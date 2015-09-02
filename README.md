@@ -1,15 +1,16 @@
-**Summary**
+# Summary
 
-"cpptask" is an open source library which represents a higher-level, task-based parallelism that abstracts platform details and threading mechanisms.
+"cpptask" is an open source library which implements load balanced task scheduler for developing parallel C++ programs.
 
-It was made to be similar to native C++ "async" interfaces as much as possible. The main advantages are:
+The main advantages are:
 
-1. You can specify number of threads, library will not create new ones.
-2. "Work stealing" technique is used for load balancing.
-3. You can use special type of synchronization primitives and special lock type to guarantee workload of thread during lock waiting operation.
-4. Library implemented as headers only library.
+1. It was made to be **similar to native C++** `async` interfaces as much as possible. 
+2. You can specify **number of threads**, library will not create new ones.
+3. "Work stealing" technique is used for **load balancing**.
+4. You can use special type of synchronization primitives and special lock type to guarantee **workload of thread during lock** waiting operation.
+5. Library implemented as **headers only** library.
 
-**Library provide next features:**
+# Features
 
 1. Task management
  * ***future*** class
@@ -54,10 +55,11 @@ It was made to be similar to native C++ "async" interfaces as much as possible. 
  * **_initializer_** class
  * **_exception_** class
 
-**Supported Platforms (was tested on)**
+# Supported Platforms (was tested on)
 
  * Linux (Arch)
   * gcc 5.1.0 (64bits)
+  * clang 3.6.2 (64bits)
  * Windows
   * Visual Studio 2015 (64 bit)
   * MinGw-64 (gcc 5.1)
