@@ -12,8 +12,31 @@ It was made to be similar to native C++ "async" interfaces as much as possible. 
 **Library provide next features:**
 
 1. Task management
- * **_[future](#futurelink)_** class
- * **_async_** function
+ * ***future*** class
+ * ***async*** function 
+ 
+ These functionality copies standard C++ signatures, methods and behaviour except `shared_future` class. Usage example:
+ 
+ ```cpp
+ #inlcude <cpptask/cpptask.h>
+ #include <chrono>
+ #include <cassert>
+ 
+ int main()
+ {
+    cpptask::initializer init(4); //initialize library with 4 threads
+    auto f = cpptask::async(std::launch::async, []()
+    {
+        //do something
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        return 5;
+    });
+    
+    auto x = f.get();
+    assert(5 == x);
+ }
+ ```
+ 
 2. Synchronization
  * **_mutex_** class
  * **_event_** class
@@ -40,11 +63,3 @@ It was made to be similar to native C++ "async" interfaces as much as possible. 
   * MinGw-64 (gcc 5.1)
 
 Also you can visit [c-vision.com.ua](http://c-vision.com.ua) to learn more news about project.
-
-Documentation:
-
-<a name="futurelink">
-# **_future_** class
-
-dsfgdfg
-dfgdf
