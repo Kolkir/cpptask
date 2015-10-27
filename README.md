@@ -170,7 +170,27 @@ The main advantages are:
      ...
      ``` 
 
- * ***reduce*** function
+ * ***reduce*** function - perform reduction on input right opened range, specified with iterators. Function recursively split input range and process each sub range in parallel with others.
+ 
+     Usage example:
+
+     ```
+     ...
+     int process_func(const cpptask::range<std::vector<int>::iterator>& range)
+     {
+         return std::accumulate(range.start, range.end, 0);
+     }
+     
+     int join_func(int a, int b)
+     {
+        return a + b;
+     }
+     ...
+     std::vector<int> m(BIG_NUMBER_OF_ELEMENTS);
+     ...
+     cpptask::reduce<int>(m.begin(), m.end(), process_func, join_func); // calculate sum in parallel
+     ...
+     ``` 
  
 4. **Miscellaneous**
  * ***initializer*** class - should be used for library initialization, use number of threads as parameter.
