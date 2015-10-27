@@ -111,17 +111,70 @@ The main advantages are:
      }
      ```
 
- * ***lockable_semaphore*** class
- * ***process_lock*** class
+ * ***lockable_semaphore*** class - Same as `cpptask::semaphore` but should be used in pair with `process_lock` type to workload thread during waiting operation.
+ 
+     Usage example:
+
+     ```
+     ...
+     cpptask::lockable_semaphore s(3,3); //We limit access to resource only to 3 threads concurrently
+     SharedResource res;
+     ...
+     //somewhere in threads
+     {
+       std::process_lock<cpptask::lockable_semaphore> lock(s); //will process other tasks during lock
+       //now we can access resource
+       process(res);
+     }
+     ``` 
+ 
+ * ***process_lock*** class - type for instantiating RAII lock on special synchronization primitives to workload thread during waiting. See `lockable_mutex`, `lockable_event` and `lockable_semaphore`.
+ 
 3. **Algorithms**
- * ***range*** class
- * ***split_range*** function
- * ***split_num_range*** function
+ * ***range*** class - simple right opened range. Can be initialized with integer types or with iterators. Used internally for parallel `for_each` implementation.
+ 
+ * ***split_range*** function - split input iterator range to number of smaller ranges sequentially. Used internally for parallel `for_each` implementation.
+ 
+     Usage example:
+
+     ```
+     template<class Iterator>
+     void function(Iterator start, Iterator end)
+     {
+         typedef range<Iterator> RangeType;
+         typedef std::vector<RangeType> Ranges;
+         Ranges ranges = split_range(start, end, 4); //split input iterator range to 4 sub ranges sequentially
+         ...
+     }
+     ```
+ 
+ * ***split_num_range*** function - split input integers range to number of smaller ranges sequentially. Used internally for parallel `for_each` implementation.
+ 
+     Usage example:
+
+     ```
+     ...
+     typedef range<Int> RangeType;
+     typedef std::vector<RangeType> Ranges;
+     Ranges ranges = split_range(1, 100, 4); //split input integer range[1,100) to 4 sub ranges sequentially
+      ...
+     ``` 
+ 
  * ***for_each*** function
  * ***reduce*** function
+ 
 4. **Miscellaneous**
- * ***initializer*** class
- * ***exception*** class
+ * ***initializer*** class - should be used for library initialization, use number of threads as parameter.
+
+     Usage example:
+     
+     ```
+     ...
+     cpptask::initializer init(4); //initialize library with 4 threads
+     ...
+    ```
+ 
+ * ***cpptask::exception*** class - this type of exception will be throwed in case of exceptional situation from library functions.
 
 # Supported Platforms (was tested on)
 
