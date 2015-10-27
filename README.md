@@ -160,7 +160,16 @@ The main advantages are:
       ...
      ``` 
  
- * ***for_each*** function
+ * ***for_each*** function - apply operation to each element of input right opened range. Function splits input range to number of sub ranges and proccess them in parallel. Number of sub ranges equals to number of threads used for library initialization. Input range can be specified with iterators or with integer numbers.
+ 
+     Usage example:
+
+     ```
+     ...
+     cpptask::for_each(1,100,[&](int x){ heavyFunction(x); });
+     ...
+     ``` 
+
  * ***reduce*** function
  
 4. **Miscellaneous**
