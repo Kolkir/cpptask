@@ -50,11 +50,11 @@ The main advantages are:
     cpptask::mutex guard;
     ...
     {
-      std::unique_lock<cpptask::mutex> lock(gurad); //totaly block thread
+      std::unique_lock<cpptask::mutex> lock(guard); //totaly block thread
     }
     ...
     {
-      cpptask::process_lock<cpptask::mutex> lock(gurad); //will process other tasks during lock
+      cpptask::process_lock<cpptask::mutex> lock(guard); //will process other tasks during lock
     }
     ...
     ```
