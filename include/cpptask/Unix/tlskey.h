@@ -42,7 +42,7 @@ public:
         int err = pthread_key_create(&key, 0);
         if (err != 0)
         {
-            throw Exception("Can't create a TLS key");
+            throw exception("Can't create a TLS key");
         }
     }
 
@@ -63,7 +63,7 @@ public:
     {
         if (pthread_setspecific(key, value) != 0)
         {
-            throw Exception("Can't set a TLS key");
+            throw exception("Can't set a TLS key");
         }
     }
 
