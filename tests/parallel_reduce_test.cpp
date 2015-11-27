@@ -26,7 +26,7 @@ namespace
 
 TEST_F(CppTaskTest, Reduce_Serial)
 {
-    cpptask::initialzer init(0);
+    cpptask::initializer init(0);
 
     double sum = cpptask::reduce<double>(testArray.begin(), testArray.end(), process_func, join_func);
 
@@ -36,7 +36,7 @@ TEST_F(CppTaskTest, Reduce_Serial)
 
 TEST_F(CppTaskTest, Reduce_Parallel)
 {
-    cpptask::initialzer init(4);
+    cpptask::initializer init(4);
 
     double sum = cpptask::reduce<double>(testArray.begin(), testArray.end(), process_func, join_func);
 
