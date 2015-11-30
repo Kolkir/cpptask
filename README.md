@@ -21,7 +21,7 @@ The main advantages are:
  Usage example:
 
  ```cpp
- #inlcude <cpptask/cpptask.h>
+ #include <cpptask/cpptask.h>
  #include <chrono>
  #include <cassert>
 

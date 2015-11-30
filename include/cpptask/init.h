@@ -33,19 +33,19 @@
 namespace cpptask
 {
 
-class initialzer
+class initializer
 {
 public:
-    initialzer(size_t threadsNum)
+    initializer(size_t threadsNum)
         : threadPool(threadsNum)
     {
     }
 
 
 
-    initialzer(const initialzer&) = delete;
+    initializer(const initializer&) = delete;
 
-    const initialzer& operator=(const initialzer&) = delete;
+    const initializer& operator=(const initializer&) = delete;
 
 private:
     internal::TaskThreadPool threadPool;

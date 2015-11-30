@@ -19,7 +19,7 @@ namespace
 
 TEST_F(CppTaskTest, Async_Deffered)
 {
-    cpptask::initialzer init(4);
+    cpptask::initializer init(4);
 
     auto f1 = cpptask::async(std::launch::deferred, processFunc, std::ref(testArray));
     auto f2 = cpptask::async(std::launch::deferred, processFunc, std::ref(testArray2));
@@ -36,7 +36,7 @@ TEST_F(CppTaskTest, Async_Deffered)
 
 TEST_F(CppTaskTest, Async_Parallel)
 {
-    cpptask::initialzer init(4);
+    cpptask::initializer init(4);
 
     auto f1 = cpptask::async(std::launch::async, processFunc, std::ref(testArray));
     auto f2 = cpptask::async(std::launch::async, processFunc, std::ref(testArray2));
@@ -56,7 +56,7 @@ TEST_F(CppTaskTest, Async_Parallel)
 
 TEST_F(CppTaskTest, Async_ParallelWait)
 {
-    cpptask::initialzer init(4);
+    cpptask::initializer init(4);
 
     auto f1 = cpptask::async(std::launch::async, processFunc, std::ref(testArray));
     auto f2 = cpptask::async(std::launch::async, processFunc, std::ref(testArray2));

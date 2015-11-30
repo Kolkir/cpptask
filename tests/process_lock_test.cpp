@@ -37,7 +37,7 @@ namespace
 
 TEST_F(CppTaskTest, ProcessLock_Serial)
 {
-    cpptask::initialzer init(1);
+    cpptask::initializer init(1);
 
     std::unique_lock<std::mutex> lock(guard);
     auto f1 = cpptask::async(std::launch::async, processFuncLock);
@@ -53,7 +53,7 @@ TEST_F(CppTaskTest, ProcessLock_Serial)
 
 TEST_F(CppTaskTest, ProcessLock_Parallel)
 {
-    cpptask::initialzer init(1);
+    cpptask::initializer init(1);
 
     std::unique_lock<cpptask::mutex> lock(guard2);
     auto f1 = cpptask::async(std::launch::async, processFuncLockMutex);
@@ -68,7 +68,7 @@ TEST_F(CppTaskTest, ProcessLock_Parallel)
 
 TEST_F(CppTaskTest, ProcessLock_ParallelEvent)
 {
-    cpptask::initialzer init(1);
+    cpptask::initializer init(1);
 
     auto f1 = cpptask::async(std::launch::async, processFuncLockEvent);
     std::this_thread::sleep_for(std::chrono::milliseconds(10)); // additional thread blocked, he stole task
@@ -82,7 +82,7 @@ TEST_F(CppTaskTest, ProcessLock_ParallelEvent)
 
 TEST_F(CppTaskTest, ProcessLock_ParallelSemaphore)
 {
-    cpptask::initialzer init(1);
+    cpptask::initializer init(1);
 
     std::unique_lock<cpptask::lockable_semaphore> lock(sem1);
     auto f1 = cpptask::async(std::launch::async, processFuncLockSem);
